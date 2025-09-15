@@ -9,6 +9,7 @@ import {
 import { AuthService } from './auth.service';
 import { IsPublic } from 'src/shared/decorators/auth.decorator';
 import {
+  ForgotPasswordBodyDTO,
   LoginBodyDTO,
   LoginResponseDTO,
   LogOutBodyDTO,
@@ -75,5 +76,12 @@ export class AuthController {
   @ZodSerializerDto(MessageResponseDTO)
   async logout(@Body() body: LogOutBodyDTO) {
     return this.authService.logout(body.refreshToken);
+  }
+
+  @Post('forgot-password')
+  @IsPublic()
+  @ZodSerializerDto(MessageResponseDTO)
+  forgotPassword(@Body() body: ForgotPasswordBodyDTO) {
+    return this.authService.forgotPassword(body);
   }
 }

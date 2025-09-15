@@ -5,6 +5,7 @@ import { AuthRepository } from './auth.repo';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
 import { EmailService } from 'src/shared/services/email.service';
 import {
+  ForgotPasswordBodyType,
   LoginBodyType,
   RefreshTokenBodyType,
   RegisterBodyType,
@@ -293,5 +294,47 @@ export class AuthService {
       }
       throw UnauthorizedAccessException;
     }
+  }
+
+  async forgotPassword(body: ForgotPasswordBodyType) {
+    const { email, code, newPassword } = body;
+
+    // check if email exists
+    const user = await this.sharedUserRepository.findUnique({
+      email: email,
+    });
+    if (!user) {
+      throw EmailNotFoundException;
+    }
+
+    // validate verification code
+    await this.validateVerificationCode({
+      email: email,
+      code: code,
+      type: TypeOfVerificationCode.FORGOT_PASSWORD,
+    });
+
+    // update new password
+    const hashedPassword = await this.hashingService.hashPassword(newPassword);
+    const $updateUser = this.authRepository.updateUser(
+      { id: user.id },
+      {
+        password: hashedPassword,
+      },
+    );
+
+    const $deleteVerificationCode = this.authRepository.deleteVerificationCode({
+      email_code_type: {
+        email: email,
+        code: code,
+        type: TypeOfVerificationCode.FORGOT_PASSWORD,
+      },
+    });
+
+    await Promise.all([$updateUser, $deleteVerificationCode]);
+
+    return {
+      message: 'Update password successfully',
+    };
   }
 }

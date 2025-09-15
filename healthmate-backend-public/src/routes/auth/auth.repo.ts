@@ -177,4 +177,14 @@ export class AuthRepository {
       where: uniqueObject,
     });
   }
+
+  async updateUser(
+    condition: { id: number } | { email: string },
+    data: Partial<UserType>,
+  ) {
+    return this.prismaService.user.update({
+      where: condition,
+      data,
+    });
+  }
 }
