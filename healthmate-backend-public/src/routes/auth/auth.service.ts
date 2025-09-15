@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { TokenService } from 'src/shared/services/token.service';
 import { AuthRepository } from './auth.repo';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
 import { EmailService } from 'src/shared/services/email.service';
-import { LoginBodyType, RegisterBodyType, SendOTPBodyType } from './auth.model';
+import {
+  LoginBodyType,
+  RefreshTokenBodyType,
+  RegisterBodyType,
+  SendOTPBodyType,
+} from './auth.model';
 import {
   TypeOfVerificationCode,
   TypeOfVerificationCodeType,
@@ -16,8 +21,14 @@ import {
   InvalidOTPException,
   InvalidPasswordException,
   OTPExpiredException,
+  RefreshTokenAlreadyUsedException,
+  UnauthorizedAccessException,
 } from './auth.error';
-import { generateOTP, isUniqueConstraintError } from 'src/shared/helper';
+import {
+  generateOTP,
+  isNotFoundError,
+  isUniqueConstraintError,
+} from 'src/shared/helper';
 import { addMilliseconds } from 'date-fns';
 import envConfig from 'src/shared/config';
 import ms, { StringValue } from 'ms';
@@ -192,5 +203,95 @@ export class AuthService {
       deviceId: payload.deviceId,
     });
     return { accessToken, refreshToken };
+  }
+
+  async refreshToken({
+    refreshToken,
+    userAgent,
+    ip,
+  }: RefreshTokenBodyType & { userAgent: string; ip: string }) {
+    console.log(refreshToken);
+    console.log(userAgent);
+    console.log(ip);
+    try {
+      // verify refreshToken
+      const { userId } =
+        await this.tokenService.verifyRefreshToken(refreshToken);
+
+      // check if refreshToken in database
+      const refreshTokenInDB =
+        await this.authRepository.findUniqueRefreshTokenIncludeUserRole({
+          token: refreshToken,
+        });
+      if (!refreshTokenInDB) {
+        throw RefreshTokenAlreadyUsedException;
+      }
+
+      // update device
+      const {
+        deviceId,
+        user: {
+          roleId,
+          role: { name: roleName },
+        },
+      } = refreshTokenInDB;
+
+      const $updateDevice = this.authRepository.updateDevice(deviceId, {
+        ip,
+        userAgent,
+      });
+
+      // delete old refreshToken
+      const $deleteRefreshToken = this.authRepository.deleteRefreshToken({
+        token: refreshToken,
+      });
+
+      // renew accessToken and refreshToken
+      const $token = this.generateTokens({
+        userId,
+        roleId,
+        roleName,
+        deviceId,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [_, __, tokens] = await Promise.all([
+        $updateDevice,
+        $deleteRefreshToken,
+        $token,
+      ]);
+
+      return tokens;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      console.log(error);
+      throw UnauthorizedAccessException;
+    }
+  }
+
+  async logout(refreshToken: string) {
+    try {
+      // verify refreshToken
+      await this.tokenService.verifyRefreshToken(refreshToken);
+
+      // delete refreshToken in database
+      const deletedRefreshToken = await this.authRepository.deleteRefreshToken({
+        token: refreshToken,
+      });
+
+      // deactivate device
+      await this.authRepository.updateDevice(deletedRefreshToken.deviceId, {
+        isActive: false,
+      });
+
+      return { message: 'Logout successfully' };
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        throw RefreshTokenAlreadyUsedException;
+      }
+      throw UnauthorizedAccessException;
+    }
   }
 }
