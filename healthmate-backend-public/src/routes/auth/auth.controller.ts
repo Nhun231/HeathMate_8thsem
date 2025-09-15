@@ -11,6 +11,7 @@ import { IsPublic } from 'src/shared/decorators/auth.decorator';
 import {
   LoginBodyDTO,
   LoginResponseDTO,
+  LogOutBodyDTO,
   RefreshTokenBodyDTO,
   RefreshTokenResponseDTO,
   RegisterBodyDTO,
@@ -68,5 +69,11 @@ export class AuthController {
       userAgent,
       ip,
     });
+  }
+
+  @Post('logout')
+  @ZodSerializerDto(MessageResponseDTO)
+  async logout(@Body() body: LogOutBodyDTO) {
+    return this.authService.logout(body.refreshToken);
   }
 }
