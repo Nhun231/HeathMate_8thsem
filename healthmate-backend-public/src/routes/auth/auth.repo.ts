@@ -46,7 +46,7 @@ export class AuthRepository {
   }
 
   async updateUser(
-    condition: { id: number } | { email: string },
+    condition: { _id: Types.ObjectId } | { email: string },
     data: Partial<User>,
   ) {
     return await this.userModel.updateOne(condition, { $set: data });

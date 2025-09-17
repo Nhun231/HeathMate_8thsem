@@ -20,13 +20,14 @@ import {
   TypeOfVerificationCodeType,
 } from 'src/shared/constants/auth.constant';
 import {
+  ForgotPasswordBodyType,
   LoginBodyType,
   RefreshTokenBodyType,
   RegisterBodyType,
   SendOTPBodyType,
 } from './schema/request/auth.request.schema';
 import { AccessTokenPayloadCreate } from 'src/shared/types/jwt.type';
-import { generateOTP } from 'src/shared/helper';
+import { generateOTP, isNotFoundError } from 'src/shared/helper';
 import { addMilliseconds } from 'date-fns';
 import envConfig from 'src/shared/config';
 import ms, { StringValue } from 'ms';
@@ -234,32 +235,35 @@ export class AuthService {
     }
   }
 
-  // async logout(refreshToken: string) {
-  //   try {
-  //     // 1. Kiểm tra refreshToken có hợp lệ không
-  //     await this.tokenService.verifyRefreshToken(refreshToken);
+  async logout(refreshToken: string) {
+    try {
+      // 1. Kiểm tra refreshToken có hợp lệ không
+      await this.tokenService.verifyRefreshToken(refreshToken);
 
-  //     // 2. Xóa refreshToken trong database
-  //     const deletedRefreshToken = await this.authRepository.deleteRefreshToken({
-  //       token: refreshToken,
-  //     });
+      // 2. Xóa refreshToken trong database
+      const deletedRefreshToken = await this.authRepository.deleteRefreshToken({
+        token: refreshToken,
+      });
 
-  //     // 3. Vô hiệu hóa device
-  //     if (deletedRefreshToken) {
-  //       await this.authRepository.updateDevice(deletedRefreshToken.deviceId, {
-  //         isActive: false,
-  //       });
-  //     }
-  //     return { message: 'Logout successfully' };
-  //   } catch (error) {
-  //     // Trường hợp đã refresh token rồi, hãy thông báo cho user biết
-  //     // refresh token của họ đã bị đánh cắp
-  //     if (isNotFoundError(error)) {
-  //       throw RefreshTokenAlreadyUsedException;
-  //     }
-  //     throw UnauthorizedAccessException;
-  //   }
-  // }
+      // 3. Vô hiệu hóa device
+      if (deletedRefreshToken) {
+        await this.authRepository.updateDevice(
+          new Types.ObjectId(deletedRefreshToken.deviceId),
+          {
+            isActive: false,
+          },
+        );
+      }
+      return { message: 'Logout successfully' };
+    } catch (error) {
+      // Trường hợp đã refresh token rồi, hãy thông báo cho user biết
+      // refresh token của họ đã bị đánh cắp
+      if (isNotFoundError(error)) {
+        throw RefreshTokenAlreadyUsedException;
+      }
+      throw UnauthorizedAccessException;
+    }
+  }
 
   async generateTokens(payload: AccessTokenPayloadCreate) {
     const [accessToken, refreshToken] = await Promise.all([
@@ -307,5 +311,49 @@ export class AuthService {
     }
 
     return verificationCode;
+  }
+
+  async forgotPassword(body: ForgotPasswordBodyType) {
+    const { email, code, newPassword } = body;
+
+    // check if email exists
+    const user = await this.sharedUserRepository.findUnique({
+      email: email,
+    });
+    if (!user) {
+      throw EmailNotFoundException;
+    }
+
+    // validate verification code
+    await this.validateVerificationCode({
+      email: email,
+      code: code,
+      type: TypeOfVerificationCode.FORGOT_PASSWORD,
+    });
+
+    console.log(body.newPassword);
+    console.log(user.password);
+    // update new password
+    const hashedPassword = await this.hashingService.hashPassword(newPassword);
+    console.log(hashedPassword);
+
+    const $updateUser = this.authRepository.updateUser(
+      { _id: user._id },
+      {
+        password: hashedPassword,
+      },
+    );
+
+    const $deleteVerificationCode = this.authRepository.deleteVerificationCode({
+      email: email,
+      code: code,
+      type: TypeOfVerificationCode.FORGOT_PASSWORD,
+    });
+
+    await Promise.all([$updateUser, $deleteVerificationCode]);
+
+    return {
+      message: 'Update password successfully',
+    };
   }
 }

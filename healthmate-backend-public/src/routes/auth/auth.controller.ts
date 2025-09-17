@@ -69,16 +69,16 @@ export class AuthController {
     });
   }
 
-  // @Post('logout')
-  // // @ZodSerializerDto(MessageResponseDTO)
-  // async logout(@Body() body: LogOutBodyDTO) {
-  //   return this.authService.logout(body.refreshToken);
-  // }
-
-  // @Post('forgot-password')
-  // @IsPublic()
+  @Post('logout')
   // @ZodSerializerDto(MessageResponseDTO)
-  // forgotPassword(@Body() body: ForgotPasswordBodyDTO) {
-  //   return this.authService.forgotPassword(body);
-  // }
+  async logout(@Body() body: LogOutBodyDTO) {
+    return this.authService.logout(body.refreshToken);
+  }
+
+  @Post('forgot-password')
+  @IsPublic()
+  @ZodSerializerDto(MessageResponseDTO)
+  forgotPassword(@Body() body: ForgotPasswordBodyDTO) {
+    return this.authService.forgotPassword(body);
+  }
 }
