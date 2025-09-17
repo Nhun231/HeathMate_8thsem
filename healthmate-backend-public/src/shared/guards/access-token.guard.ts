@@ -14,6 +14,7 @@ export class AccessTokenGuard implements CanActivate {
       // throw new UnauthorizedException('Access token is missing');
       return false;
     }
+
     try {
       const decodedToken =
         await this.tokenService.verifyAccessToken(accessToken);

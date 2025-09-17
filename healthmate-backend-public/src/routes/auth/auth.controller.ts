@@ -8,20 +8,17 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { IsPublic } from 'src/shared/decorators/auth.decorator';
-import {
-  ForgotPasswordBodyDTO,
-  LoginBodyDTO,
-  LoginResponseDTO,
-  LogOutBodyDTO,
-  RefreshTokenBodyDTO,
-  RefreshTokenResponseDTO,
-  RegisterBodyDTO,
-  RegisterResponseDTO,
-  SendOTPBodyDTO,
-} from './auth.dto';
 import { ZodSerializerDto } from 'nestjs-zod';
 import { UserAgent } from 'src/shared/decorators/user-agent.decorator';
 import { MessageResponseDTO } from 'src/shared/dtos/response.dto';
+import {
+  ForgotPasswordBodyDTO,
+  LoginBodyDTO,
+  LogOutBodyDTO,
+  RefreshTokenBodyDTO,
+  RegisterBodyDTO,
+  SendOTPBodyDTO,
+} from './auth.dto';
 
 @Controller('v1/auth')
 export class AuthController {
@@ -29,7 +26,7 @@ export class AuthController {
 
   @Post('register')
   @IsPublic()
-  @ZodSerializerDto(RegisterResponseDTO)
+  // @ZodSerializerDto(RegisterResponseDTO)
   async register(@Body() body: RegisterBodyDTO) {
     return await this.authService.register(body);
   }
@@ -42,7 +39,7 @@ export class AuthController {
 
   @Post('login')
   @IsPublic()
-  @ZodSerializerDto(LoginResponseDTO)
+  // @ZodSerializerDto(LoginResponseDTO)
   async login(
     @Body() body: LoginBodyDTO,
     @UserAgent() userAgent: string,
@@ -58,7 +55,7 @@ export class AuthController {
   @Post('refresh-token')
   @IsPublic()
   @HttpCode(HttpStatus.OK)
-  @ZodSerializerDto(RefreshTokenResponseDTO)
+  // @ZodSerializerDto(RefreshTokenResponseDTO)
   async refreshToken(
     @Body() body: RefreshTokenBodyDTO,
     @UserAgent() userAgent: string,
@@ -72,16 +69,16 @@ export class AuthController {
     });
   }
 
-  @Post('logout')
-  @ZodSerializerDto(MessageResponseDTO)
-  async logout(@Body() body: LogOutBodyDTO) {
-    return this.authService.logout(body.refreshToken);
-  }
+  // @Post('logout')
+  // // @ZodSerializerDto(MessageResponseDTO)
+  // async logout(@Body() body: LogOutBodyDTO) {
+  //   return this.authService.logout(body.refreshToken);
+  // }
 
-  @Post('forgot-password')
-  @IsPublic()
-  @ZodSerializerDto(MessageResponseDTO)
-  forgotPassword(@Body() body: ForgotPasswordBodyDTO) {
-    return this.authService.forgotPassword(body);
-  }
+  // @Post('forgot-password')
+  // @IsPublic()
+  // @ZodSerializerDto(MessageResponseDTO)
+  // forgotPassword(@Body() body: ForgotPasswordBodyDTO) {
+  //   return this.authService.forgotPassword(body);
+  // }
 }
