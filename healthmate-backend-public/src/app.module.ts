@@ -8,10 +8,15 @@ import { ZodSerializerInterceptor } from 'nestjs-zod';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { CatchEverythingFilter } from './shared/filters/catch-everything.filter';
 import { AuthModule } from './routes/auth/auth.module';
-import { ProfileModule } from './routes/profile/profile.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import envConfig from './shared/config';
 
 @Module({
-  imports: [SharedModule, AuthModule, ProfileModule],
+  imports: [
+    MongooseModule.forRoot(envConfig.MONGODB_URI),
+    SharedModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,

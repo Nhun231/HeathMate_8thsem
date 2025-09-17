@@ -1,24 +1,14 @@
-import { Prisma } from '@prisma/client';
 import { randomInt } from 'crypto';
+import { MongoServerError } from 'mongodb';
 
-export function isUniqueConstraintError(
-  error: any,
-): error is Prisma.PrismaClientKnownRequestError {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2002'
-  );
+export function isUniqueConstraintError(error: any): error is MongoServerError {
+  return error instanceof MongoServerError && error.code === 11000;
 }
 
-export function isNotFoundError(
-  error: any,
-): error is Prisma.PrismaClientKnownRequestError {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2025'
-  );
+export function isNotFoundError(error: any): boolean {
+  return error instanceof Error && error.name === 'DocumentNotFoundError';
 }
 
-export const generateOTP = () => {
+export const generateOTP = (): string => {
   return randomInt(100000, 1000000).toString();
 };

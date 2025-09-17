@@ -15,7 +15,7 @@ if (!fs.existsSync(path.resolve('.env'))) {
 const configSchema = z.object({
   APP_NAME: z.string().default('Health Mate'),
   PORT: z.string(),
-  DATABASE_URL: z.string(),
+  MONGODB_URI: z.string(),
   ACCESS_TOKEN_SECRET: z.string(),
   REFRESH_TOKEN_SECRET: z.string(),
   REFRESH_TOKEN_EXPIRES_IN: z.string(),

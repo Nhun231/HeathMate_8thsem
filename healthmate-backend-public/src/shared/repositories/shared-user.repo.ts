@@ -1,16 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../services/prisma.service';
-import { UserType } from '../models/shared-user.model';
+import { InjectModel } from '@nestjs/mongoose';
+import { User, UserDocument } from '../schemas/user.schema';
+import { Model, Types } from 'mongoose';
 
 @Injectable()
 export class SharedUserRepository {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async findUnique(
-    uniqueObject: { email: string } | { id: number },
-  ): Promise<UserType | null> {
-    return this.prismaService.user.findFirst({
-      where: uniqueObject,
-    });
+    uniqueObject: { email: string } | { _id: Types.ObjectId },
+  ): Promise<UserDocument | null> {
+    return this.userModel.findOne(uniqueObject).populate('roleId').exec();
   }
 }
