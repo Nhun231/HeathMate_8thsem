@@ -16,6 +16,8 @@ const configSchema = z.object({
   APP_NAME: z.string().default('Health Mate'),
   PORT: z.string(),
   MONGODB_URI: z.string(),
+  MONGODB_USER: z.string(),
+  MONGODB_PASSWORD: z.string(),
   ACCESS_TOKEN_SECRET: z.string(),
   REFRESH_TOKEN_SECRET: z.string(),
   REFRESH_TOKEN_EXPIRES_IN: z.string(),

@@ -13,7 +13,12 @@ import envConfig from './shared/config';
 
 @Module({
   imports: [
-    MongooseModule.forRoot(envConfig.MONGODB_URI),
+    MongooseModule.forRoot(
+      envConfig.MONGODB_URI.replace(
+        '<db_user>',
+        envConfig.MONGODB_USER,
+      ).replace('<db_password>', envConfig.MONGODB_PASSWORD),
+    ),
     SharedModule,
     AuthModule,
   ],
