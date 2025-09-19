@@ -9,6 +9,7 @@ import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { CatchEverythingFilter } from './shared/filters/catch-everything.filter';
 import { AuthModule } from './routes/auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CalculationModule } from './routes/calculation/calculation.module';
 import envConfig from './shared/config';
 
 @Module({
@@ -21,6 +22,7 @@ import envConfig from './shared/config';
     ),
     SharedModule,
     AuthModule,
+    CalculationModule,
   ],
   controllers: [AppController],
   providers: [

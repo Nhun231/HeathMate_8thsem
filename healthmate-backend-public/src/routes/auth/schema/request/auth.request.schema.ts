@@ -11,7 +11,7 @@ export const RegisterBodySchema = z
     confirmPassword: z.string().min(6).max(64),
     code: z.string().length(6),
     fullname: z.string().min(2).max(64),
-    gender: z.enum([Gender.Male, Gender.Female, Gender.Other]),
+    gender: z.enum([Gender.Male, Gender.Female]),
     dob: z.coerce.date(),
     phoneNumber: z.string(),
   })

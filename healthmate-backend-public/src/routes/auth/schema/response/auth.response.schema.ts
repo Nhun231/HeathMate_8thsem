@@ -7,7 +7,7 @@ export const UserSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
   fullname: z.string().min(2),
-  gender: z.enum([Gender.Male, Gender.Female, Gender.Other]),
+  gender: z.enum([Gender.Male, Gender.Female]),
   dob: z.date().optional(),
   phoneNumber: z.string().optional(),
   avatar: z.string().optional(),
