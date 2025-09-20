@@ -33,17 +33,16 @@ export type TypeOfVerificationCodeType =
 export const Gender = {
   Male: 'Male',
   Female: 'Female',
-  Other: 'Other',
 } as const;
 
 export type GenderType = (typeof Gender)[keyof typeof Gender];
 
 export const ActivityLevel = {
-  Sedentary: 'Sedentary',
-  Light: 'Lightly',
-  Moderate: 'Moderate',
-  Active: 'Active',
-  VeryActive: 'VeryActive',
+  Sedentary: 'Sedentary', // little to no excercises
+  Light: 'Light', // light exercise 1-3 days/week
+  Moderate: 'Moderate', // moderate exercise 3-5 days/week
+  Active: 'Active', // hard exercise 6-7 days/week
+  VeryActive: 'VeryActive', // hard exercise & work in a physical job
 } as const;
 
 export type ActivityLevelType =

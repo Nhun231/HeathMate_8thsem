@@ -61,7 +61,6 @@ export class AuthController {
     @UserAgent() userAgent: string,
     @Ip() ip: string,
   ) {
-    console.log(body);
     return await this.authService.refreshToken({
       refreshToken: body.refreshToken,
       userAgent,
