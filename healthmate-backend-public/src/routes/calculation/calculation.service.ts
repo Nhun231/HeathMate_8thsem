@@ -1,17 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { CalculationRepo } from './calculation.repo';
 import { CalculationCreateType } from './schema/request/calculation.request.schema';
-import { ActivityLevel, Gender } from 'src/shared/constants/auth.constant';
-import {
-  InvalidActivityLevelException,
-  InvalidGenderException,
-} from './calculation.error';
+import { NotFoundUserCalculationException } from './calculation.error';
 import { Calculation } from './schema/calculation.schema';
 import { Types } from 'mongoose';
+import { NutrientsCalculatorService } from 'src/shared/services/nutrients-calculator.service';
+import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
 
 @Injectable()
 export class CalculationService {
-  constructor(private readonly calculationRepo: CalculationRepo) {}
+  constructor(
+    private readonly calculationRepo: CalculationRepo,
+    private readonly nutrientCalculatorService: NutrientsCalculatorService,
+    private readonly sharedUserRepository: SharedUserRepository,
+  ) {}
 
   async createCalculation({
     data,
@@ -20,13 +22,44 @@ export class CalculationService {
     data: CalculationCreateType;
     userId: Types.ObjectId;
   }) {
-    const { gender, age, height, weight, activityLevel } = data;
+    const calculation = await this.calculate({ data, userId });
 
-    const bmr = this.calculateBMR({ gender, age, weight, height });
-    const tdee = this.calculateTDEE({ bmr, activityLevel });
-    const bmi = this.calculateBMI({ height, weight });
-    const waterNeeded = +(weight * 0.03).toFixed(2);
-    const nutrition = this.calculateNutrition(tdee);
+    // if there is a record for today, update the existing record
+    const existingCalculation =
+      await this.calculationRepo.findTodayRecord(userId);
+    if (existingCalculation) {
+      return this.update(existingCalculation._id.toString(), calculation);
+    }
+
+    // else create new record
+    return this.calculationRepo.create(calculation);
+  }
+
+  async calculate({
+    data,
+    userId,
+  }: {
+    data: CalculationCreateType;
+    userId: Types.ObjectId;
+  }) {
+    const { height, weight, activityLevel } = data;
+
+    const userAge = await this.sharedUserRepository.getUserAge(userId);
+    const user = await this.sharedUserRepository.findUnique({ _id: userId });
+
+    if (!user) {
+      throw NotFoundUserCalculationException;
+    }
+    const gender = user.gender;
+
+    const { bmr, tdee, bmi, waterNeeded, protein, fat, carbs, fiber } =
+      this.nutrientCalculatorService.calculateNutrients({
+        gender,
+        height,
+        weight,
+        age: userAge,
+        activityLevel,
+      });
 
     const calculation: Calculation = {
       userId,
@@ -37,13 +70,13 @@ export class CalculationService {
       tdee,
       bmi,
       waterNeeded,
-      protein: nutrition.protein,
-      fat: nutrition.fat,
-      carbs: nutrition.carbs,
-      fiber: nutrition.fiber,
+      protein,
+      fat,
+      carbs,
+      fiber,
     };
 
-    return this.calculationRepo.create(calculation);
+    return calculation;
   }
 
   findById(id: string) {
@@ -55,81 +88,8 @@ export class CalculationService {
     return this.calculationRepo.findByUserId(userId);
   }
 
-  calculateBMR({
-    gender,
-    age,
-    weight,
-    height,
-  }: {
-    gender: string;
-    age: number;
-    weight: number;
-    height: number;
-  }) {
-    let bmr = 0;
-    if (gender === Gender.Male) {
-      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-    } else if (gender === Gender.Female) {
-      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-    } else {
-      throw InvalidGenderException;
-    }
-
-    return bmr;
-  }
-
-  calculateTDEE({
-    bmr,
-    activityLevel,
-  }: {
-    bmr: number;
-    activityLevel: string;
-  }) {
-    const activityFactors = {
-      [ActivityLevel.Sedentary]: 1.2,
-      [ActivityLevel.Light]: 1.375,
-      [ActivityLevel.Moderate]: 1.55,
-      [ActivityLevel.Active]: 1.725,
-      [ActivityLevel.VeryActive]: 1.9,
-    };
-
-    const factor = activityFactors[activityLevel];
-    if (!factor) {
-      throw InvalidActivityLevelException;
-    }
-
-    const tdee = bmr * factor;
-
-    return tdee;
-  }
-
-  calculateBMI({ height, weight }: { height: number; weight: number }) {
-    return +(weight / Math.pow(height / 100, 2)).toFixed(2);
-  }
-
-  calculateNutrition(calories: number) {
-    const proteinRatio = 0.25;
-    const fatRatio = 0.25;
-    const fiberRatio = 0.05;
-    const carbsRatio = 1 - proteinRatio - fatRatio - fiberRatio;
-
-    const proteinCalories = calories * proteinRatio;
-    const fatCalories = calories * fatRatio;
-    const fiberCalories = calories * fiberRatio;
-    const carbsCalories = calories * carbsRatio;
-
-    const proteinGrams = +(proteinCalories / 4).toFixed(2);
-    const fatGrams = +(fatCalories / 9).toFixed(2);
-    const fiberGrams = +(fiberCalories / 2).toFixed(2);
-    const carbsGrams = +(carbsCalories / 4).toFixed(2);
-
-    const result = {
-      protein: proteinGrams,
-      fat: fatGrams,
-      fiber: fiberGrams,
-      carbs: carbsGrams,
-    };
-
-    return result;
+  update(id: string, data: Partial<Omit<Calculation, 'userId'>>) {
+    const calculationId = new Types.ObjectId(id);
+    return this.calculationRepo.update(calculationId, data);
   }
 }

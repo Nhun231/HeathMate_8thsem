@@ -20,12 +20,14 @@ import {
   VerificationCode,
   VerificationCodeSchema,
 } from './schemas/verificationCode.schema';
+import { NutrientsCalculatorService } from './services/nutrients-calculator.service';
 
 const sharedServices = [
   TokenService,
   HashingService,
   SharedUserRepository,
   EmailService,
+  NutrientsCalculatorService,
 ];
 
 @Global()

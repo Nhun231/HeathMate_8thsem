@@ -23,6 +23,18 @@ export class CalculationRepo {
     return this.calculationModel.find({ userId });
   }
 
+  async findTodayRecord(userId: Types.ObjectId) {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    return this.calculationModel.findOne({
+      userId,
+      createdAt: { $gte: start, $lte: end },
+    });
+  }
+
   async update(id: Types.ObjectId, data: Partial<Calculation>) {
     return this.calculationModel.updateOne({ _id: id }, { $set: data });
   }
