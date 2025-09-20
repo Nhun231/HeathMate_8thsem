@@ -92,4 +92,9 @@ export class CalculationService {
     const calculationId = new Types.ObjectId(id);
     return this.calculationRepo.update(calculationId, data);
   }
+
+  delete(id: string) {
+    const calculationId = new Types.ObjectId(id);
+    return this.calculationRepo.delete(calculationId);
+  }
 }

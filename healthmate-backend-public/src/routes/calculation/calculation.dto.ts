@@ -16,3 +16,7 @@ export class GetCalculationParamsDTO extends createZodDto(
 export class GetCalculationUserParamsDTO extends createZodDto(
   GetCalculationUserParamsSchema,
 ) {}
+
+export class DeleteCalculationParamsDTO extends createZodDto(
+  GetCalculationParamsSchema,
+) {}

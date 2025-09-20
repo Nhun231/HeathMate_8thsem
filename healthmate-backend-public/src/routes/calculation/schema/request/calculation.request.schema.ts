@@ -26,6 +26,8 @@ export const GetCalculationUserParamsSchema = z.object({
   userId: z.instanceof(Types.ObjectId),
 });
 
+export const DeleteCalculationParamsSchema = GetCalculationParamsSchema;
+
 export type CalculationCreateType = z.infer<typeof CalculationCreateBodySchema>;
 
 export type GetCalculationParamsType = z.infer<
@@ -34,4 +36,8 @@ export type GetCalculationParamsType = z.infer<
 
 export type GetCalculationUserParamsType = z.infer<
   typeof GetCalculationUserParamsSchema
+>;
+
+export type DeleteCalculationParamsType = z.infer<
+  typeof DeleteCalculationParamsSchema
 >;

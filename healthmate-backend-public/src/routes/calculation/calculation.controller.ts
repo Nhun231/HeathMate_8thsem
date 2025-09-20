@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { CalculationService } from './calculation.service';
 import {
   CreateCalculationBodyDTO,
+  DeleteCalculationParamsDTO,
   GetCalculationParamsDTO,
 } from './calculation.dto';
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
@@ -27,5 +28,10 @@ export class CalculationController {
   @Get('user/list')
   async findCalculationByUserId(@ActiveUser('userId') userId: Types.ObjectId) {
     return this.calculationService.findByUserId(userId);
+  }
+
+  @Delete('/details/:calculationId')
+  async deleteCalculationById(@Param() params: DeleteCalculationParamsDTO) {
+    return this.calculationService.delete(params.calculationId);
   }
 }
