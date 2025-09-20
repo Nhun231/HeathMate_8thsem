@@ -46,6 +46,15 @@ export class CalculationService {
     return this.calculationRepo.create(calculation);
   }
 
+  findById(id: string) {
+    const calculationId = new Types.ObjectId(id);
+    return this.calculationRepo.findbyId(calculationId);
+  }
+
+  findByUserId(userId: Types.ObjectId) {
+    return this.calculationRepo.findByUserId(userId);
+  }
+
   calculateBMR({
     gender,
     age,

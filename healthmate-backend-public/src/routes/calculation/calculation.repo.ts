@@ -20,7 +20,7 @@ export class CalculationRepo {
   }
 
   async findByUserId(userId: Types.ObjectId) {
-    return this.calculationModel.findOne({ userId });
+    return this.calculationModel.find({ userId });
   }
 
   async update(id: Types.ObjectId, data: Partial<Calculation>) {

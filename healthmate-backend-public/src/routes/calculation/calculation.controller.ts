@@ -1,16 +1,15 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { CalculationService } from './calculation.service';
-import { CalculationRepo } from './calculation.repo';
-import { CreateCalculationBodyDTO } from './calculation.dto';
+import {
+  CreateCalculationBodyDTO,
+  GetCalculationParamsDTO,
+} from './calculation.dto';
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
 import { Types } from 'mongoose';
 
 @Controller('v1/calculation')
 export class CalculationController {
-  constructor(
-    private readonly calculationService: CalculationService,
-    private readonly calculationRepo: CalculationRepo,
-  ) {}
+  constructor(private readonly calculationService: CalculationService) {}
 
   @Post()
   async createCalculation(
@@ -18,5 +17,15 @@ export class CalculationController {
     @ActiveUser('userId') userId: Types.ObjectId,
   ) {
     return this.calculationService.createCalculation({ data, userId });
+  }
+
+  @Get('/details/:calculationId')
+  async findCalculationById(@Param() params: GetCalculationParamsDTO) {
+    return this.calculationService.findById(params.calculationId);
+  }
+
+  @Get('user/list')
+  async findCalculationByUserId(@ActiveUser('userId') userId: Types.ObjectId) {
+    return this.calculationService.findByUserId(userId);
   }
 }
