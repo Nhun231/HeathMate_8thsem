@@ -10,7 +10,8 @@ import { CatchEverythingFilter } from './shared/filters/catch-everything.filter'
 import { AuthModule } from './routes/auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CalculationModule } from './routes/calculation/calculation.module';
-import envConfig from './shared/config';
+import { UserModule } from './routes/user/user.module';
+import envConfig from './shared/utils/config';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import envConfig from './shared/config';
     SharedModule,
     AuthModule,
     CalculationModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [

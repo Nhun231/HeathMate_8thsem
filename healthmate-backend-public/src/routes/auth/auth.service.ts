@@ -27,9 +27,9 @@ import {
   SendOTPBodyType,
 } from './schema/request/auth.request.schema';
 import { AccessTokenPayloadCreate } from 'src/shared/types/jwt.type';
-import { generateOTP, isNotFoundError } from 'src/shared/helper';
+import { generateOTP, isNotFoundError } from 'src/shared/utils/helper';
 import { addMilliseconds } from 'date-fns';
-import envConfig from 'src/shared/config';
+import envConfig from 'src/shared/utils/config';
 import ms, { StringValue } from 'ms';
 import { RoleDocument } from 'src/shared/schemas/role.schema';
 import { Types } from 'mongoose';

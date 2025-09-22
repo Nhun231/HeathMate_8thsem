@@ -21,13 +21,15 @@ import {
   VerificationCodeSchema,
 } from './schemas/verificationCode.schema';
 import { NutrientsCalculatorService } from './services/nutrients-calculator.service';
+import { QueryBuilderService } from './utils/query-builder';
 
 const sharedServices = [
   TokenService,
   HashingService,
-  SharedUserRepository,
   EmailService,
   NutrientsCalculatorService,
+  // QueryBuilderService,
+  SharedUserRepository,
 ];
 
 @Global()
