@@ -1,16 +1,8 @@
 import './App.css'
-import RegisterForm from "./components/authentication/Register.jsx"
-
+import { Router, RouterProvider } from 'react-router-dom'
+import router from './routes/routes.jsx'
 function App() {
-
-
-  return (
-    <>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <RegisterForm />
-        </div>
-    </>
-  )
+  return  <RouterProvider router={router}/>
 }
 
 export default App
