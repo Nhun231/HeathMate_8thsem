@@ -5,21 +5,28 @@ import NotFoundPage from "../components/common/NotFound404.jsx";
 import UnauthorizedPage from "../components/common/Unautorized401.jsx";
 import MainLayout from "../components/common/MainLayout.jsx";
 import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
+import {Component} from "react";
+import LoginForm from "../components/authentication/Login.jsx";
 
-const AuthLayout = () => (
-    <AuthProvider>
-        <Outlet />
-    </AuthProvider>
-);
+class AuthLayout extends Component {
+    render() {
+        return (
+            <AuthProvider>
+                <Outlet/>
+            </AuthProvider>
+        );
+    }
+}
+
 const router = createBrowserRouter([
     {
         path: "/register",
         element: <RegisterForm />,
     },
-    // {
-    //     path: "/login",
-    //     element: <Login />,
-    // },
+    {
+        path: "/login",
+        element: <LoginForm />,
+    },
     // {
     //     path: "/changepassword/:token",
     //     element: <ChangePassword />,
@@ -27,9 +34,7 @@ const router = createBrowserRouter([
 
     {
         path: '/',
-        element: (<AuthProvider>
-            <Outlet />
-        </AuthProvider>),
+        element: <AuthLayout/>,
         children: [
             {
                 element: <MainLayout />,
