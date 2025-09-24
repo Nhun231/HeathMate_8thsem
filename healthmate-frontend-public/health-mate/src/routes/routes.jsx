@@ -5,62 +5,68 @@ import NotFoundPage from "../components/common/NotFound404.jsx";
 import UnauthorizedPage from "../components/common/Unautorized401.jsx";
 import MainLayout from "../components/common/MainLayout.jsx";
 import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
-
+import ProfilePage from "../pages/ProfilePage.jsx";
 const AuthLayout = () => (
-    <AuthProvider>
-        <Outlet />
-    </AuthProvider>
+  <AuthProvider>
+    <Outlet />
+  </AuthProvider>
 );
 const router = createBrowserRouter([
-    {
-        path: "/register",
-        element: <RegisterForm />,
-    },
-    // {
-    //     path: "/login",
-    //     element: <Login />,
-    // },
-    // {
-    //     path: "/changepassword/:token",
-    //     element: <ChangePassword />,
-    // },
+  {
+    path: "/register",
+    element: <RegisterForm />,
+  },
+  // {
+  //     path: "/login",
+  //     element: <Login />,
+  // },
+  // {
+  //     path: "/changepassword/:token",
+  //     element: <ChangePassword />,
+  // },
 
-    {
-        path: '/',
-        element: (<AuthProvider>
-            <Outlet />
-        </AuthProvider>),
+  {
+    path: "/",
+    element: (
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    ),
+    children: [
+      {
+        element: <MainLayout />,
         children: [
-            {
-                element: <MainLayout />,
-                children: [
-                    // {
-                    //     path: "/oauth-callback",
-                    //     element: <OAuthCallback />,
-                    // },
-                    {
-                        path: "/",
-                        element: <DefaultRedirect />
-                    },
+          // {
+          //     path: "/oauth-callback",
+          //     element: <OAuthCallback />,
+          // },
+          {
+            path: "/",
+            element: <DefaultRedirect />,
+          },
+          {
+            path: "/my-profile",
+            element: <ProfilePage />,
+          },
 
-                    // {
-                    //     path: "/homepage",
-                    //     element: (
-                    //         <HomePage />
-                    //     )
-                    // },
-                    {
-                        path: "/unauthorized",
-                        element: <UnauthorizedPage />,
-                    },
-                    {
-                        path: "*",
-                        element: <NotFoundPage />,
-                    }
-                ],
-            },
+          // {
+          //     path: "/homepage",
+          //     element: (
+          //         <HomePage />
+          //     )
+          // },
+          {
+            path: "/unauthorized",
+            element: <UnauthorizedPage />,
+          },
+          {
+            path: "*",
+            element: <NotFoundPage />,
+          },
         ],
-    },
+      },
+    ],
+  },
 ]);
 
 export default router;
