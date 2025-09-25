@@ -5,6 +5,8 @@ import NotFoundPage from "../components/common/NotFound404.jsx";
 import UnauthorizedPage from "../components/common/Unautorized401.jsx";
 import MainLayout from "../components/common/MainLayout.jsx";
 import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
+import HomePage from "../components/homepage/HomePage.jsx";
+import GuestHomePage from "../components/homepage/GuestHomePage.jsx";
 
 const AuthLayout = () => (
     <AuthProvider>
@@ -15,6 +17,10 @@ const router = createBrowserRouter([
     {
         path: "/register",
         element: <RegisterForm />,
+    },
+    {
+        path: "/homepage",
+        element: <GuestHomePage />,
     },
     // {
     //     path: "/login",
