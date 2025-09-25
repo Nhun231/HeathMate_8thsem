@@ -6,8 +6,7 @@ export const register = async (formData) => {
     try{
         return await baseAxios.post('/auth/register', formData);
     }catch (e) {
-        alert("Lỗi khi đăng ký: ",e.message)
-        console.error(e)
+        console.error("Loi khi dang ky:", e)
         return e;
     }
 }
@@ -16,8 +15,7 @@ export const sendOTP = async (sendOTPRequest) => {
     try{
         return  await baseAxios.post('/auth/send-otp', sendOTPRequest);
     }catch (e) {
-        alert("Lỗi khi gửi OTP: ",e.message)
-        console.log(e)
+        console.log("Lỗi khi gửi OTP: ",e)
         return e;
     }
 }

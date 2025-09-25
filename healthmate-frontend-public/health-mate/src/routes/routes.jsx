@@ -1,12 +1,12 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
-import RegisterForm from "../components/authentication/Register.jsx";
+import RegisterForm from "../pages/authentication/Register.jsx";
 import AuthProvider from "../context/AuthProvider.jsx";
 import NotFoundPage from "../components/common/NotFound404.jsx";
 import UnauthorizedPage from "../components/common/Unautorized401.jsx";
 import MainLayout from "../components/common/MainLayout.jsx";
 import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
 import {Component} from "react";
-import LoginForm from "../components/authentication/Login.jsx";
+import LoginForm from "../pages/authentication/Login.jsx";
 
 class AuthLayout extends Component {
     render() {

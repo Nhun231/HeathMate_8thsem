@@ -14,7 +14,13 @@ import {register, sendOTP} from "../../services/authService/RegisterService.js";
 import {useNavigate} from "react-router-dom";
 import {PhoneIcon} from "lucide-react";
 import { RadioGroup, Radio, FormControlLabel } from "@mui/material"
+import CustomAlert from "../../components/common/Alert.jsx";
 const RegisterForm = () => {
+    const [alert, setAlert] = useState({
+        show: false,
+        message: '',
+        severity: 'info', // 'success', 'error', 'warning', 'info'
+    });
     const [formData, setFormData] = useState({
         fullname: "",
         email: "",
@@ -61,17 +67,29 @@ const RegisterForm = () => {
         e.preventDefault()
         console.log(formData)
         if (checkEmpty(formData)) {
-            alert("Vui lòng điền đầy đủ tất cả các trường!");
+            setAlert({
+                show: true,
+                message: "Vui lòng điền đầy đủ tất cả các trường!",
+                severity: "warning",
+            });
             return;
         }
         if (!isValidPhoneNumber(formData.phoneNumber)) {
-            alert("Số điện thoại phải gồm đúng 10 chữ số!");
+            setAlert({
+                show: true,
+                message: "Số điện thoại phải gồm đúng 10 chữ số!",
+                severity: "warning",
+            });
             return;
         }try{
 
             const res = await register(formData);
             console.log("Dang ky", res)
-            alert('Đăng ký tài khoản thành công!')
+            setAlert({
+                show: true,
+                message: "Đăng ký tài khoản thành công!",
+                severity: "success",
+            });
             //** navigate
             navigate("/login")
         }catch(e){
@@ -83,14 +101,21 @@ const RegisterForm = () => {
     const handleSendOtp = async (e) => {
         e.preventDefault();
         if (!formData.email || formData.email.trim() === "") {
-            alert("Vui lòng điền email để nhận mã OTP.");
+            setAlert({
+                show: true,
+                message: "Vui lòng điền email để nhận mã OTP.",
+                severity: "warning",
+            });
             return;
         }
 
-        // Optional: Validate email format here if needed
         const emailValid = emailValidator(formData.email);
         if (!emailValid.isValid) {
-            alert(emailValid.message);
+            setAlert({
+                show: true,
+                message: emailValid.message,
+                severity: "warning",
+            });
             return;
         }
         try {
@@ -101,7 +126,7 @@ const RegisterForm = () => {
             setSecondsLeft(300);
             setFormData((prev) => ({
                 ...prev,
-                code: "", // reset code field
+                code: "",
             }));
         } catch (error) {
             console.error("Failed to send OTP", error);
@@ -110,7 +135,11 @@ const RegisterForm = () => {
 
     const handleResendOtp = async () => {
         if(!formData.email){
-            alert("Hãy điền email")
+            setAlert({
+                show: true,
+                message: "Hãy điền email",
+                severity: "warning",
+            });
             return null;
         }
         setFormData({
@@ -146,6 +175,25 @@ const RegisterForm = () => {
                 p: 2,
             }}
         >
+            {alert.show && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 16,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '90%',
+                        maxWidth: 500,
+                        zIndex: 9999,
+                    }}
+                >
+                    <CustomAlert
+                        message={alert.message}
+                        variant={alert.severity}
+                        onClose={() => setAlert({ ...alert, show: false })}
+                    />
+                </Box>
+            )}
         <Card
             sx={{
                 maxWidth: 480,

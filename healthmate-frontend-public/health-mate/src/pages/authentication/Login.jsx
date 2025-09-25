@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react"
-import { Card, CardContent, TextField, Button, Typography, InputAdornment, IconButton, Box } from "@mui/material"
+import {Card, CardContent, TextField, Button, Typography, InputAdornment, IconButton, Box, Alert} from "@mui/material"
 import { Email, Lock, Visibility, VisibilityOff } from "@mui/icons-material"
 import GoogleIcon from '@mui/icons-material/Google';
 import {login} from "../../services/authService/LoginService.js";
+import CustomAlert from "../../components/common/Alert.jsx";
 const LoginForm = () => {
+    const [alert, setAlert] = useState({
+        show: false,
+        message: '',
+        severity: 'info', // 'success', 'error', 'warning', 'info'
+    });
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -23,17 +29,38 @@ const LoginForm = () => {
     const handleSubmit = async(e) => {
         e.preventDefault()
         if (checkEmpty(formData)) {
-            alert("Vui lòng điền đầy đủ tất cả các trường!");
+            setAlert({
+                show: true,
+                message: "Vui lòng điền đầy đủ tất cả các trường!",
+                severity: "warning",
+            });
             return;
         }
         try{
             const res = await login(formData);
-            alert("Đăng nhập thành công, chào mừng tới với HealthMate")
             console.log("Đăng nhập", res)
             localStorage.setItem("accessToken", res.data.accessToken)
-        }catch(e){
-            alert("Lỗi khi đăng nhập: ",e.message)
-            console.log(e)
+            setAlert({
+                show: true,
+                message: "Đăng nhập thành công, chào mừng tới với HealthMate!",
+                severity: "success",
+            });
+
+            // Optional: auto-hide alert after 3s
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
+        }catch(error){
+            setAlert({
+                show: true,
+                message: "Lỗi khi đăng nhập: " + error.message,
+                severity: "error",
+            });
+
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
+
         }
 
     }
@@ -52,6 +79,25 @@ const LoginForm = () => {
                 p: 2,
             }}
         >
+            {alert.show && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 16,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '90%',
+                        maxWidth: 500,
+                        zIndex: 9999,
+                    }}
+                >
+                    <CustomAlert
+                        message={alert.message}
+                        variant={alert.severity}
+                        onClose={() => setAlert({ ...alert, show: false })}
+                    />
+                </Box>
+            )}
         <Card
             sx={{
                 maxWidth: 480,
