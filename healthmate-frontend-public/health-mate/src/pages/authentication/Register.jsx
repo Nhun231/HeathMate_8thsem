@@ -15,6 +15,7 @@ import {useNavigate} from "react-router-dom";
 import {PhoneIcon} from "lucide-react";
 import { RadioGroup, Radio, FormControlLabel } from "@mui/material"
 import CustomAlert from "../../components/common/Alert.jsx";
+import { extractBackendErrorCode, translateErrorCode } from "../../utils/errorTranslations.js";
 const RegisterForm = () => {
     const [alert, setAlert] = useState({
         show: false,
@@ -81,8 +82,8 @@ const RegisterForm = () => {
                 severity: "warning",
             });
             return;
-        }try{
-
+        }
+        try{
             const res = await register(formData);
             console.log("Dang ky", res)
             setAlert({
@@ -90,10 +91,15 @@ const RegisterForm = () => {
                 message: "Đăng ký tài khoản thành công!",
                 severity: "success",
             });
-            //** navigate
-            navigate("/login")
-        }catch(e){
-            console.log('Lỗi khi đăng ký: ',e.message)
+            setTimeout(()=>{
+                console.log("đợi thông báo")
+                navigate("/login")
+            }, 3000)
+
+        }catch(error){
+            const code = extractBackendErrorCode(error) || error?.message;
+            const vi = translateErrorCode(code) || "Đăng ký thất bại. Vui lòng kiểm tra thông tin và thử lại.";
+            setAlert({ show: true, message: vi, severity: "error" });
         }
 
     }
@@ -129,7 +135,9 @@ const RegisterForm = () => {
                 code: "",
             }));
         } catch (error) {
-            console.error("Failed to send OTP", error);
+            const code = extractBackendErrorCode(error) || error?.message;
+            const vi = translateErrorCode(code) || "Không thể gửi OTP. Vui lòng thử lại.";
+            setAlert({ show: true, message: vi, severity: "error" });
         }
     }
 
@@ -148,7 +156,7 @@ const RegisterForm = () => {
         })
         setSecondsLeft(300)
 
-        const response = await sendOTP(formData);
+        const response = await sendOTP({ email: formData.email, type: 'REGISTER' });
         console.log("Gui OTP", response)
     }
 
@@ -566,7 +574,6 @@ const RegisterForm = () => {
                                 </Box>
                             </Box>
                         )}
-
                         {/* Submit Button */}
                         {!otpSent ? (
                             <Button

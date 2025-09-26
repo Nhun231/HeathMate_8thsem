@@ -4,6 +4,7 @@ import { Email, Lock, Visibility, VisibilityOff } from "@mui/icons-material"
 import GoogleIcon from '@mui/icons-material/Google';
 import {login} from "../../services/authService/LoginService.js";
 import CustomAlert from "../../components/common/Alert.jsx";
+import { extractBackendErrorCode, translateErrorCode } from "../../utils/errorTranslations.js";
 const LoginForm = () => {
     const [alert, setAlert] = useState({
         show: false,
@@ -38,29 +39,22 @@ const LoginForm = () => {
         }
         try{
             const res = await login(formData);
-            console.log("Đăng nhập", res)
             localStorage.setItem("accessToken", res.data.accessToken)
             setAlert({
                 show: true,
                 message: "Đăng nhập thành công, chào mừng tới với HealthMate!",
                 severity: "success",
             });
-
-            // Optional: auto-hide alert after 3s
             setTimeout(() => {
                 setAlert({ ...alert, show: false });
             }, 3000);
         }catch(error){
-            setAlert({
-                show: true,
-                message: "Lỗi khi đăng nhập: " + error.message,
-                severity: "error",
-            });
-
+            const code = extractBackendErrorCode(error) || error?.message;
+            const vi = translateErrorCode(code) || "Đăng nhập thất bại. Vui lòng kiểm tra email/mật khẩu.";
+            setAlert({ show: true, message: vi, severity: "error" });
             setTimeout(() => {
                 setAlert({ ...alert, show: false });
             }, 3000);
-
         }
 
     }
@@ -227,7 +221,20 @@ const LoginForm = () => {
                                 }}
                             />
                         </Box>
-
+                        <Box sx={{ display: "flex", alignItems: "center"}}>
+                            <Typography
+                                component="a"
+                                href="/forgot-password"
+                                sx={{
+                                    color: "#22c55e",
+                                    fontWeight: 500,
+                                    textDecoration: "underline",
+                                    "&:hover": { color: "#16a34a" },
+                                }}
+                            >
+                                Quên mật khẩu?
+                            </Typography>
+                        </Box>
                         {/* Submit Button */}
                         <Button
                             type= "submit"

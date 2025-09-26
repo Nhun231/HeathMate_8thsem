@@ -7,6 +7,7 @@ import MainLayout from "../components/common/MainLayout.jsx";
 import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
 import {Component} from "react";
 import LoginForm from "../pages/authentication/Login.jsx";
+import ForgotPassword from "../pages/authentication/ForgotPassword.jsx";
 
 class AuthLayout extends Component {
     render() {
@@ -27,10 +28,10 @@ const router = createBrowserRouter([
         path: "/login",
         element: <LoginForm />,
     },
-    // {
-    //     path: "/changepassword/:token",
-    //     element: <ChangePassword />,
-    // },
+    {
+        path: "/forgot-password",
+        element: <ForgotPassword />,
+    },
 
     {
         path: '/',

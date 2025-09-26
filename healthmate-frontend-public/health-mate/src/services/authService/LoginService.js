@@ -6,6 +6,6 @@ export const login = async (formData) => {
         return await baseAxios.post('/auth/login', formData);
     }catch (e) {
         console.error(e)
-        return e;
+        throw e;
     }
 }
