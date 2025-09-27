@@ -97,4 +97,10 @@ export class CalculationService {
     const calculationId = new Types.ObjectId(id);
     return this.calculationRepo.delete(calculationId);
   }
+
+  // Find lastest calculation record by userId
+  async findLatestByUserId(userId: Types.ObjectId) {
+  return this.calculationRepo.findLatestByUserId(userId);
+}
+
 }

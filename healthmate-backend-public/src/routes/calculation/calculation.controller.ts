@@ -10,7 +10,7 @@ import { Types } from 'mongoose';
 
 @Controller('v1/calculation')
 export class CalculationController {
-  constructor(private readonly calculationService: CalculationService) {}
+  constructor(private readonly calculationService: CalculationService) { }
 
   @Post()
   async createCalculation(
@@ -34,4 +34,12 @@ export class CalculationController {
   async deleteCalculationById(@Param() params: DeleteCalculationParamsDTO) {
     return this.calculationService.delete(params.calculationId);
   }
+
+  @Get('user/latest')
+  async findLatestByUserId(
+    @ActiveUser('userId') userId: Types.ObjectId,
+  ) {
+    return this.calculationService.findLatestByUserId(userId);
+  }
+
 }
