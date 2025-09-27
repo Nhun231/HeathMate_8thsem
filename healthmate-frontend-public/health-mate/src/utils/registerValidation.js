@@ -47,7 +47,10 @@ export const emailValidator = (email) => {
         isValid: false,
         message: "Sai format email",
     }
-}
-
+};
+export const isValidPhoneNumber = (phone) => {
+    const regex = /^\d{10}$/;
+    return regex.test(phone);
+};
 
 

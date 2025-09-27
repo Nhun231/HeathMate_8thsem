@@ -1,37 +1,41 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
-import RegisterForm from "../components/authentication/Register.jsx";
+import RegisterForm from "../pages/authentication/Register.jsx";
 import AuthProvider from "../context/AuthProvider.jsx";
 import NotFoundPage from "../components/common/NotFound404.jsx";
 import UnauthorizedPage from "../components/common/Unautorized401.jsx";
 import MainLayout from "../components/common/MainLayout.jsx";
 import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
-import ProfilePage from "../pages/ProfilePage.jsx";
-const AuthLayout = () => (
-  <AuthProvider>
-    <Outlet />
-  </AuthProvider>
-);
+import { Component } from "react";
+import LoginForm from "../pages/authentication/Login.jsx";
+import ForgotPassword from "../pages/authentication/ForgotPassword.jsx";
+
+class AuthLayout extends Component {
+  render() {
+    return (
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    );
+  }
+}
+
 const router = createBrowserRouter([
   {
     path: "/register",
     element: <RegisterForm />,
   },
-  // {
-  //     path: "/login",
-  //     element: <Login />,
-  // },
-  // {
-  //     path: "/changepassword/:token",
-  //     element: <ChangePassword />,
-  // },
+  {
+    path: "/login",
+    element: <LoginForm />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
+  },
 
   {
     path: "/",
-    element: (
-      <AuthProvider>
-        <Outlet />
-      </AuthProvider>
-    ),
+    element: <AuthLayout />,
     children: [
       {
         element: <MainLayout />,
@@ -43,10 +47,6 @@ const router = createBrowserRouter([
           {
             path: "/",
             element: <DefaultRedirect />,
-          },
-          {
-            path: "/my-profile",
-            element: <ProfilePage />,
           },
 
           // {
@@ -62,6 +62,10 @@ const router = createBrowserRouter([
           {
             path: "*",
             element: <NotFoundPage />,
+          },
+          {
+            path: "/my-profile",
+            element: <ProfilePage />,
           },
         ],
       },
