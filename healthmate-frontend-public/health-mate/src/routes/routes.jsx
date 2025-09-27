@@ -8,6 +8,8 @@ import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
 import {Component} from "react";
 import LoginForm from "../pages/authentication/Login.jsx";
 import ForgotPassword from "../pages/authentication/ForgotPassword.jsx";
+import HomePage from "../components/homepage/HomePage.jsx";
+import GuestHomePage from "../components/homepage/GuestHomePage.jsx";
 
 class AuthLayout extends Component {
     render() {
@@ -32,7 +34,10 @@ const router = createBrowserRouter([
         path: "/forgot-password",
         element: <ForgotPassword />,
     },
-
+    {
+        path: "/homepage",
+        element: <GuestHomePage />,
+    },
     {
         path: '/',
         element: <AuthLayout/>,

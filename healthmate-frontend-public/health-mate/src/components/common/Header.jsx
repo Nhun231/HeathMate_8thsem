@@ -1,120 +1,106 @@
 import React, { useEffect, useState } from "react";
-import { Box, Button, Typography, Menu, MenuItem } from "@mui/material";
+import {
+    AppBar,
+    Toolbar,
+    Typography,
+    Button,
+    Box,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { Link } from 'react-router-dom';
 
 const Header = () => {
     const navigate = useNavigate();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [anchorEl, setAnchorEl] = useState(null);
 
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
         setIsLoggedIn(!!token);
     }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("email");
-        navigate("/login");
-        setIsLoggedIn(false);
-    };
-
-    const handleMenuClick = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
-
     return (
-        <Box
+        <AppBar
+            position="sticky"
             sx={{
-                backgroundColor: "#4CAF50",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                position: "sticky",
-                top: 0,
-                zIndex: 1000,
-                width: "100%",
-                fontFamily: '"Segoe UI", sans-serif',
+                background: "linear-gradient(90deg, #4CAF50, #66BB6A)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
             }}
         >
-            <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                maxWidth="1600px"
-                mx="auto"
-                px={4}
-                py={2}
-            >
+            <Toolbar sx={{ maxWidth: "1600px", mx: "auto", width: "100%" }}>
+                {/* Logo */}
                 <Typography
                     variant="h5"
-                    fontWeight="bold"
-                    color="white"
-                    sx={{ cursor: 'pointer' }}
-                    onClick={() => window.location.href = "https://smart-diet-gamma.vercel.app/dashboard"}
+                    component="div"
+                    sx={{
+                        flexGrow: 1,
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        transition: "transform 0.2s",
+                        "&:hover": { transform: "scale(1.05)", opacity: 0.9 },
+                    }}
                 >
-                    SmartDiet
+                    HealthMate
                 </Typography>
 
-                <Box display="flex" gap={2}>
-                    <Button
-                        onClick={() => navigate("/calculate")}
-                        sx={{ color: "#ffffff", fontWeight: "bold" }}
-                    >
-                        Công cụ tính toán
-                    </Button>
-                    <Button onClick={() => navigate("/meal")}
-                        sx={{ color: "#ffffff", fontWeight: "bold" }}>
-                        Thực đơn hôm nay
-                    </Button>
-                    <Button sx={{ color: "#ffffff", fontWeight: "bold" }}>
-                        Lập kế hoạch ăn uống
-                    </Button>
-
+                {/* Nút đăng nhập/đăng ký */}
+                <Box sx={{ display: "flex", gap: 2 }}>
                     {isLoggedIn ? (
                         <>
                             <Button
-                                onClick={handleMenuClick}
-                                sx={{ color: "#ffffff", fontWeight: "bold" }}
+                                color="inherit"
+                                onClick={() => navigate("/calculate")}
+                                sx={{ fontWeight: "bold" }}
                             >
-                                Tài khoản
+                                Công cụ tính toán
                             </Button>
-                            <Menu
-                                anchorEl={anchorEl}
-                                open={Boolean(anchorEl)}
-                                onClose={handleMenuClose}
+                            <Button
+                                color="inherit"
+                                onClick={() => navigate("/meal")}
+                                sx={{ fontWeight: "bold" }}
                             >
-                                <MenuItem onClick={() => { navigate("/my-profile"); handleMenuClose(); }}>
-                                    Hồ sơ
-                                </MenuItem>
-                                <MenuItem onClick={() => { handleLogout(); handleMenuClose(); }}>
-                                    Đăng xuất
-                                </MenuItem>
-                            </Menu>
+                                Thực đơn hôm nay
+                            </Button>
+                            <Button color="inherit" sx={{ fontWeight: "bold" }}>
+                                Lập kế hoạch ăn uống
+                            </Button>
+                            <Button
+                                color="inherit"
+                                onClick={() => navigate("/my-profile")}
+                                sx={{ fontWeight: "bold" }}
+                            >
+                                Hồ sơ
+                            </Button>
+                            <Button
+                                color="inherit"
+                                onClick={() => {
+                                    localStorage.clear();
+                                    navigate("/login");
+                                }}
+                                sx={{ fontWeight: "bold" }}
+                            >
+                                Đăng xuất
+                            </Button>
                         </>
                     ) : (
                         <>
                             <Button
+                                color="inherit"
                                 onClick={() => navigate("/login")}
-                                sx={{ color: "#ffffff", fontWeight: "bold" }}
+                                sx={{ fontWeight: "bold" }}
                             >
                                 Đăng nhập
                             </Button>
                             <Button
-                                variant="outlined"
+                                variant="contained"
                                 onClick={() => navigate("/register")}
                                 sx={{
-                                    borderColor: "#ffffff",
-                                    color: "#ffffff",
                                     fontWeight: "bold",
+                                    background: "linear-gradient(45deg, #FF8A65, #FF7043)",
+                                    color: "#fff",
                                     "&:hover": {
-                                        backgroundColor: "rgba(255, 255, 255, 0.1)",
-                                        borderColor: "#ffffff",
+                                        background: "linear-gradient(45deg, #FF7043, #FF8A65)",
                                     },
+                                    boxShadow: "0 3px 8px rgba(0,0,0,0.2)",
                                 }}
                             >
                                 Đăng ký
@@ -122,8 +108,8 @@ const Header = () => {
                         </>
                     )}
                 </Box>
-            </Box>
-        </Box>
+            </Toolbar>
+        </AppBar>
     );
 };
 
