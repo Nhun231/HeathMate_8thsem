@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import baseAxios from "../../api/axios";
 import "../../style/themeStyle.css";
 
 // Import icons from MUI
@@ -12,28 +11,29 @@ import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import SpeedIcon from "@mui/icons-material/Speed";
 import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
-
+import { getCurrentUser } from "../../services/UserService.js";
+import { getLatestCalculation } from "../../services/CalculateService.js";
 const ProfilePage = () => {
-  // const [userData, setUserData] = useState(null);
-  // const [physicalData, setPhysicalData] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [physicalData, setPhysicalData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const userData = {
-    username: "Nguyen Van A",
-    email: "nguyenvana@example.com",
-    dob: "2000-05-15",
-  };
+  // const userData = {
+  //   fullname: "Nguyen Van A",
+  //   email: "nguyenvana@example.com",
+  //   dob: "2000-05-15",
+  // };
 
-  const physicalData = {
-    gender: "Nam",
-    height: 175,
-    weight: 70,
-    activity: "Trung bình",
-    waterIntake: 2.5,
-    bmr: 1650,
-    tdee: 2300,
-    bmi: 22.9,
-  };
+  // const physicalData = {
+  //   gender: "Nam",
+  //   height: 175,
+  //   weight: 70,
+  //   activityLevel: "Trung bình",
+  //   waterNeeded: 2.5,
+  //   bmr: 1650,
+  //   tdee: 2300,
+  //   bmi: 22.9,
+  // };
   const calculateAge = (dob) =>
     new Date().getFullYear() -
     new Date(dob).getFullYear() -
@@ -41,39 +41,31 @@ const ProfilePage = () => {
       ? 1
       : 0);
 
-  //   useEffect(() => {
-  //     const fetchUserData = async () => {
-  //       try {
-  //         const response = await baseAxios.get("/users/find-by-email", {});
-  //         setUserData(response.data);
-  //       } catch (err) {
-  //         setError(
-  //           err.response?.data?.message || "Có lỗi khi lấy dữ liệu người dùng"
-  //         );
-  //       }
-  //     };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userRes = await getCurrentUser();
+        setUserData(userRes.data);
 
-  //     const fetchPhysicalData = async () => {
-  //       try {
-  //         const response = await baseAxios.get(`/customer/calculate/newest`, {});
-  //         setPhysicalData(response.data);
-  //       } catch (err) {
-  //         console.error("Lỗi khi lấy dữ liệu thể chất:", err);
-  //       }
-  //     };
+        const physicalRes = await getLatestCalculation();
+        setPhysicalData(physicalRes.data);
+      } catch (err) {
+        setError(
+          err.response?.data?.message || "Có lỗi khi lấy dữ liệu từ server"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  //     fetchUserData();
-  //     fetchPhysicalData();
-  //     setLoading(false);
-  //   }, []);
-
+    fetchData();
+  }, []);
   const getBMICategory = (bmi) => {
     const value = Number.parseFloat(bmi);
     if (!value) return "Chưa có dữ liệu";
     if (value < 18.5) return "Thiếu cân";
     if (value < 25) return "Bình thường";
-    if (value < 30) return "Thừa cân";
-    return "Béo phì";
+    return "Thừa cân";
   };
 
   const getBMIColor = (bmi) => {
@@ -92,16 +84,14 @@ const ProfilePage = () => {
         return "my-badge badge-blue";
       case "Thừa cân":
         return "my-badge badge-yellow";
-      case "Béo phì":
-        return "my-badge badge-red";
       default:
         return "my-badge";
     }
   };
 
-  // if (loading || !userData)
-  //   return <div className="container p-4">Loading...</div>;
-  // if (error) return <div className="container p-4">Error: {error}</div>;
+  if (loading || !userData)
+    return <div className="container p-4">Loading...</div>;
+  if (error) return <div className="container p-4">Error: {error}</div>;
 
   return (
     <div className="container p-4">
@@ -125,14 +115,14 @@ const ProfilePage = () => {
         <div className="card-content">
           <div className="flex flex-col flex-md-row items-center gap-6">
             <div className="avatar">
-              {userData.username
+              {userData.fullname
                 .split(" ")
                 .map((n) => n[0])
                 .join("") || "--"}
             </div>
             <div>
               <h2 className="text-2xl font-bold mb-1">
-                {userData.username || "--"}
+                {userData.fullname || "--"}
               </h2>
               <p className="text-gray-600 mb-2">{userData.email || "--"}</p>
               <div className="flex gap-2">
@@ -143,8 +133,8 @@ const ProfilePage = () => {
                   {userData.dob ? calculateAge(userData.dob) : "--"} Tuổi
                 </span>
                 <span className="my-badge badge-green text-green-700">
-                  {physicalData?.activity
-                    ? "Cường độ vận động: " + physicalData.activity
+                  {physicalData?.activityLevel
+                    ? "Cường độ vận động: " + physicalData.activityLevel
                     : "Cường độ vận động: --"}
                 </span>
               </div>
@@ -165,7 +155,7 @@ const ProfilePage = () => {
           <div className="card-content">
             <div className="p-3 rounded-lg bg-gray-50 mb-4">
               <p className="text-sm text-gray-500">Họ và tên</p>
-              <p className="font-medium">{userData.username || "--"}</p>
+              <p className="font-medium">{userData.fullname || "--"}</p>
             </div>
             <div className="p-3 rounded-lg bg-gray-50 mb-4">
               <p className="text-sm text-gray-500">Email</p>
@@ -216,14 +206,16 @@ const ProfilePage = () => {
             <div className="p-3 rounded-lg bg-gray-50 mb-4">
               <p className="text-sm text-gray-500">Lượng nước cần uống</p>
               <p className="font-medium">
-                {physicalData?.waterIntake ?? "--"}
+                {physicalData?.waterNeeded ?? "--"}
                 (lít/ngày)
               </p>
             </div>
             <div className="p-3 rounded-lg bg-gray-50">
               <p className="text-sm text-gray-500">Cường độ vận động</p>
               <p className="font-medium">
-                {physicalData?.activity ? physicalData.activity : "--"}
+                {physicalData?.activityLevel
+                  ? physicalData.activityLevel
+                  : "--"}
               </p>
             </div>
           </div>

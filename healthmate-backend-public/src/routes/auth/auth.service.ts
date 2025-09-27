@@ -43,7 +43,7 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly sharedUserRepository: SharedUserRepository,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   async register(body: RegisterBodyType) {
     try {

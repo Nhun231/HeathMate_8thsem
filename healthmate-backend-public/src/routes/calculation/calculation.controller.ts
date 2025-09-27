@@ -35,7 +35,7 @@ export class CalculationController {
     return this.calculationService.delete(params.calculationId);
   }
 
-  @Get('user/latest')
+  @Get('user/lastest')
   async findLatestByUserId(
     @ActiveUser('userId') userId: Types.ObjectId,
   ) {

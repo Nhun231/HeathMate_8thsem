@@ -10,15 +10,21 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { QuerySchema } from 'src/shared/schemas/request/request.schema';
+import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
 
 @Controller('v1/users')
 export class UserController {
-  constructor(private readonly usersService: UserService) {}
+  constructor(private readonly usersService: UserService) { }
 
   @Get()
   async getUsers(@Query() query: Record<string, string>) {
     const parsed = QuerySchema.parse(query);
     return this.usersService.getUsers(parsed);
+  }
+
+  @Get('me')
+  async getCurrentUser(@ActiveUser('userId') userId: string) {
+    return this.usersService.getUserById(userId);
   }
 
   @Get(':id')
@@ -40,4 +46,5 @@ export class UserController {
   async deleteUser(@Param('id') id: string) {
     return this.usersService.deleteUser(id);
   }
+
 }

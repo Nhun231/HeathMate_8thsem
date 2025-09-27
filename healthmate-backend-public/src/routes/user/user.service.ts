@@ -4,7 +4,7 @@ import { UserRepository } from './user.repo';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepo: UserRepository) {}
+  constructor(private readonly userRepo: UserRepository) { }
 
   async getUsers(query: QueryType) {
     return this.userRepo.findAll(query);
