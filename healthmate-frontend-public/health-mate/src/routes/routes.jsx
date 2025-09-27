@@ -35,7 +35,7 @@ const router = createBrowserRouter([
         element: <ForgotPassword />,
     },
     {
-        path: "/homepage",
+        path: "/guest-homepage",
         element: <GuestHomePage />,
     },
     {
@@ -62,7 +62,7 @@ const router = createBrowserRouter([
                     // },
                     {
                         path: "/unauthorized",
-                        element: <UnauthorizedPage />,
+                         element: <UnauthorizedPage />,
                     },
                     {
                         path: "*",
