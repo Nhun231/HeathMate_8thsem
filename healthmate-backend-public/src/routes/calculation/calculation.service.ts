@@ -13,7 +13,7 @@ export class CalculationService {
     private readonly calculationRepo: CalculationRepo,
     private readonly nutrientCalculatorService: NutrientsCalculatorService,
     private readonly sharedUserRepository: SharedUserRepository,
-  ) {}
+  ) { }
 
   async createCalculation({
     data,

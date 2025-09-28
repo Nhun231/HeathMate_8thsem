@@ -7,6 +7,8 @@ import MainLayout from "../components/common/MainLayout.jsx";
 import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
 import HomePage from "../components/homepage/HomePage.jsx";
 import GuestHomePage from "../components/homepage/GuestHomePage.jsx";
+import Calculate from "../components/calculate/Calculate.jsx";
+import CustomerHomePage from "../components/homepage/CustomerHomePage.jsx";
 
 const AuthLayout = () => (
     <AuthProvider>
@@ -21,6 +23,14 @@ const router = createBrowserRouter([
     {
         path: "/homepage",
         element: <GuestHomePage />,
+    },
+    {
+        path: "/calculate",
+        element: < Calculate />,
+    },
+    {
+        path: "/customer",
+        element: < CustomerHomePage />,
     },
     // {
     //     path: "/login",
