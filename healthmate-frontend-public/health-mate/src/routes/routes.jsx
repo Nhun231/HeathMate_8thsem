@@ -1,36 +1,44 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
-import RegisterForm from "../components/authentication/Register.jsx";
+import RegisterForm from "../pages/authentication/Register.jsx";
 import AuthProvider from "../context/AuthProvider.jsx";
 import NotFoundPage from "../components/common/NotFound404.jsx";
 import UnauthorizedPage from "../components/common/Unautorized401.jsx";
 import MainLayout from "../components/common/MainLayout.jsx";
 import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
+import {Component} from "react";
+import LoginForm from "../pages/authentication/Login.jsx";
+import ForgotPassword from "../pages/authentication/ForgotPassword.jsx";
 import HomePage from "../components/homepage/HomePage.jsx";
 import GuestHomePage from "../components/homepage/GuestHomePage.jsx";
 import Calculate from "../components/calculate/Calculate.jsx";
 import CustomerHomePage from "../components/homepage/CustomerHomePage.jsx";
 
-const AuthLayout = () => (
-    <AuthProvider>
-        <Outlet />
-    </AuthProvider>
-);
+class AuthLayout extends Component {
+    render() {
+        return (
+            <AuthProvider>
+                <Outlet/>
+            </AuthProvider>
+        );
+    }
+}
+
 const router = createBrowserRouter([
     {
         path: "/register",
         element: <RegisterForm />,
     },
     {
-        path: "/homepage",
+        path: "/login",
+        element: <LoginForm />,
+    },
+    {
+        path: "/forgot-password",
+        element: <ForgotPassword />,
+    },
+    {
+        path: "/guest-homepage",
         element: <GuestHomePage />,
-    },
-    {
-        path: "/calculate",
-        element: < Calculate />,
-    },
-    {
-        path: "/customer",
-        element: < CustomerHomePage />,
     },
     // {
     //     path: "/login",
@@ -43,9 +51,7 @@ const router = createBrowserRouter([
 
     {
         path: '/',
-        element: (<AuthProvider>
-            <Outlet />
-        </AuthProvider>),
+        element: <AuthLayout/>,
         children: [
             {
                 element: <MainLayout />,
@@ -67,7 +73,7 @@ const router = createBrowserRouter([
                     // },
                     {
                         path: "/unauthorized",
-                        element: <UnauthorizedPage />,
+                         element: <UnauthorizedPage />,
                     },
                     {
                         path: "*",
