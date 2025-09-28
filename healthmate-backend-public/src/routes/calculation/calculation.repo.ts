@@ -36,7 +36,7 @@ export class CalculationRepo {
   }
 
   async update(id: Types.ObjectId, data: Partial<Calculation>) {
-    return this.calculationModel.updateOne({ _id: id }, { $set: data });
+    return this.calculationModel.findByIdAndUpdate(id, data, { new: true });
   }
 
   async delete(id: Types.ObjectId): Promise<DeleteResult> {
