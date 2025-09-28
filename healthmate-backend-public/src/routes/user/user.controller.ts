@@ -37,6 +37,11 @@ export class UserController {
     return this.usersService.createUser(body);
   }
 
+  @Put('me')
+  async updateCurrentUser(@ActiveUser('userId') userId: string, @Body() body: any) {
+    return this.usersService.updateUser(userId, body);
+  }
+
   @Put(':id')
   async updateUser(@Param('id') id: string, @Body() body: any) {
     return this.usersService.updateUser(id, body);

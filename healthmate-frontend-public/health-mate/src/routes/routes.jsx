@@ -8,7 +8,8 @@ import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
 import { Component } from "react";
 import LoginForm from "../pages/authentication/Login.jsx";
 import ForgotPassword from "../pages/authentication/ForgotPassword.jsx";
-
+import ProfilePage from "../pages/ProfilePage.jsx";
+import EditProfilePage from "../pages/EditProfilePage.jsx";
 class AuthLayout extends Component {
   render() {
     return (
@@ -66,6 +67,10 @@ const router = createBrowserRouter([
           {
             path: "/my-profile",
             element: <ProfilePage />,
+          },
+          {
+            path: "/edit-profile",
+            element: <EditProfilePage />,
           },
         ],
       },

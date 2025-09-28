@@ -10,3 +10,14 @@ export const getCurrentUser = async () => {
         return e;
     }
 };
+
+export const updateCurrentUser = async (data) => {
+    try {
+        const response = await baseAxios.put("/users/me", data);
+        return response;
+    } catch (e) {
+        alert("Lỗi khi cập nhật thông tin người dùng");
+        console.error(e);
+        return e;
+    }
+};

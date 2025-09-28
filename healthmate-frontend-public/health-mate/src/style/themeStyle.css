@@ -149,7 +149,29 @@ body {
   border-color: var(--main-green);
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
+.form-control.error,
+.form-select.error {
+  border: 1px solid var(--red-600);
+}
 
+.form-control.error:focus,
+.form-select.error:focus {
+  border: 1px solid var(--red-600);
+  outline: none;
+}
+
+.error-text {
+  color: var(--red-600);
+  font-style: italic;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+.form-control.error:focus,
+.form-select.error:focus {
+  border: 1px solid var(--red-600);
+  outline: none !important;      
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
 .form-select {
   width: 100%;
   padding: 10px 12px;
@@ -352,6 +374,8 @@ body {
   display: block;
   color: #2e7d32;
 }
+
+
 
 /* Media Queries */
 @media (min-width: 768px) {

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../style/themeStyle.css";
 
-// Import icons from MUI
 import PersonIcon from "@mui/icons-material/Person";
 import StraightenIcon from "@mui/icons-material/Straighten";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
@@ -11,29 +10,16 @@ import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import SpeedIcon from "@mui/icons-material/Speed";
 import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
+
 import { getCurrentUser } from "../../services/UserService.js";
 import { getLatestCalculation } from "../../services/CalculateService.js";
+
 const ProfilePage = () => {
   const [userData, setUserData] = useState(null);
   const [physicalData, setPhysicalData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // const userData = {
-  //   fullname: "Nguyen Van A",
-  //   email: "nguyenvana@example.com",
-  //   dob: "2000-05-15",
-  // };
 
-  // const physicalData = {
-  //   gender: "Nam",
-  //   height: 175,
-  //   weight: 70,
-  //   activityLevel: "Trung bình",
-  //   waterNeeded: 2.5,
-  //   bmr: 1650,
-  //   tdee: 2300,
-  //   bmi: 22.9,
-  // };
   const calculateAge = (dob) =>
     new Date().getFullYear() -
     new Date(dob).getFullYear() -
@@ -42,7 +28,7 @@ const ProfilePage = () => {
       : 0);
 
   useEffect(() => {
-    const fetchData = async () => {
+    (async () => {
       try {
         const userRes = await getCurrentUser();
         setUserData(userRes.data);
@@ -56,42 +42,59 @@ const ProfilePage = () => {
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchData();
+    })();
   }, []);
-  const getBMICategory = (bmi) => {
-    const value = Number.parseFloat(bmi);
-    if (!value) return "Chưa có dữ liệu";
-    if (value < 18.5) return "Thiếu cân";
-    if (value < 25) return "Bình thường";
-    return "Thừa cân";
+
+  // BMI helper gộp tất cả
+  const getBMIInfo = (bmi) => {
+    if (!bmi)
+      return {
+        category: "Chưa có dữ liệu",
+        badgeClass: "my-badge",
+        colorClass: "text-green",
+      };
+    if (bmi < 18.5)
+      return {
+        category: "Thiếu cân",
+        badgeClass: "my-badge badge-blue",
+        colorClass: "text-blue-600",
+      };
+    if (bmi < 25)
+      return {
+        category: "Bình thường",
+        badgeClass: "my-badge badge-green",
+        colorClass: "text-green",
+      };
+    return {
+      category: "Thừa cân",
+      badgeClass: "my-badge badge-yellow",
+      colorClass: "text-red-600",
+    };
   };
 
-  const getBMIColor = (bmi) => {
-    const bmiValue = Number.parseFloat(bmi);
-    if (bmiValue < 18.5) return "text-blue-600";
-    if (bmiValue < 25) return "text-green";
-    if (bmiValue < 30) return "text-yellow-600";
-    return "text-red-600";
-  };
+  const getVietnameseActivityLevel = (level) =>
+    ({
+      Sedentary: "Ít vận động",
+      Light: "Vận động nhẹ",
+      Moderate: "Vận động vừa",
+      Active: "Vận động nhiều",
+      VeryActive: "Vận động cực nhiều",
+    }[level] || "--");
 
-  const getBMIBadgeClass = (category) => {
-    switch (category) {
-      case "Bình thường":
-        return "my-badge badge-green";
-      case "Thiếu cân":
-        return "my-badge badge-blue";
-      case "Thừa cân":
-        return "my-badge badge-yellow";
-      default:
-        return "my-badge";
-    }
-  };
+  const InfoItem = ({ label, value, unit }) => (
+    <div className="p-3 rounded-lg bg-gray-50 mb-4">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="font-medium">
+        {value ?? "--"} {unit || ""}
+      </p>
+    </div>
+  );
 
   if (loading || !userData)
     return <div className="container p-4">Loading...</div>;
   if (error) return <div className="container p-4">Error: {error}</div>;
+
+  const bmiInfo = getBMIInfo(physicalData?.bmi);
 
   return (
     <div className="container p-4">
@@ -103,48 +106,48 @@ const ProfilePage = () => {
             Quản lý thông tin cá nhân và các chỉ số sức khỏe
           </p>
         </div>
-        <div>
-          <Link to="/edit-profile" className="my-btn my-btn-primary">
-            Chỉnh sửa hồ sơ
-          </Link>
-        </div>
+        <Link to="/edit-profile" className="my-btn my-btn-primary">
+          Chỉnh sửa hồ sơ
+        </Link>
       </div>
 
-      {/* Profile Overview Card */}
+      {/* Profile Overview */}
       <div className="my-card border-left-green mb-6">
-        <div className="card-content">
-          <div className="flex flex-col flex-md-row items-center gap-6">
-            <div className="avatar">
-              {userData.fullname
-                .split(" ")
-                .map((n) => n[0])
-                .join("") || "--"}
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold mb-1">
-                {userData.fullname || "--"}
-              </h2>
-              <p className="text-gray-600 mb-2">{userData.email || "--"}</p>
-              <div className="flex gap-2">
-                <span className="my-badge badge-green text-green-700">
-                  {physicalData?.gender ? physicalData.gender : "Giới tính: --"}
-                </span>
-                <span className="my-badge badge-green text-green-700">
-                  {userData.dob ? calculateAge(userData.dob) : "--"} Tuổi
-                </span>
-                <span className="my-badge badge-green text-green-700">
-                  {physicalData?.activityLevel
-                    ? "Cường độ vận động: " + physicalData.activityLevel
-                    : "Cường độ vận động: --"}
-                </span>
-              </div>
+        <div className="card-content flex flex-col flex-md-row items-center gap-6">
+          <div className="avatar">
+            {userData.fullname
+              ?.split(" ")
+              .map((n) => n[0])
+              .join("") || "--"}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold mb-1">
+              {userData.fullname || "--"}
+            </h2>
+            <p className="text-gray-600 mb-2">{userData.email || "--"}</p>
+            <div className="flex gap-2">
+              <span className="my-badge badge-green text-green-700">
+                {userData?.gender === "Male"
+                  ? "Nam"
+                  : userData?.gender === "Female"
+                  ? "Nữ"
+                  : "--"}
+              </span>
+              <span className="my-badge badge-green text-green-700">
+                {userData.dob ? calculateAge(userData.dob) : "--"} Tuổi
+              </span>
+              <span className="my-badge badge-green text-green-700">
+                {physicalData?.activityLevel
+                  ? getVietnameseActivityLevel(physicalData.activityLevel)
+                  : "--"}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Personal & Physical Info */}
       <div className="grid grid-cols-1 grid-cols-2 gap-6 mb-6">
-        {/* Personal Information */}
         <div className="my-card">
           <div className="my-card-header">
             <div className="my-card-title">
@@ -153,36 +156,29 @@ const ProfilePage = () => {
             </div>
           </div>
           <div className="card-content">
-            <div className="p-3 rounded-lg bg-gray-50 mb-4">
-              <p className="text-sm text-gray-500">Họ và tên</p>
-              <p className="font-medium">{userData.fullname || "--"}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50 mb-4">
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="font-medium">{userData.email || "--"}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50 mb-4">
-              <p className="text-sm text-gray-500">Giới tính</p>
-              <p className="font-medium">
-                {physicalData?.gender ? physicalData.gender : "--"}
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50">
-              <p className="text-sm text-gray-500">Ngày sinh</p>
-              <p className="font-medium">
-                {userData.dob
-                  ? new Date(userData.dob).toLocaleDateString("vi-VN", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                    })
-                  : "--/--/----"}
-              </p>
-            </div>
+            <InfoItem label="Họ và tên" value={userData.fullname} />
+            <InfoItem label="Email" value={userData.email} />
+            <InfoItem
+              label="Giới tính"
+              value={
+                userData.gender === "Male"
+                  ? "Nam"
+                  : userData.gender === "Female"
+                  ? "Nữ"
+                  : "--"
+              }
+            />
+            <InfoItem
+              label="Ngày sinh"
+              value={
+                userData.dob
+                  ? new Date(userData.dob).toLocaleDateString("vi-VN")
+                  : "--/--/----"
+              }
+            />
           </div>
         </div>
 
-        {/* Physical Metrics */}
         <div className="my-card">
           <div className="my-card-header">
             <div className="my-card-title">
@@ -191,33 +187,25 @@ const ProfilePage = () => {
             </div>
           </div>
           <div className="card-content">
-            <div className="p-3 rounded-lg bg-gray-50 mb-4">
-              <p className="text-sm text-gray-500">Chiều cao</p>
-              <p className="font-medium">
-                {physicalData?.height ? physicalData.height : "--"} (cm)
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50 mb-4">
-              <p className="text-sm text-gray-500">Cân nặng</p>
-              <p className="font-medium">
-                {physicalData?.weight ? physicalData.weight : "--"} (kg)
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50 mb-4">
-              <p className="text-sm text-gray-500">Lượng nước cần uống</p>
-              <p className="font-medium">
-                {physicalData?.waterNeeded ?? "--"}
-                (lít/ngày)
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50">
-              <p className="text-sm text-gray-500">Cường độ vận động</p>
-              <p className="font-medium">
-                {physicalData?.activityLevel
-                  ? physicalData.activityLevel
-                  : "--"}
-              </p>
-            </div>
+            <InfoItem
+              label="Chiều cao"
+              value={physicalData?.height}
+              unit="cm"
+            />
+            <InfoItem label="Cân nặng" value={physicalData?.weight} unit="kg" />
+            <InfoItem
+              label="Lượng nước cần uống"
+              value={physicalData?.waterNeeded}
+              unit="lít/ngày"
+            />
+            <InfoItem
+              label="Cường độ vận động"
+              value={
+                physicalData?.activityLevel
+                  ? getVietnameseActivityLevel(physicalData.activityLevel)
+                  : "--"
+              }
+            />
           </div>
         </div>
       </div>
@@ -230,62 +218,48 @@ const ProfilePage = () => {
             Chỉ số sức khỏe
           </div>
         </div>
-        <div className="card-content">
-          <div className="grid grid-cols-1 grid-cols-3 gap-6">
-            {/* BMR */}
-            <div className="metric-card">
-              <LocalFireDepartmentIcon
-                style={{ fontSize: 32, color: "green" }}
-              />
-              <h3 className="font-semibold text-green mb-1">
-                Tỷ lệ trao đổi chất cơ bản (BMR)
-              </h3>
-              <p className="text-2xl font-bold text-green">
-                {physicalData?.bmr ? physicalData?.bmr : "--"} cal/day
-              </p>
-              <p className="text-sm text-gray-600 mt-1">
-                Lượng calo tiêu thụ khi nghỉ ngơi
-              </p>
-            </div>
-
-            {/* TDEE */}
-            <div className="metric-card">
-              <TrackChangesIcon style={{ fontSize: 32, color: "green" }} />
-              <h3 className="font-semibold text-green mb-1">
-                Tổng năng lượng tiêu hao mỗi ngày (TDEE)
-              </h3>
-              <p className="text-2xl font-bold text-green">
-                {physicalData?.tdee ? physicalData?.tdee : "--"} cal/day
-              </p>
-              <p className="text-sm text-gray-600 mt-1">
-                Tổng lượng calo cần thiết mỗi ngày
-              </p>
-            </div>
-
-            {/* BMI */}
-            <div className="metric-card">
-              <SportsScoreIcon style={{ fontSize: 32, color: "green" }} />
-              <h3 className="font-semibold text-green mb-1">Chỉ số BMI</h3>
-              <p
-                className={`text-2xl font-bold ${
-                  physicalData?.bmi
-                    ? getBMIColor(physicalData.bmi)
-                    : "text-green"
-                }`}
-              >
-                {physicalData?.bmi ?? "--"}
-              </p>
-              <span
-                className={`${getBMIBadgeClass(
-                  getBMICategory(physicalData?.bmi)
-                )}`}
-              >
-                Đánh giá: {getBMICategory(physicalData?.bmi)}
-              </span>
-              <p className="text-sm text-gray-600 mt-1">
-                Chỉ số khối cơ thể đánh giá tình trạng cân nặng
-              </p>
-            </div>
+        <div className="card-content grid grid-cols-1 grid-cols-3 gap-6">
+          {[
+            {
+              icon: LocalFireDepartmentIcon,
+              label: "Tỷ lệ trao đổi chất cơ bản (BMR)",
+              value: physicalData?.bmr,
+              unit: "cal/day",
+              desc: "Lượng calo tiêu thụ khi nghỉ ngơi",
+            },
+            {
+              icon: TrackChangesIcon,
+              label: "Tổng năng lượng tiêu hao mỗi ngày (TDEE)",
+              value: physicalData?.tdee,
+              unit: "cal/day",
+              desc: "Tổng lượng calo cần thiết mỗi ngày",
+            },
+          ].map((item, idx) => {
+            const Icon = item.icon;
+            return (
+              <div key={idx} className="metric-card">
+                <Icon style={{ fontSize: 32, color: "green" }} />
+                <h3 className="font-semibold text-green mb-1">{item.label}</h3>
+                <p className="text-2xl font-bold text-green">
+                  {item.value ? Math.round(item.value) : "--"} {item.unit}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">{item.desc}</p>
+              </div>
+            );
+          })}
+          {/* BMI */}
+          <div className="metric-card">
+            <SportsScoreIcon style={{ fontSize: 32, color: "green" }} />
+            <h3 className="font-semibold text-green mb-1">Chỉ số BMI</h3>
+            <p className={`text-2xl font-bold ${bmiInfo.colorClass}`}>
+              {physicalData?.bmi ?? "--"}
+            </p>
+            <span className={bmiInfo.badgeClass}>
+              Đánh giá: {bmiInfo.category}
+            </span>
+            <p className="text-sm text-gray-600 mt-1">
+              Chỉ số khối cơ thể đánh giá tình trạng cân nặng
+            </p>
           </div>
         </div>
       </div>
@@ -295,36 +269,39 @@ const ProfilePage = () => {
         <div className="my-card-header">
           <div className="my-card-title">Thao tác nhanh</div>
         </div>
-        <div className="card-content">
-          <div className="grid grid-cols-1 grid-cols-3 gap-4">
-            <Link to="/water-infor" className="btn btn-outline p-4 text-center">
-              <FitnessCenterIcon
-                style={{ fontSize: 32, marginBottom: 8, color: "green" }}
-              />
-              <br />
-              <span>Xem thông tin uống nước</span>
-            </Link>
-            <Link
-              to="/edit-profile"
-              className="btn btn-outline p-4 text-center"
-            >
-              <SpeedIcon
-                style={{ fontSize: 32, marginBottom: 8, color: "green" }}
-              />
-              <br />
-              <span>Thay đổi cường độ vận động</span>
-            </Link>
-            <Link
-              to="/edit-profile"
-              className="btn btn-outline p-4 text-center"
-            >
-              <TrackChangesIcon
-                style={{ fontSize: 32, marginBottom: 8, color: "green" }}
-              />
-              <br />
-              <span>Thiết lập mục tiêu mới</span>
-            </Link>
-          </div>
+        <div className="card-content grid grid-cols-1 grid-cols-3 gap-4">
+          {[
+            {
+              to: "/water-infor",
+              icon: FitnessCenterIcon,
+              label: "Xem thông tin uống nước",
+            },
+            {
+              to: "/edit-profile",
+              icon: SpeedIcon,
+              label: "Thay đổi cường độ vận động",
+            },
+            {
+              to: "/edit-profile",
+              icon: TrackChangesIcon,
+              label: "Thiết lập mục tiêu mới",
+            },
+          ].map((action, idx) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={idx}
+                to={action.to}
+                className="btn btn-outline p-4 text-center"
+              >
+                <Icon
+                  style={{ fontSize: 32, marginBottom: 8, color: "green" }}
+                />
+                <br />
+                <span>{action.label}</span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
