@@ -139,7 +139,7 @@ const HomePage = () => {
                             iconUrl: "https://img.icons8.com/fluency/48/scale.png",
                             title: "Lập kế hoạch cho cân nặng",
                             desc: "Gợi ý chế độ thông minh, phù hợp cho cơ thể",
-                            path: "/",
+                            path: "/set-goal",
                         },
                         {
                             iconUrl: "https://img.icons8.com/fluency/48/healthy-food.png",

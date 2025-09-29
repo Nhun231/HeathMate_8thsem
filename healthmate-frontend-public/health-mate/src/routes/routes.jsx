@@ -11,6 +11,8 @@ import ForgotPassword from "../pages/authentication/ForgotPassword.jsx";
 import GuestHomePage from "../components/homepage/GuestHomePage.jsx";
 import Calculate from "../components/calculate/Calculate.jsx";
 import CustomerHomePage from "../components/homepage/CustomerHomePage.jsx";
+import SetGoal from "../components/dietplan/SetGoal.jsx";
+import DietPlan from "../components/dietplan/DietPlan.jsx"
 
 class AuthLayout extends Component {
     render() {
@@ -46,6 +48,13 @@ const router = createBrowserRouter([
     {
         path: "/customer",
         element: < CustomerHomePage />,
+    },
+     {
+        path: "/set-goal",
+        element: < SetGoal />,
+    }, {
+        path: "/dietplan",
+        element: < DietPlan />,
     },
     // {
     //     path: "/login",

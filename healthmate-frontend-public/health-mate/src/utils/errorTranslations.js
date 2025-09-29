@@ -11,6 +11,9 @@ const ERROR_CODE_TO_VI = {
   'Error.RefreshTokenAlreadyUsed': 'Phiên làm mới đã bị sử dụng. Vui lòng đăng nhập lại.',
   'Error.UnauthorizedAccess': 'Không được phép truy cập. Vui lòng đăng nhập lại.',
   'Error.NotFoundUser': 'Không tìm thấy thông tin người dùng.',
+  'UserCalculation.NotFound': 'Không tìm thấy dữ liệu tính toán của người dùng.',
+  'DietPlan.NotFound': 'Không tìm thấy kế hoạch ăn kiêng.',
+  'DietPlan.InvalidTargetWeightChange': 'Cân nặng mục tiêu không hợp lệ.',
 };
 
 export function translateErrorCode(code) {

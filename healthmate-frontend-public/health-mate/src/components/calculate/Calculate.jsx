@@ -117,8 +117,8 @@ export default function Calculate() {
 
     const handleModalClose = (ans) => {
         setOpenModal(false);
-        if (ans === "yes") navigate("/setgoal");
-        else navigate("/homepage");
+        if (ans === "yes") navigate("/set-goal");
+        else navigate("/customer");
     };
 
     return (
