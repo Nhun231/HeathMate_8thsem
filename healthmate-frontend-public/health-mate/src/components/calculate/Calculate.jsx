@@ -15,8 +15,11 @@ import {
     DialogContent,
     DialogActions,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import baseAxios from "../../api/axios";
+import "../../styles/themeCalculate.css";
+import { createCalculation } from "../../services/Calculation";
+import CustomAlert from "../common/Alert";
 
 const activityLevels = [
     { value: "Sedentary", label: "Vận động ít", desc: "Vận động cơ bản" },
@@ -26,150 +29,318 @@ const activityLevels = [
     { value: "VeryActive", label: "Vận động cực nhiều", desc: "Cấp độ vận động viên" },
 ];
 
-// TOKEN hợp lệ của user đăng nhập
-const FIXED_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGNhZDUyYmYyNjVkYjc4ZGM5OTc3YzUiLCJkZXZpY2VJZCI6IjY4ZDZkMTdlZmVmN2M2MTQzZTJkODgxMyIsInJvbGVJZCI6IjY4Y2FkNGY2ZWM4YzRjOGNkMzY5NGNlZCIsInJvbGVOYW1lIjoiQ3VzdG9tZXIiLCJ1dWlkIjoiNTE3MWEyMzAtM2NiNC00MWY5LTlmNDAtNzkzZDE2YWYzN2QwIiwiaWF0IjoxNzU4OTA4Nzk4LCJleHAiOjE3NTg5MTA1OTh9.nHjxu0uQnDOYEwv4TkDtjlqfHAa5ez1oRc7058kuHiY";
-
 export default function Calculate() {
-    const [form, setForm] = useState({ height: "", weight: "", activity: "Sedentary" });
+    const [form, setForm] = useState({
+        gender: "Nam",
+        age: "22",
+        height: "",
+        weight: "",
+        activity: "Sedentary",
+    });
     const [result, setResult] = useState(null);
     const [openModal, setOpenModal] = useState(false);
+    const [errors, setErrors] = useState({ height: "", weight: "" });
+    const [alert, setAlert] = useState({
+        show: false,
+        message: "",
+        severity: "info", // success | error | warning | info
+    });
+
     const resultRef = useRef(null);
+    const navigate = useNavigate();
 
-    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+    const handleChange = (e) =>
+        setForm({ ...form, [e.target.name]: e.target.value });
 
-    const handleSubmit = async () => {
-        if (!form.height || !form.weight) {
-            setOpenModal(true);
+    const handleGender = (gender) => setForm({ ...form, gender });
+
+    const validateForm = () => {
+        const newErr = { height: "", weight: "" };
+
+        if (!form.height || isNaN(form.height) || Number(form.height) <= 0)
+            newErr.height = "Vui lòng nhập chiều cao hợp lệ.";
+
+        if (!form.weight || isNaN(form.weight) || Number(form.weight) <= 0)
+            newErr.weight = "Vui lòng nhập cân nặng hợp lệ.";
+
+        setErrors(newErr);
+        return !newErr.height && !newErr.weight;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!validateForm()) {
+            setAlert({
+                show: true,
+                message: "Vui lòng nhập đầy đủ và hợp lệ.",
+                severity: "warning",
+            });
             return;
         }
+
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+            setAlert({
+                show: true,
+                message: "Bạn cần đăng nhập để tính toán.",
+                severity: "error",
+            });
+            return;
+        }
+
         try {
-            // 1️⃣ POST -> tạo / cập nhật calculation
-            const postRes = await baseAxios.post(
-                "/calculation",
+            const res = await createCalculation(
                 {
                     height: Number(form.height),
                     weight: Number(form.weight),
                     activityLevel: form.activity,
                 },
-                { headers: { Authorization: `Bearer ${FIXED_TOKEN}` } }
+                token
             );
-
-            const id = postRes.data?._id || postRes.data?.id;
-            if (!id) {
-                alert("Không lấy được ID từ server");
-                return;
-            }
-
-            // 2️⃣ GET -> lấy document đầy đủ
-            const getRes = await baseAxios.get(`/calculation/details/${id}`, {
-                headers: { Authorization: `Bearer ${FIXED_TOKEN}` },
+            setResult(res.data);
+            setAlert({
+                show: true,
+                message: "Tính toán thành công!",
+                severity: "success",
             });
-
-            setResult(getRes.data);
-            setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+            setTimeout(() => setAlert({ ...alert, show: false }), 3000);
         } catch (err) {
             console.error(err);
-            alert(err.response?.data?.message || "Có lỗi khi gọi API");
+            setAlert({
+                show: true,
+                message: "Tính toán thất bại. Vui lòng thử lại!",
+                severity: "error",
+            });
         }
+    };
+
+    const handleModalClose = (ans) => {
+        setOpenModal(false);
+        if (ans === "yes") navigate("/setgoal");
+        else navigate("/homepage");
     };
 
     return (
         <Container maxWidth="lg" className="tdee-wrapper">
-            <Typography variant="h4" textAlign="center" mb={4} fontWeight="bold" color="primary">
-                Tính TDEE – BMR – BMI
-            </Typography>
-
-            <Paper className="tdee-form" sx={{ p: 3 }}>
-                <Box display="flex" flexDirection="column" gap={2}>
-                    <TextField
-                        label="Chiều cao (cm)"
-                        name="height"
-                        value={form.height}
-                        onChange={handleChange}
-                        type="number"
+            {/* Alert */}
+            {alert.show && (
+                <Box
+                    sx={{
+                        position: "fixed",
+                        top: 16,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: "90%",
+                        maxWidth: 500,
+                        zIndex: 9999,
+                    }}
+                >
+                    <CustomAlert
+                        message={alert.message}
+                        variant={alert.severity}
+                        onClose={() => setAlert({ ...alert, show: false })}
                     />
-                    <TextField
-                        label="Cân nặng (kg)"
-                        name="weight"
-                        value={form.weight}
-                        onChange={handleChange}
-                        type="number"
-                    />
-
-                    <Typography fontWeight="bold" mt={1}>
-                        Mức độ hoạt động:
-                    </Typography>
-                    <RadioGroup
-                        row
-                        name="activity"
-                        value={form.activity}
-                        onChange={handleChange}
-                    >
-                        {activityLevels.map((a) => (
-                            <FormControlLabel
-                                key={a.value}
-                                value={a.value}
-                                control={<Radio />}
-                                label={a.label}
-                            />
-                        ))}
-                    </RadioGroup>
-
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        sx={{ mt: 2, width: "fit-content" }}
-                        onClick={handleSubmit}
-                    >
-                        Tính ngay
-                    </Button>
-                </Box>
-            </Paper>
-
-            {result && (
-                <Box className="result-box" mt={6} ref={resultRef}>
-                    <Typography align="center" fontWeight="bold" fontSize={24} color="#4CAF50" mb={2}>
-                        Kết quả của bạn
-                    </Typography>
-                    <Grid container spacing={4} justifyContent="center">
-                        <Grid item xs={12} md={3}>
-                            <Typography align="center" color="#2e7d32">BMR</Typography>
-                            <Typography align="center" fontSize={40} color="red" fontWeight="bold">
-                                {result.bmr}
-                            </Typography>
-                            <Typography align="center" color="gray">Calo/ngày</Typography>
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                            <Typography align="center" color="#2e7d32">TDEE</Typography>
-                            <Typography align="center" fontSize={40} color="red" fontWeight="bold">
-                                {result.tdee}
-                            </Typography>
-                            <Typography align="center" color="gray">Calo/ngày</Typography>
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                            <Typography align="center" color="#2e7d32">BMI</Typography>
-                            <Typography align="center" fontSize={40} color="red" fontWeight="bold">
-                                {result.bmi}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                            <Typography align="center" color="#2e7d32">Nước cần</Typography>
-                            <Typography align="center" fontSize={40} color="red" fontWeight="bold">
-                                {result.waterNeeded} L
-                            </Typography>
-                        </Grid>
-                    </Grid>
                 </Box>
             )}
 
-            {/* Thông báo thiếu dữ liệu */}
-            <Dialog open={openModal} onClose={() => setOpenModal(false)}>
-                <DialogTitle>
-                    <WarningAmberIcon color="warning" /> Thiếu dữ liệu
+            <Typography variant="h4" align="center" className="title">
+                CÔNG CỤ TÍNH BMI, TDEE VÀ BMR ONLINE
+            </Typography>
+            <Typography align="center" className="subtitle">
+                Tính lượng calo cần thiết cho cơ thể bạn mỗi ngày
+                <br />
+                Hãy nhập thông tin để HealthMate tính cho bạn nhé!
+            </Typography>
+
+            <Box className="main-form-box">
+                <Grid container spacing={12}>
+                    {/* Cột trái */}
+                    <Grid item xs={12} md={6}>
+                        <Typography className="label">Giới tính</Typography>
+                        <Box className="gender-buttons">
+                            <button
+                                className={form.gender === "Nam" ? "active" : ""}
+                                onClick={() => handleGender("Nam")}
+                            >
+                                NAM
+                            </button>
+                            <button
+                                className={form.gender === "Nữ" ? "active" : ""}
+                                onClick={() => handleGender("Nữ")}
+                            >
+                                NỮ
+                            </button>
+                        </Box>
+
+                        <Typography className="label">Tuổi</Typography>
+                        <TextField
+                            fullWidth
+                            name="age"
+                            value={form.age}
+                            onChange={handleChange}
+                            placeholder="Nhập độ tuổi..."
+                            className="input-box"
+                        />
+
+                        <Typography className="label">Chiều cao (cm)</Typography>
+                        <TextField
+                            fullWidth
+                            name="height"
+                            value={form.height}
+                            onChange={handleChange}
+                            placeholder="Nhập chiều cao..."
+                            className="input-box"
+                            error={Boolean(errors.height)}
+                            helperText={errors.height}
+                        />
+
+                        <Typography className="label">Cân nặng (kg)</Typography>
+                        <TextField
+                            fullWidth
+                            name="weight"
+                            value={form.weight}
+                            onChange={handleChange}
+                            placeholder="Nhập cân nặng..."
+                            className="input-box"
+                            error={Boolean(errors.weight)}
+                            helperText={errors.weight}
+                        />
+
+                        <Box textAlign="center" mt={3}>
+                            <Button variant="contained" color="success" onClick={handleSubmit}>
+                                TÍNH TOÁN
+                            </Button>
+                        </Box>
+                    </Grid>
+
+                    {/* Cột phải */}
+                    <Grid item xs={12} md={6}>
+                        <Paper className="activity-box">
+                            <Typography align="center" className="activity-title">
+                                CƯỜNG ĐỘ HOẠT ĐỘNG
+                            </Typography>
+                            <Grid container className="activity-header">
+                                <Grid item xs={6}>
+                                    <strong>Cường độ</strong>
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <strong>Mô tả</strong>
+                                </Grid>
+                            </Grid>
+                            <RadioGroup
+                                name="activity"
+                                value={form.activity}
+                                onChange={handleChange}
+                                className="activity-group"
+                            >
+                                {activityLevels.map((a) => (
+                                    <Grid container key={a.value} className="activity-row">
+                                        <Grid item xs={6}>
+                                            <FormControlLabel
+                                                value={a.value}
+                                                control={<Radio />}
+                                                label={a.label}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={6}>
+                                            <Typography>{a.desc}</Typography>
+                                        </Grid>
+                                    </Grid>
+                                ))}
+                            </RadioGroup>
+                        </Paper>
+                    </Grid>
+                </Grid>
+
+                {/* Kết quả */}
+                {result && (
+                    <Box className="result-box" mt={6} ref={resultRef}>
+                        <Typography align="center" fontWeight="bold" fontSize={24} color="#4CAF50" mb={2}>
+                            CHỈ SỐ CALO CỦA BẠN
+                        </Typography>
+                        <Typography align="center" fontWeight="bold" mb={4}>
+                            Dựa trên thông tin bạn đã cung cấp<br />
+                            HealthMate đã tính ra các chỉ số calo của bạn như sau:
+                        </Typography>
+
+                        <Grid container spacing={4} justifyContent="center">
+                            <Grid item xs={12} md={3}>
+                                <Typography align="center" fontWeight="bold" color="#2e7d32">
+                                    BMR của bạn là:
+                                </Typography>
+                                <Typography align="center" fontSize={50} color="red" fontWeight="bold">
+                                    {result.bmr}
+                                </Typography>
+                                <Typography align="center" color="gray">Calo / ngày</Typography>
+                            </Grid>
+
+                            <Grid item xs={12} md={3}>
+                                <Typography align="center" fontWeight="bold" color="#2e7d32">
+                                    TDEE của bạn là:
+                                </Typography>
+                                <Typography align="center" fontSize={50} color="red" fontWeight="bold">
+                                    {result.tdee}
+                                </Typography>
+                                <Typography align="center" color="gray">Calo / ngày</Typography>
+                            </Grid>
+
+                            <Grid item xs={12} md={3}>
+                                <Typography align="center" fontWeight="bold" color="#2e7d32">
+                                    BMI của bạn là:
+                                </Typography>
+                                <Typography align="center" fontSize={50} color="red" fontWeight="bold">
+                                    {result.bmi}
+                                </Typography>
+                                <Typography align="center" color="gray">Chỉ số khối cơ thể</Typography>
+                            </Grid>
+
+                            <Grid item xs={12} md={3}>
+                                <Typography align="center" fontWeight="bold" color="#2e7d32">
+                                    Lượng nước cần uống:
+                                </Typography>
+                                <Typography align="center" fontSize={50} color="red" fontWeight="bold">
+                                    {result.waterNeeded} L
+                                </Typography>
+                                <Typography align="center" color="gray">Lít / ngày</Typography>
+                            </Grid>
+                        </Grid>
+                        <Box textAlign="center" mt={4}>
+                            <Button
+                                variant="contained"
+                                color="success"
+                                onClick={() => setOpenModal(true)}
+                            >
+                                Tạo kế hoạch ăn uống
+                            </Button>
+                        </Box>
+                    </Box>
+                )}
+            </Box>
+
+            <Dialog open={openModal} onClose={() => handleModalClose("no")}>
+                <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <WarningAmberIcon color="warning" />
+                    Xác nhận
                 </DialogTitle>
-                <DialogContent>Vui lòng nhập đủ chiều cao và cân nặng.</DialogContent>
+                <DialogContent>
+                    Bạn có muốn tạo kế hoạch ăn uống dựa trên dữ liệu vừa tính?
+                </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenModal(false)}>Đóng</Button>
+                    <Button
+                        onClick={() => handleModalClose("no")}
+                        variant="outlined"
+                        color="inherit"
+                    >
+                        Không
+                    </Button>
+                    <Button
+                        onClick={() => handleModalClose("yes")}
+                        variant="contained"
+                        color="success"
+                    >
+                        Có, tạo ngay
+                    </Button>
                 </DialogActions>
             </Dialog>
         </Container>

@@ -9,7 +9,7 @@ export class CalculationRepo {
   constructor(
     @InjectModel(Calculation.name)
     private calculationModel: Model<CalculationDocument>,
-  ) {}
+  ) { }
 
   async create(calculation: Calculation): Promise<Calculation> {
     return await this.calculationModel.create(calculation);

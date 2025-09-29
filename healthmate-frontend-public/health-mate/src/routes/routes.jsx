@@ -5,10 +5,9 @@ import NotFoundPage from "../components/common/NotFound404.jsx";
 import UnauthorizedPage from "../components/common/Unautorized401.jsx";
 import MainLayout from "../components/common/MainLayout.jsx";
 import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
-import {Component} from "react";
+import { Component } from "react";
 import LoginForm from "../pages/authentication/Login.jsx";
 import ForgotPassword from "../pages/authentication/ForgotPassword.jsx";
-import HomePage from "../components/homepage/HomePage.jsx";
 import GuestHomePage from "../components/homepage/GuestHomePage.jsx";
 import Calculate from "../components/calculate/Calculate.jsx";
 import CustomerHomePage from "../components/homepage/CustomerHomePage.jsx";
@@ -17,7 +16,7 @@ class AuthLayout extends Component {
     render() {
         return (
             <AuthProvider>
-                <Outlet/>
+                <Outlet />
             </AuthProvider>
         );
     }
@@ -40,6 +39,14 @@ const router = createBrowserRouter([
         path: "/guest-homepage",
         element: <GuestHomePage />,
     },
+    {
+        path: "/calculate",
+        element: < Calculate />,
+    },
+    {
+        path: "/customer",
+        element: < CustomerHomePage />,
+    },
     // {
     //     path: "/login",
     //     element: <Login />,
@@ -51,7 +58,7 @@ const router = createBrowserRouter([
 
     {
         path: '/',
-        element: <AuthLayout/>,
+        element: <AuthLayout />,
         children: [
             {
                 element: <MainLayout />,
@@ -73,7 +80,7 @@ const router = createBrowserRouter([
                     // },
                     {
                         path: "/unauthorized",
-                         element: <UnauthorizedPage />,
+                        element: <UnauthorizedPage />,
                     },
                     {
                         path: "*",

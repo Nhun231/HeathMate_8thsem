@@ -10,6 +10,7 @@ const ERROR_CODE_TO_VI = {
   'Error.InvalidPassword': 'Mật khẩu không chính xác.',
   'Error.RefreshTokenAlreadyUsed': 'Phiên làm mới đã bị sử dụng. Vui lòng đăng nhập lại.',
   'Error.UnauthorizedAccess': 'Không được phép truy cập. Vui lòng đăng nhập lại.',
+  'Error.NotFoundUser': 'Không tìm thấy thông tin người dùng.',
 };
 
 export function translateErrorCode(code) {
