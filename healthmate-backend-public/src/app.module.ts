@@ -11,6 +11,7 @@ import { AuthModule } from './routes/auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CalculationModule } from './routes/calculation/calculation.module';
 import envConfig from './shared/config';
+import {IngredientModule} from "./routes/ingredient/ingredient.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import envConfig from './shared/config';
     SharedModule,
     AuthModule,
     CalculationModule,
+    IngredientModule,
   ],
   controllers: [AppController],
   providers: [
