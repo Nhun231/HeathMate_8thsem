@@ -12,6 +12,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CalculationModule } from './routes/calculation/calculation.module';
 import envConfig from './shared/config';
 import {IngredientModule} from "./routes/ingredient/ingredient.module";
+import { DietPlanModule } from './routes/dietplan/dietplan.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import {IngredientModule} from "./routes/ingredient/ingredient.module";
     AuthModule,
     CalculationModule,
     IngredientModule,
+    DietPlanModule
   ],
   controllers: [AppController],
   providers: [

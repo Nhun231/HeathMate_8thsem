@@ -60,7 +60,10 @@ const Header = () => {
                             >
                                 Thực đơn hôm nay
                             </Button>
-                            <Button color="inherit" sx={{ fontWeight: "bold" }}>
+                            <Button
+                                color="inherit"
+                                onClick={() => navigate("/set-goal")}
+                                sx={{ fontWeight: "bold" }}>
                                 Lập kế hoạch ăn uống
                             </Button>
                             <Button
