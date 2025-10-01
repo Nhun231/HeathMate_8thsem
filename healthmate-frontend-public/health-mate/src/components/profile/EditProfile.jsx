@@ -204,7 +204,7 @@ const EditProfilePage = () => {
               ))}
             </div>
 
-            <div className="flex gap-4 mt-6">
+            <div className="flex-buttons">
               <button
                 type="submit"
                 className="my-btn my-btn-primary"

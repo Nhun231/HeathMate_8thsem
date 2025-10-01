@@ -41,6 +41,7 @@ body {
 
 .my-btn {
   display: inline-flex;
+  font-size: 16px;
   align-items: center;
   justify-content: center;
   padding: 8px 16px;
@@ -126,7 +127,17 @@ body {
 }
 
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+}
+input[type="date"] {
+  font-family: inherit;  
+  font-size: 16px;      
+}
+.flex-buttons {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center; 
+  gap: 16px; 
 }
 
 .form-label {
