@@ -9,7 +9,15 @@ export class QueryBuilderService<T> {
     private readonly allowedFilters: string[] = [],
   ) {}
 
-  async query(query: QueryType, allowedFilters?: string[]) {
+  async query({
+    query,
+    allowedFilters,
+    populateFields,
+  }: {
+    query: QueryType;
+    allowedFilters?: string[];
+    populateFields?: string[];
+  }) {
     const { page = 1, limit = 10, sort, ...queryFilters } = query;
 
     // Filters
@@ -71,6 +79,10 @@ export class QueryBuilderService<T> {
       .limit(limit)
       .sort(sortObj)
       .select('-password');
+
+    if (populateFields) {
+      mongooseQuery.populate(populateFields);
+    }
 
     const [results, total] = await Promise.all([
       mongooseQuery.exec(),

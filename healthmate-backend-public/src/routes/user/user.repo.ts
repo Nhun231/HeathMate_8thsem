@@ -18,29 +18,20 @@ export class UserRepository {
   }
 
   async findAll(query: QueryType) {
-    const queryUsers = await this.queryBuilder.query(query, [
-      'email',
-      'fullname',
-      'gender',
-      'phoneNumber',
-      'status',
-      'roleId',
-    ]);
-
-    // const users = queryUsers.data.map((user) => {
-    //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    //   const { password, ...rest } = user;
-    //   return rest;
-    // });
-
-    const populatedUsers = await this.userModel.populate(queryUsers, {
-      path: 'roleId',
+    const queryUsers = await this.queryBuilder.query({
+      query,
+      allowedFilters: [
+        'email',
+        'fullname',
+        'gender',
+        'phoneNumber',
+        'status',
+        'roleId',
+      ],
+      populateFields: ['roleId'],
     });
 
-    return {
-      ...queryUsers,
-      data: populatedUsers,
-    };
+    return queryUsers;
   }
 
   async findOne(id: string) {

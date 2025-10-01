@@ -1,7 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CalculationRepo } from './calculation.repo';
 import { CalculationCreateType } from './schema/request/calculation.request.schema';
-import { NotFoundUserCalculationException } from './calculation.error';
+import {
+  NotFoundCalculationException,
+  NotFoundUserCalculationException,
+} from './calculation.error';
 import { Calculation } from './schema/calculation.schema';
 import { Types } from 'mongoose';
 import { NutrientsCalculatorService } from 'src/shared/services/nutrients-calculator.service';
@@ -84,13 +87,17 @@ export class CalculationService {
 
     const calculation = await this.calculationRepo.findbyId(calculationId);
     if (!calculation) {
-      throw new NotFoundException('Calculation not found');
+      throw NotFoundCalculationException;
     }
 
     return calculation;
   }
 
-  findByUserId(userId: Types.ObjectId) {
+  async findByUserId(userId: Types.ObjectId) {
+    const calculation = await this.calculationRepo.findByUserId(userId);
+    if (!calculation) {
+      throw NotFoundUserCalculationException;
+    }
     return this.calculationRepo.findByUserId(userId);
   }
 
