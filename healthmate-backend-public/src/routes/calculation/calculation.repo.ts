@@ -20,7 +20,9 @@ export class CalculationRepo {
   }
 
   async findByUserId(userId: Types.ObjectId) {
-    return this.calculationModel.find({ userId });
+    return this.calculationModel.find({
+      userId,
+    });
   }
 
   async findTodayRecord(userId: Types.ObjectId) {
