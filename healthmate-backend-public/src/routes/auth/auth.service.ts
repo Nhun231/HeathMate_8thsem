@@ -48,8 +48,8 @@ export class AuthService {
   async register(body: RegisterBodyType) {
     try {
       const clientRoleId = await this.rolesService.getClientRole();
+      // console.log(clientRoleId);
 
-      console.log(clientRoleId);
       // Validate verification code
       await this.validateVerificationCode({
         email: body.email,
@@ -331,11 +331,8 @@ export class AuthService {
       type: TypeOfVerificationCode.FORGOT_PASSWORD,
     });
 
-    console.log(body.newPassword);
-    console.log(user.password);
     // update new password
     const hashedPassword = await this.hashingService.hashPassword(newPassword);
-    console.log(hashedPassword);
 
     const $updateUser = this.authRepository.updateUser(
       { _id: user._id },

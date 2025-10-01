@@ -69,7 +69,8 @@ export class QueryBuilderService<T> {
       .find(conditions)
       .skip(skip)
       .limit(limit)
-      .sort(sortObj);
+      .sort(sortObj)
+      .select('-password');
 
     const [results, total] = await Promise.all([
       mongooseQuery.exec(),

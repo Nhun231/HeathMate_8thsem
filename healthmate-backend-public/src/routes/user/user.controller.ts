@@ -10,6 +10,13 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { QuerySchema } from 'src/shared/schemas/request/request.schema';
+import {
+  CreateUserDTO,
+  DeleteUserDTO,
+  GetUserDetailParamsDTO,
+  UpdateUserDTO,
+} from './user.dto';
+import { DeleteResult } from 'mongoose';
 
 @Controller('v1/users')
 export class UserController {
@@ -22,22 +29,25 @@ export class UserController {
   }
 
   @Get(':id')
-  async getUser(@Param('id') id: string) {
-    return this.usersService.getUserById(id);
+  async getUser(@Param() params: GetUserDetailParamsDTO) {
+    return this.usersService.getUserById(params.id);
   }
 
   @Post()
-  async createUser(@Body() body: any) {
+  async createUser(@Body() body: CreateUserDTO) {
     return this.usersService.createUser(body);
   }
 
   @Put(':id')
-  async updateUser(@Param('id') id: string, @Body() body: any) {
-    return this.usersService.updateUser(id, body);
+  async updateUser(
+    @Param() params: GetUserDetailParamsDTO,
+    @Body() body: UpdateUserDTO,
+  ) {
+    return this.usersService.updateUser(params.id, body);
   }
 
   @Delete(':id')
-  async deleteUser(@Param('id') id: string) {
-    return this.usersService.deleteUser(id);
+  async deleteUser(@Param() params: DeleteUserDTO): Promise<DeleteResult> {
+    return this.usersService.deleteUser(params.id);
   }
 }
