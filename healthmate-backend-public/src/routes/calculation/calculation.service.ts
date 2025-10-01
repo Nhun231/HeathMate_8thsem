@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CalculationRepo } from './calculation.repo';
 import { CalculationCreateType } from './schema/request/calculation.request.schema';
 import { NotFoundUserCalculationException } from './calculation.error';
@@ -79,22 +79,30 @@ export class CalculationService {
     return calculation;
   }
 
-  findById(id: string) {
+  async findById(id: string) {
     const calculationId = new Types.ObjectId(id);
-    return this.calculationRepo.findbyId(calculationId);
+
+    const calculation = await this.calculationRepo.findbyId(calculationId);
+    if (!calculation) {
+      throw new NotFoundException('Calculation not found');
+    }
+
+    return calculation;
   }
 
   findByUserId(userId: Types.ObjectId) {
     return this.calculationRepo.findByUserId(userId);
   }
 
-  update(id: string, data: Partial<Omit<Calculation, 'userId'>>) {
-    const calculationId = new Types.ObjectId(id);
-    return this.calculationRepo.update(calculationId, data);
+  async update(id: string, data: Partial<Omit<Calculation, 'userId'>>) {
+    await this.findById(id);
+
+    return this.calculationRepo.update(new Types.ObjectId(id), data);
   }
 
-  delete(id: string) {
-    const calculationId = new Types.ObjectId(id);
-    return this.calculationRepo.delete(calculationId);
+  async delete(id: string) {
+    await this.findById(id);
+
+    return this.calculationRepo.delete(new Types.ObjectId(id));
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Calculation, CalculationDocument } from './schema/calculation.schema';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
@@ -20,7 +20,14 @@ export class CalculationRepo {
   }
 
   async findByUserId(userId: Types.ObjectId) {
-    return this.calculationModel.find({ userId });
+    const calculation = await this.calculationModel.find({
+      userId,
+    });
+    if (!calculation) {
+      throw new NotFoundException('');
+    }
+
+    return calculation;
   }
 
   async findTodayRecord(userId: Types.ObjectId) {
