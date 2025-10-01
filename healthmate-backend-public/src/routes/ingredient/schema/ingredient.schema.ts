@@ -31,7 +31,7 @@ export class Ingredient {
     @Prop({ required: true })
     sugarPer100g: number;
 
-    @Prop({ type: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } })
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null })
     belongsTo: mongoose.Types.ObjectId;
 }
 export const IngredientSchema = SchemaFactory.createForClass(Ingredient);

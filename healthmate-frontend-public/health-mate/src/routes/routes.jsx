@@ -56,6 +56,7 @@ const router = createBrowserRouter([
         path: "/dietplan",
         element: < DietPlan />,
     },
+
     // {
     //     path: "/login",
     //     element: <Login />,
@@ -76,6 +77,7 @@ const router = createBrowserRouter([
                     //     path: "/oauth-callback",
                     //     element: <OAuthCallback />,
                     // },
+
                     {
                         path: "/",
                         element: <DefaultRedirect />
@@ -86,6 +88,15 @@ const router = createBrowserRouter([
                     //     element: (
                     //         <HomePage />
                     //     )
+                    // },
+                    // {
+                    //     path: "/add-dish",
+                    //     element: (
+                    //         <AddDishModal
+                    //             isOpen={true}
+                    //             onClose={() => console.log("closed")}
+                    //         />
+                    //     ),
                     // },
                     {
                         path: "/unauthorized",

@@ -13,6 +13,7 @@ import { CalculationModule } from './routes/calculation/calculation.module';
 import envConfig from './shared/config';
 import {IngredientModule} from "./routes/ingredient/ingredient.module";
 import { DietPlanModule } from './routes/dietplan/dietplan.module';
+import { DishModule } from './routes/dish/dish.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { DietPlanModule } from './routes/dietplan/dietplan.module';
     AuthModule,
     CalculationModule,
     IngredientModule,
-    DietPlanModule
+    DietPlanModule,
+    DishModule
   ],
   controllers: [AppController],
   providers: [
