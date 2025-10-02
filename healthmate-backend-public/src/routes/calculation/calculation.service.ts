@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CalculationRepo } from './calculation.repo';
 import { CalculationCreateType } from './schema/request/calculation.request.schema';
-import { NotFoundUserCalculationException } from './calculation.error';
+import {
+  NotFoundCalculationException,
+  NotFoundUserCalculationException,
+} from './calculation.error';
 import { Calculation } from './schema/calculation.schema';
 import { Types } from 'mongoose';
 import { NutrientsCalculatorService } from 'src/shared/services/nutrients-calculator.service';
@@ -13,7 +16,7 @@ export class CalculationService {
     private readonly calculationRepo: CalculationRepo,
     private readonly nutrientCalculatorService: NutrientsCalculatorService,
     private readonly sharedUserRepository: SharedUserRepository,
-  ) { }
+  ) {}
 
   async createCalculation({
     data,
@@ -79,22 +82,34 @@ export class CalculationService {
     return calculation;
   }
 
-  findById(id: string) {
+  async findById(id: string) {
     const calculationId = new Types.ObjectId(id);
-    return this.calculationRepo.findbyId(calculationId);
+
+    const calculation = await this.calculationRepo.findbyId(calculationId);
+    if (!calculation) {
+      throw NotFoundCalculationException;
+    }
+
+    return calculation;
   }
 
-  findByUserId(userId: Types.ObjectId) {
+  async findByUserId(userId: Types.ObjectId) {
+    const calculation = await this.calculationRepo.findByUserId(userId);
+    if (!calculation) {
+      throw NotFoundUserCalculationException;
+    }
     return this.calculationRepo.findByUserId(userId);
   }
 
-  update(id: string, data: Partial<Omit<Calculation, 'userId'>>) {
-    const calculationId = new Types.ObjectId(id);
-    return this.calculationRepo.update(calculationId, data);
+  async update(id: string, data: Partial<Omit<Calculation, 'userId'>>) {
+    await this.findById(id);
+
+    return this.calculationRepo.update(new Types.ObjectId(id), data);
   }
 
-  delete(id: string) {
-    const calculationId = new Types.ObjectId(id);
-    return this.calculationRepo.delete(calculationId);
+  async delete(id: string) {
+    await this.findById(id);
+
+    return this.calculationRepo.delete(new Types.ObjectId(id));
   }
 }

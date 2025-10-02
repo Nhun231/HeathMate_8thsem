@@ -9,7 +9,7 @@ export class CalculationRepo {
   constructor(
     @InjectModel(Calculation.name)
     private calculationModel: Model<CalculationDocument>,
-  ) { }
+  ) {}
 
   async create(calculation: Calculation): Promise<Calculation> {
     return await this.calculationModel.create(calculation);
@@ -20,7 +20,9 @@ export class CalculationRepo {
   }
 
   async findByUserId(userId: Types.ObjectId) {
-    return this.calculationModel.find({ userId });
+    return this.calculationModel.find({
+      userId,
+    });
   }
 
   async findTodayRecord(userId: Types.ObjectId) {
