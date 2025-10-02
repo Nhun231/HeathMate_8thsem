@@ -23,7 +23,7 @@ const DietPlan = () => {
     const [result, setResult] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
 
-    const handleNavigate = () => navigate('/customer');
+    const handleNavigate = () => navigate('/customer-homepage');
 
     const handleSubmit = async () => {
         try {

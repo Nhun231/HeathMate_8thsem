@@ -15,6 +15,7 @@ import SetGoal from "../components/dietplan/SetGoal.jsx";
 import DietPlan from "../components/dietplan/DietPlan.jsx"
 import FoodDiary from "../components/diary/FoodDiary.jsx";
 import {DiaryProvider} from "../context/DiaryContext.jsx";
+import CustomerPage from "../components/homepage/CustomerPage.jsx";
 
 class AuthLayout extends Component {
     render() {
@@ -43,21 +44,7 @@ const router = createBrowserRouter([
         path: "/guest-homepage",
         element: <GuestHomePage />,
     },
-    {
-        path: "/calculate",
-        element: < Calculate />,
-    },
-    {
-        path: "/customer",
-        element: < CustomerHomePage />,
-    },
-     {
-        path: "/set-goal",
-        element: < SetGoal />,
-    }, {
-        path: "/dietplan",
-        element: < DietPlan />,
-    },
+
 
     // {
     //     path: "/login",
@@ -84,7 +71,21 @@ const router = createBrowserRouter([
                         path: "/",
                         element: <DefaultRedirect />
                     },
-
+                    {
+                        path: "/calculate",
+                        element: < Calculate />,
+                    },
+                    {
+                        path: "/customer-homepage",
+                        element: < CustomerPage />,
+                    },
+                    {
+                        path: "/set-goal",
+                        element: < SetGoal />,
+                    }, {
+                        path: "/dietplan",
+                        element: < DietPlan />,
+                    },
                     // {
                     //     path: "/homepage",
                     //     element: (
@@ -102,7 +103,9 @@ const router = createBrowserRouter([
                     // },
                     {
                         path: "/diary",
-                        element: <DiaryProvider><FoodDiary /></DiaryProvider>,
+                        element: <DiaryProvider>
+                            <FoodDiary />
+                            </DiaryProvider>,
                     },
                     {
                         path: "/unauthorized",

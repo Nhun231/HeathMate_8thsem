@@ -9,12 +9,12 @@ const DefaultRedirect = () => {
     if (!user) {
         return <Navigate to="/guest-homepage" replace />;
     }
-    if (user.role === "admin") {
-        return <Navigate to="/create-ingredient" replace />;
-    }
+    // if (user.role === "admin") {
+    //     return <Navigate to="/create-ingredient" replace />;
+    // }
 
     if (user.role === "customer") {
-        return <Navigate to="/dashboard" replace />;
+        return <Navigate to="/customer-homepage" replace />;
     }
 
     // Optional fallback

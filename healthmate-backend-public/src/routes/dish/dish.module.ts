@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DishController } from './dish.controller';
 import { DishService } from './dish.service';
+import { DishRepo } from './dish.repo';
 import { MongooseModule } from "@nestjs/mongoose";
 import { Dish, DishSchema } from "./schema/dish.schema";
 
@@ -11,6 +12,7 @@ import { Dish, DishSchema } from "./schema/dish.schema";
     ]),
   ],
   controllers: [DishController],
-  providers: [DishService]
+  providers: [DishService, DishRepo],
+  exports: [DishService, DishRepo],
 })
 export class DishModule {}

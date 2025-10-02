@@ -1,20 +1,30 @@
 "use client"
 
-import { useState } from "react"
-import { Box, Container, Typography, Button, ButtonGroup } from "@mui/material"
+import { useEffect, useState } from "react"
+import {Box, Container, Typography, Button, ButtonGroup, CircularProgress} from "@mui/material"
 import { useDiary } from "../../context/DiaryContext.jsx"
 import MealSection from "./MealSection"
 import AddMealModal from "./AddMealModal"
 import HistoryView from "./HistoryView"
+import {useNavigate} from "react-router-dom";
+import baseAxios from "../../api/axios.js";
+import CustomAlert from "../common/Alert.jsx";
 
 function FoodDiary() {
+    const navigate = useNavigate()
   const { selectedDate, getTotalCalories } = useDiary()
   const [view, setView] = useState("today") // 'today' or 'history'
   const [addMealModalOpen, setAddMealModalOpen] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState(null)
-
   const totalCalories = getTotalCalories(selectedDate)
-
+    const [calculationData, setCalculationData] = useState(null);
+    const [shouldRedirect, setShouldRedirect] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [alert, setAlert] = useState({
+        show: false,
+        message: '',
+        severity: 'info', // 'success', 'error', 'warning', 'info'
+    });
   const handleOpenAddMeal = (mealType) => {
     setSelectedMealType(mealType)
     setAddMealModalOpen(true)
@@ -24,9 +34,73 @@ function FoodDiary() {
     setAddMealModalOpen(false)
     setSelectedMealType(null)
   }
+    useEffect(() => {
+        const checkCalculateData = async () => {
+            try {
+                const res = await baseAxios.get('/calculation/latest');
+                if (res.data && res.data.tdee) {
+                    setCalculationData(res.data);
+                } else {
+                    setAlert({
+                        show: true,
+                        message: 'Vui lòng nhập thông tin cá nhân trước',
+                        severity: 'warning',
+                    });
+                    setShouldRedirect(true);
+                }
+            } catch (err) {
+                setAlert({
+                    show: true,
+                    message: 'Vui lòng nhập thông tin cá nhân trước',
+                    severity: 'warning',
+                });
+                setShouldRedirect(true);
+            } finally {
+                setLoading(false);
+            }
+        };
 
+        checkCalculateData();
+    }, []);
+    useEffect(() => {
+        if (shouldRedirect) {
+            // Add a small delay so user can see the alert message
+            const timer = setTimeout(() => {
+                navigate('/calculate');
+            }, 3000); 
+            
+            return () => clearTimeout(timer);
+        }
+    }, [shouldRedirect, navigate]);
+
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+                <CircularProgress />
+            </Box>
+        );
+    }
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", pb: 4 }}>
+        {alert.show && (
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: 16,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '90%',
+                    maxWidth: 500,
+                    zIndex: 9999,
+                }}
+            >
+                <CustomAlert
+                    message={alert.message}
+                    variant={alert.severity}
+                    onClose={() => setAlert({ ...alert, show: false })}
+                />
+            </Box>
+        )}
       <Container maxWidth="md">
         {/* Header */}
         <Box
@@ -135,7 +209,7 @@ function FoodDiary() {
               >
                 + Thêm món ăn mới
               </Button>
-              <Button
+              {/* <Button
                 variant="outlined"
                 fullWidth
                 sx={{
@@ -146,7 +220,7 @@ function FoodDiary() {
                 }}
               >
                 ✨ Gợi ý AI
-              </Button>
+              </Button> */}
               <Button
                 variant="outlined"
                 fullWidth

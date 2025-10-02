@@ -25,7 +25,7 @@ export class Meal {
   dishId: mongoose.Types.ObjectId;
 
   @Prop({ required: true, min: 0 })
-  quantity: number; // in grams or pieces
+  quantity: number;
 
   @Prop({ required: true, min: 0 })
   calories: number;
@@ -46,13 +46,12 @@ export class Meal {
   sugar: number;
 
   @Prop({ default: false })
-  isIngredient: boolean; // true if this is a direct ingredient, false if it's a dish
+  isIngredient: boolean;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Ingredient' })
-  ingredientId?: mongoose.Types.ObjectId; // only set if isIngredient is true
+  ingredientId?: mongoose.Types.ObjectId;
 }
 
 export const MealSchema = SchemaFactory.createForClass(Meal);
 
-// Create compound index for efficient queries
 MealSchema.index({ userId: 1, date: 1, mealType: 1 });

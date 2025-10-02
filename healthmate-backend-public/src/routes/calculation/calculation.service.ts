@@ -112,4 +112,8 @@ export class CalculationService {
 
     return this.calculationRepo.delete(new Types.ObjectId(id));
   }
+
+   async getLatest(userId: Types.ObjectId) {
+        return await this.calculationRepo.getLatestRecord(userId);
+    }
 }

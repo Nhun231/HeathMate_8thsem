@@ -6,11 +6,12 @@ import { PaginateDto } from "../../shared/dtos/paginate.dto";
 import { PaginatedResult } from "../../shared/interfaces/paginated-result.interface";
 import { DishForbiddenError, DishNotFoundError } from "./dish.error";
 import { Rolename } from '../../shared/constants/role.constant';
+import { DishRepo } from './dish.repo';
 
 @Injectable()
 export class DishService {
     constructor(
-        @InjectModel(Dish.name) private dishModel: Model<DishDocument>
+        private readonly dishRepo: DishRepo
     ) {}
 
     private validateObjectId(id: string): void {
@@ -72,27 +73,18 @@ export class DishService {
         }
 
         try {
-            const total = await this.dishModel.countDocuments(filter).exec();
+            const result = await this.dishRepo.findAllPaginated(page, limit, filter);
 
-            if (total === 0) {
+            if (result.total === 0) {
                 throw new DishNotFoundError('No dishes found with the given filter');
             }
 
-            const skip = (page - 1) * limit;
-            const items = await this.dishModel
-                .find(filter)
-                .populate('ingredients.ingredient')
-                .sort({ _id: 1 })
-                .skip(skip)
-                .limit(limit)
-                .exec();
-
             return {
-                items,
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
+                items: result.items,
+                total: result.total,
+                page: result.page,
+                limit: result.limit,
+                totalPages: result.totalPages,
             };
         } catch (error) {
             if (error instanceof DishNotFoundError) {
@@ -121,7 +113,7 @@ export class DishService {
             payload.totalFiber = nutritionalValues.totalFiber;
             payload.totalSugar = nutritionalValues.totalSugar;
 
-            return this.dishModel.create(payload);
+            return this.dishRepo.create(payload);
         } catch (error) {
             console.error('[DishService.create] Unexpected error:', error);
             throw new Error('Failed to create dish');
@@ -131,7 +123,7 @@ export class DishService {
     async update(dishId: string, data: any, userId: any, roleName: string): Promise<DishDocument> {
         try {
             this.validateObjectId(dishId);
-            const doc = await this.dishModel.findById(dishId).populate('ingredients.ingredient').exec();
+            const doc = await this.dishRepo.findById(new Types.ObjectId(dishId));
             if (!doc) throw new DishNotFoundError('Dish not found');
 
             // Ownership rules
@@ -157,9 +149,8 @@ export class DishService {
                 data.totalSugar = nutritionalValues.totalSugar;
             }
 
-            Object.assign(doc, data);
-            await doc.save();
-            return doc;
+            const updatedDoc = await this.dishRepo.update(new Types.ObjectId(dishId), data);
+            return updatedDoc!;
         } catch (error) {
             if (error instanceof DishNotFoundError || error instanceof DishForbiddenError) {
                 throw error;
@@ -172,7 +163,7 @@ export class DishService {
     async delete(dishId: string, userId: any, roleName: string): Promise<void> {
         try {
             this.validateObjectId(dishId);
-            const doc = await this.dishModel.findById(dishId).exec();
+            const doc = await this.dishRepo.findById(new Types.ObjectId(dishId));
             if (!doc) throw new DishNotFoundError('Dish not found');
 
             const isPublic = !doc.belongsTo || String(doc.belongsTo).trim() === '';
@@ -186,7 +177,7 @@ export class DishService {
                 }
             }
 
-            await this.dishModel.deleteOne({ _id: dishId }).exec();
+            await this.dishRepo.delete(new Types.ObjectId(dishId));
         } catch (error) {
             if (error instanceof DishNotFoundError || error instanceof DishForbiddenError) {
                 throw error;
@@ -199,7 +190,7 @@ export class DishService {
     async findById(dishId: string, userId: any, roleName: string): Promise<DishDocument> {
         try {
             this.validateObjectId(dishId);
-            const doc = await this.dishModel.findById(dishId).populate('ingredients.ingredient').exec();
+            const doc = await this.dishRepo.findById(new Types.ObjectId(dishId));
             if (!doc) throw new DishNotFoundError('Dish not found');
 
             // Ownership rules
