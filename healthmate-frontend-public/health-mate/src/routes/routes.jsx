@@ -8,6 +8,13 @@ import DefaultRedirect from "../components/common/DefaultRedirect.jsx";
 import { Component } from "react";
 import LoginForm from "../pages/authentication/Login.jsx";
 import ForgotPassword from "../pages/authentication/ForgotPassword.jsx";
+import GuestHomePage from "../components/homepage/GuestHomePage.jsx";
+import Calculate from "../components/calculate/Calculate.jsx";
+import CustomerHomePage from "../components/homepage/CustomerHomePage.jsx";
+import SetGoal from "../components/dietplan/SetGoal.jsx";
+import DietPlan from "../components/dietplan/DietPlan.jsx";
+import FoodDiary from "../components/diary/FoodDiary.jsx";
+import { DiaryProvider } from "../context/DiaryContext.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import EditProfilePage from "../pages/EditProfilePage.jsx";
 class AuthLayout extends Component {
@@ -33,6 +40,43 @@ const router = createBrowserRouter([
     path: "/forgot-password",
     element: <ForgotPassword />,
   },
+  {
+    path: "/guest-homepage",
+    element: <GuestHomePage />,
+  },
+  {
+    path: "/calculate",
+    element: <Calculate />,
+  },
+  {
+    path: "/customer",
+    element: <CustomerHomePage />,
+  },
+  {
+    path: "/set-goal",
+    element: <SetGoal />,
+  },
+  {
+    path: "/dietplan",
+    element: <DietPlan />,
+  },
+  {
+    path: "/my-profile",
+    element: <DietPlan />,
+  },
+  {
+    path: "/edit-profile",
+    element: <DietPlan />,
+  },
+
+  // {
+  //     path: "/login",
+  //     element: <Login />,
+  // },
+  // {
+  //     path: "/changepassword/:token",
+  //     element: <ChangePassword />,
+  // },
 
   {
     path: "/",
@@ -45,6 +89,7 @@ const router = createBrowserRouter([
           //     path: "/oauth-callback",
           //     element: <OAuthCallback />,
           // },
+
           {
             path: "/",
             element: <DefaultRedirect />,
@@ -56,6 +101,23 @@ const router = createBrowserRouter([
           //         <HomePage />
           //     )
           // },
+          // {
+          //     path: "/add-dish",
+          //     element: (
+          //         <AddDishModal
+          //             isOpen={true}
+          //             onClose={() => console.log("closed")}
+          //         />
+          //     ),
+          // },
+          {
+            path: "/diary",
+            element: (
+              <DiaryProvider>
+                <FoodDiary />
+              </DiaryProvider>
+            ),
+          },
           {
             path: "/unauthorized",
             element: <UnauthorizedPage />,
@@ -63,14 +125,6 @@ const router = createBrowserRouter([
           {
             path: "*",
             element: <NotFoundPage />,
-          },
-          {
-            path: "/my-profile",
-            element: <ProfilePage />,
-          },
-          {
-            path: "/edit-profile",
-            element: <EditProfilePage />,
           },
         ],
       },

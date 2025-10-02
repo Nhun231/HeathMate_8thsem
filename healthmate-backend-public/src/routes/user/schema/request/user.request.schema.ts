@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { Gender, UserStatus } from 'src/shared/constants/auth.constant';
 import z from 'zod';
 
@@ -13,24 +12,26 @@ export const CreateUserSchema = z.object({
   gender: z.enum([Gender.Male, Gender.Female]),
   dob: z.coerce.date(),
   phoneNumber: z.string(),
-  roleId: z.instanceof(Types.ObjectId),
+  role: z.string(),
 });
 
 export const UpdateUserSchema = z.object({
-  fullname: z.string().min(2).max(64),
-  gender: z.enum([Gender.Male, Gender.Female]),
-  dob: z.coerce.date(),
-  phoneNumber: z.string(),
-  roleId: z.instanceof(Types.ObjectId),
-  status: z.enum([UserStatus.Active, UserStatus.Inactive, UserStatus.Banned]),
+  fullname: z.string().min(2).max(64).optional(),
+  gender: z.enum([Gender.Male, Gender.Female]).optional(),
+  dob: z.coerce.date().optional(),
+  phoneNumber: z.string().optional(),
+  role: z.string().optional(),
+  status: z
+    .enum([UserStatus.Active, UserStatus.Inactive, UserStatus.Banned])
+    .optional(),
 });
 
-export const DeleteUserSchema = z.object({
-  id: z.string(),
-});
+export const DeleteUserSchema = GetUserDetailParamsSchema;
 
 export type GetUserDetailParamsType = z.infer<typeof GetUserDetailParamsSchema>;
 
 export type CreateUserType = z.infer<typeof CreateUserSchema>;
 
 export type UpdateUserType = z.infer<typeof UpdateUserSchema>;
+
+export type DeleteUserType = z.infer<typeof DeleteUserSchema>;

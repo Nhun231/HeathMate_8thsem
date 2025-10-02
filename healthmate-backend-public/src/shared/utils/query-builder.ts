@@ -9,7 +9,19 @@ export class QueryBuilderService<T> {
     private readonly allowedFilters: string[] = [],
   ) {}
 
+<<<<<<< HEAD
   async query(query: QueryType, allowedFilters?: string[]) {
+=======
+  async query({
+    query,
+    allowedFilters,
+    populateFields,
+  }: {
+    query: QueryType;
+    allowedFilters?: string[];
+    populateFields?: string[];
+  }) {
+>>>>>>> feat/ingredients
     const { page = 1, limit = 10, sort, ...queryFilters } = query;
 
     // Filters
@@ -69,7 +81,16 @@ export class QueryBuilderService<T> {
       .find(conditions)
       .skip(skip)
       .limit(limit)
+<<<<<<< HEAD
       .sort(sortObj);
+=======
+      .sort(sortObj)
+      .select('-password');
+
+    if (populateFields) {
+      mongooseQuery.populate(populateFields);
+    }
+>>>>>>> feat/ingredients
 
     const [results, total] = await Promise.all([
       mongooseQuery.exec(),

@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import{ Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthProvider.jsx";
 
 const DefaultRedirect = () => {
@@ -7,7 +7,7 @@ const DefaultRedirect = () => {
     if (loading) return <div>Loading...</div>;
 
     if (!user) {
-        return <Navigate to="/homepage" replace />;
+        return <Navigate to="/guest-homepage" replace />;
     }
     if (user.role === "admin") {
         return <Navigate to="/create-ingredient" replace />;
