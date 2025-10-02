@@ -6,9 +6,9 @@ import { AuthRepository } from './auth.repo';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { RolesService } from './role.service';
 import { AuthService } from './auth.service';
-import { GoogleUserInfoError } from './auth.error';
 import { GoogleAuthStateType } from './schema/request/auth.request.schema';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
+import { Gender, GenderType } from 'src/shared/constants/auth.constant';
 
 @Injectable()
 export class GoogleService {
@@ -76,21 +76,13 @@ export class GoogleService {
       const { tokens } = await this.oauth2Client.getToken(code);
       this.oauth2Client.setCredentials(tokens);
 
-      const oauth2 = google.oauth2({
-        auth: this.oauth2Client,
-        version: 'v2',
-      });
-
-      const { data } = await oauth2.userinfo.get();
-      if (!data.email) {
-        throw GoogleUserInfoError;
-      }
+      const profile = await getGoogleProfile(this.oauth2Client);
 
       let user = await this.sharedUserRepository.findUnique({
-        email: data.email,
+        email: profile.email,
       });
 
-      // if not user, create new account
+      // If not user, create new account
       if (!user) {
         const clientRoleId = await this.rolesService.getClientRole();
         const randomPassword = this.uuid();
@@ -98,31 +90,30 @@ export class GoogleService {
           await this.hashingService.hashPassword(randomPassword);
 
         user = await this.authRepository.createUser({
-          email: data.email,
-          fullname: data.name || 'No Name',
+          email: profile.email,
+          fullname: profile.name || 'No Name',
           password: hashedPassword,
           phoneNumber: '',
           roleId: clientRoleId,
-          avatar: data.picture || '',
-          gender: data.gender || '',
+          avatar: profile.picture,
+          gender: profile.gender || Gender.Male,
+          dob: profile.birthday ? new Date(profile.birthday) : undefined,
         });
       }
-      console.log(user);
 
       const device = await this.authRepository.createDevice({
         userId: user.id,
-        userAgent: userAgent,
-        ip: ip,
+        userAgent,
+        ip,
       });
 
       const roleId = user.roleId._id.toString();
-      // const roleName = user.roleId.
 
       const authTokens = await this.authService.generateTokens({
         userId: user.id,
         deviceId: device.id,
         roleId: roleId,
-        roleName: '',
+        roleName: '', // TODO: fetch
       });
 
       return authTokens;
@@ -131,4 +122,51 @@ export class GoogleService {
       throw error;
     }
   }
+}
+export interface GoogleProfile {
+  email: string;
+  name?: string;
+  picture?: string;
+  gender?: GenderType;
+  locale?: string;
+  birthday?: string;
+}
+
+export async function getGoogleProfile(
+  oauth2Client: OAuth2Client,
+): Promise<GoogleProfile> {
+  const oauth2 = google.oauth2({ auth: oauth2Client, version: 'v2' });
+  const { data } = await oauth2.userinfo.get();
+
+  if (!data.email) {
+    throw new Error('Google user has no email');
+  }
+
+  const people = google.people({ version: 'v1', auth: oauth2Client });
+  const profile = await people.people.get({
+    resourceName: 'people/me',
+    personFields: 'genders,birthdays,locales',
+  });
+
+  let gender: GenderType | undefined;
+  if (profile.data.genders?.length) {
+    const g = profile.data.genders[0].value;
+    gender =
+      g === 'male' ? Gender.Male : g === 'female' ? Gender.Female : undefined;
+  }
+
+  let birthday: string | undefined;
+  if (profile.data.birthdays?.length && profile.data.birthdays[0].date) {
+    const { year, month, day } = profile.data.birthdays[0].date;
+    birthday = `${year || '0000'}-${month}-${day}`;
+  }
+
+  return {
+    email: data.email,
+    name: data.name || undefined,
+    picture: data.picture || undefined,
+    gender,
+    locale: data.locale || undefined,
+    birthday,
+  };
 }

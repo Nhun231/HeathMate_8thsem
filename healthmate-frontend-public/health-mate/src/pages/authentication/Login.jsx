@@ -19,6 +19,8 @@ import {
   extractBackendErrorCode,
   translateErrorCode,
 } from '../../utils/errorTranslations.js';
+import axios from '../../api/axios.js';
+
 const LoginForm = () => {
   const [alert, setAlert] = useState({
     show: false,
@@ -29,6 +31,7 @@ const LoginForm = () => {
     email: '',
     password: '',
   });
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -76,6 +79,16 @@ const LoginForm = () => {
       setTimeout(() => {
         setAlert({ ...alert, show: false });
       }, 3000);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const response = await axios.get('auth/google');
+      // Redirect to Google auth page
+      window.location.href = response.data.url;
+    } catch {
+      setError('Failed to initiate Google login');
     }
   };
   return (
@@ -292,6 +305,7 @@ const LoginForm = () => {
                   Hoặc
                 </Typography>
               </Box>
+              {error && <div className='error'>{error}</div>}
               <Button
                 type='submit'
                 fullWidth
@@ -310,6 +324,7 @@ const LoginForm = () => {
                   justifyContent: 'center',
                   gap: 1, // space between icon and text
                 }}
+                onClick={handleGoogleLogin}
               >
                 <GoogleIcon sx={{ color: '#6b7280' }} />{' '}
                 {/* Tailwind grey-500 */}

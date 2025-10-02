@@ -14,7 +14,10 @@ export class User {
   @Prop({ type: String, required: true })
   fullname: string;
 
-  @Prop({ type: String, enum: [Gender.Male, Gender.Female] })
+  @Prop({
+    type: String,
+    enum: [Gender.Male, Gender.Female],
+  })
   gender: string;
 
   @Prop({ type: Date })
