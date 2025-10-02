@@ -5,7 +5,9 @@ import GoogleIcon from '@mui/icons-material/Google';
 import {login} from "../../services/authService/LoginService.js";
 import CustomAlert from "../../components/common/Alert.jsx";
 import { extractBackendErrorCode, translateErrorCode } from "../../utils/errorTranslations.js";
+import {useNavigate} from "react-router-dom";
 const LoginForm = () => {
+    const navigate = useNavigate();
     const [alert, setAlert] = useState({
         show: false,
         message: '',
@@ -47,6 +49,7 @@ const LoginForm = () => {
             });
             setTimeout(() => {
                 setAlert({ ...alert, show: false });
+                navigate("/customer-homepage")
             }, 3000);
         }catch(error){
             const code = extractBackendErrorCode(error) || error?.message;

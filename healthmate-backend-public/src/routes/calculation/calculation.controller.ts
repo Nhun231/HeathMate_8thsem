@@ -24,7 +24,6 @@ export class CalculationController {
   async findCalculationById(@Param() params: GetCalculationParamsDTO) {
     return this.calculationService.findById(params.calculationId);
   }
-
   @Get('user/list')
   async findCalculationByUserId(@ActiveUser('userId') userId: Types.ObjectId) {
     return this.calculationService.findByUserId(userId);
@@ -33,5 +32,10 @@ export class CalculationController {
   @Delete('/details/:calculationId')
   async deleteCalculationById(@Param() params: DeleteCalculationParamsDTO) {
     return this.calculationService.delete(params.calculationId);
+  }
+
+  @Get("/latest")
+  async getLatestCalculation(@ActiveUser('userId') userId: Types.ObjectId) {
+    return this.calculationService.getLatest(userId);
   }
 }

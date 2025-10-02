@@ -55,7 +55,7 @@ const Header = () => {
                             </Button>
                             <Button
                                 color="inherit"
-                                onClick={() => navigate("/meal")}
+                                onClick={() => navigate("/diary")}
                                 sx={{ fontWeight: "bold" }}
                             >
                                 Thực đơn hôm nay

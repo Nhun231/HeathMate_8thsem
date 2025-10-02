@@ -70,7 +70,7 @@ const AuthProvider = ({ children }) => {
           originalRequest._retry = true;
           try {
             // call to refresh Refresh token
-            const response = await axios.get(`${BASE_URL}/auth/refresh`, {
+            const response = await axios.get(`${BASE_URL}/auth/refresh-token`, {
               withCredentials: true,
             });
             console.log("Through cookie refresh");

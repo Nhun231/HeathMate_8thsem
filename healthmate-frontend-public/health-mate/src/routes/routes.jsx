@@ -15,6 +15,9 @@ import SetGoal from "../components/dietplan/SetGoal.jsx";
 import DietPlan from "../components/dietplan/DietPlan.jsx"
 import DietPlanProgress from "../components/dietplan/DietPlanProgress.jsx";
 
+import FoodDiary from "../components/diary/FoodDiary.jsx";
+import {DiaryProvider} from "../context/DiaryContext.jsx";
+import CustomerPage from "../components/homepage/CustomerPage.jsx";
 
 class AuthLayout extends Component {
     render() {
@@ -43,25 +46,8 @@ const router = createBrowserRouter([
         path: "/guest-homepage",
         element: <GuestHomePage />,
     },
-    {
-        path: "/calculate",
-        element: < Calculate />,
-    },
-    {
-        path: "/customer",
-        element: < CustomerHomePage />,
-    },
-     {
-        path: "/set-goal",
-        element: < SetGoal />,
-    }, {
-        path: "/dietplan",
-        element: < DietPlan />,
-    },
-     {
-        path: "/dietplan/progress", 
-        element: <DietPlanProgress />,
-    },
+
+
     // {
     //     path: "/login",
     //     element: <Login />,
@@ -82,17 +68,51 @@ const router = createBrowserRouter([
                     //     path: "/oauth-callback",
                     //     element: <OAuthCallback />,
                     // },
+
                     {
                         path: "/",
                         element: <DefaultRedirect />
                     },
-
+                    {
+                        path: "/calculate",
+                        element: < Calculate />,
+                    },
+                    {
+                        path: "/customer-homepage",
+                        element: < CustomerPage />,
+                    },
+                    {
+                        path: "/set-goal",
+                        element: < SetGoal />,
+                    }, {
+                        path: "/dietplan",
+                        element: < DietPlan />,
+                    },
+                    {
+                        path: "/dietplan/progress",
+                        element: <DietPlanProgress />,
+                    },
                     // {
                     //     path: "/homepage",
                     //     element: (
                     //         <HomePage />
                     //     )
                     // },
+                    // {
+                    //     path: "/add-dish",
+                    //     element: (
+                    //         <AddDishModal
+                    //             isOpen={true}
+                    //             onClose={() => console.log("closed")}
+                    //         />
+                    //     ),
+                    // },
+                    {
+                        path: "/diary",
+                        element: <DiaryProvider>
+                            <FoodDiary />
+                            </DiaryProvider>,
+                    },
                     {
                         path: "/unauthorized",
                         element: <UnauthorizedPage />,
