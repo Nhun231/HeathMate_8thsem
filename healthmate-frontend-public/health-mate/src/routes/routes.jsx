@@ -13,6 +13,8 @@ import Calculate from "../components/calculate/Calculate.jsx";
 import CustomerHomePage from "../components/homepage/CustomerHomePage.jsx";
 import SetGoal from "../components/dietplan/SetGoal.jsx";
 import DietPlan from "../components/dietplan/DietPlan.jsx"
+import DietPlanProgress from "../components/dietplan/DietPlanProgress.jsx";
+
 
 class AuthLayout extends Component {
     render() {
@@ -55,6 +57,10 @@ const router = createBrowserRouter([
     }, {
         path: "/dietplan",
         element: < DietPlan />,
+    },
+     {
+        path: "/dietplan/progress", 
+        element: <DietPlanProgress />,
     },
     // {
     //     path: "/login",
