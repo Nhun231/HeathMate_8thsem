@@ -38,6 +38,7 @@ export class DietPlanService {
     )[0];
 
     const TDEE = latestCalc.tdee;
+    const currentWeight = latestCalc.weight;
 
     // Calculate diet plan details
     const { dailyCalories, durationDays, endDate } =
@@ -45,6 +46,7 @@ export class DietPlanService {
         TDEE,
         goal,
         targetWeightChange,
+        currentWeight,
       });
 
     // Check if there's an existing current plan
@@ -88,18 +90,21 @@ export class DietPlanService {
     const existingPlan =
       await this.dietPlanRepo.findCurrentByUserId(userObjectId);
     if (!existingPlan) throw new NotFoundDietPlanException();
+
     // Get all calculations of the user
     const allCalculations =
       await this.calculationRepo.findByUserId(userObjectId);
     if (!allCalculations || allCalculations.length === 0) {
       throw new NotFoundUserCalculationException();
     }
+
     // Get the latest calculation
     const latestCalc = allCalculations.sort(
       (a, b) => b._id.getTimestamp().getTime() - a._id.getTimestamp().getTime(),
     )[0];
 
     const TDEE = latestCalc.tdee;
+    const currentWeight = latestCalc.weight;
     const newGoal = goal || existingPlan.goal;
 
     const { dailyCalories, durationDays, endDate } =
@@ -107,6 +112,7 @@ export class DietPlanService {
         TDEE,
         goal: newGoal,
         targetWeightChange,
+        currentWeight,
       });
 
     return this.dietPlanRepo.update(existingPlan._id, {
@@ -144,10 +150,12 @@ export class DietPlanService {
     TDEE,
     goal,
     targetWeightChange,
+    currentWeight,
   }: {
     TDEE: number;
     goal: string;
-    targetWeightChange?: number;
+    targetWeightChange?: number; 
+    currentWeight: number;
   }) {
     let dailyCalories = TDEE;
     let durationDays = 0;
@@ -159,8 +167,16 @@ export class DietPlanService {
       if (!targetWeightChange || targetWeightChange <= 0) {
         throw new InvalidTargetWeightChangeException();
       }
-      // 0.5kg = 3500 kcal
-      const totalKcal = targetWeightChange * 7000; // 1kg = 7000 kcal
+      if (goal === 'LoseWeight' && targetWeightChange >= currentWeight) {
+        throw new InvalidTargetWeightChangeException();
+      }
+      if (goal === 'GainWeight' && targetWeightChange <= currentWeight) {
+        throw new InvalidTargetWeightChangeException();
+      }
+
+      const actualWeightChange = targetWeightChange - currentWeight;
+
+      const totalKcal = Math.abs(actualWeightChange) * 7000;      // 1kg = 7000 kcal
       const maxCalGap = 500;
       const kcalGap = Math.min(maxCalGap, Math.round(totalKcal / 30)); // try to spread over at least 30 days if possible
 
