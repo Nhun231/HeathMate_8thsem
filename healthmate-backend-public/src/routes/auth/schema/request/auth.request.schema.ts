@@ -67,6 +67,13 @@ export const ForgotPasswordBodySchema = z
     }
   });
 
+export const GoogleAuthStateSchema = z
+  .object({
+    userAgent: true,
+    ip: true,
+  })
+  .strict();
+
 export type RegisterBodyType = z.infer<typeof RegisterBodySchema>;
 
 export type LoginBodyType = z.infer<typeof LoginBodySchema>;
@@ -78,3 +85,5 @@ export type LogOutBodyType = z.infer<typeof LogOutBodySchema>;
 export type SendOTPBodyType = z.infer<typeof SendOTPBodySchema>;
 
 export type ForgotPasswordBodyType = z.infer<typeof ForgotPasswordBodySchema>;
+
+export type GoogleAuthStateType = z.infer<typeof GoogleAuthStateSchema>;

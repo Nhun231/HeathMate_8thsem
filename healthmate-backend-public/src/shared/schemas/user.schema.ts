@@ -23,7 +23,7 @@ export class User {
   @Prop({ type: String })
   phoneNumber: string;
 
-  @Prop({ type: String })
+  @Prop({ type: String, required: false })
   avatar: string;
 
   @Prop({
