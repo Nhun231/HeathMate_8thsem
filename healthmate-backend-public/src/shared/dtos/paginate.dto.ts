@@ -25,6 +25,10 @@ export class PaginateDto {
     @IsString()
     type?: string;
 
+    @IsOptional()
+    @IsString()
+    search?: string;
+
     // ---- Keyset pagination ----
     @IsOptional()
     @IsString()

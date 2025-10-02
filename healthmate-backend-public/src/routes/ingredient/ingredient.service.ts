@@ -41,11 +41,16 @@ export class IngredientService {
         return this.ingredientModel.insertMany(ingredients);
     }
     async findAllPaginate(dto: PaginateDto, userId?: any, roleName?: string): Promise<PaginatedResult<IngredientDocument>> {
-        const { page = 1, limit = 20, type } = dto;
+        const { page = 1, limit = 20, type, search } = dto;
 
         const filter: any = {};
         if (type) {
             filter.type = type;
+        }
+        
+        // Add search functionality
+        if (search) {
+            filter.name = { $regex: search, $options: 'i' };
         }
 
         // Visibility rules
