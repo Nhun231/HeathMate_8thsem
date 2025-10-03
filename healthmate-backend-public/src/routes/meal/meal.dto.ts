@@ -1,42 +1,18 @@
-import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-import { Type } from 'class-transformer';
-import { MealType } from './schema/meal.schema';
+import { createZodDto } from 'nestjs-zod';
+import {
+  AddDishToMealSchema,
+  AddIngredientToMealSchema,
+  GetMealsSchema,
+  MealParamsSchema,
+  UpdateMealSchema,
+} from './schema/request/meal.request.schema';
 
-export class AddDishToMealDto {
-  @IsString()
-  dishId: string;
+export class AddDishToMealDto extends createZodDto(AddDishToMealSchema) {}
 
-  @IsNumber()
-  @Min(0)
-  quantity: number;
-}
+export class AddIngredientToMealDto extends createZodDto(AddIngredientToMealSchema) {}
 
-export class AddIngredientToMealDto {
-  @IsString()
-  ingredientId: string;
+export class GetMealsDto extends createZodDto(GetMealsSchema) {}
 
-  @IsNumber()
-  @Min(0)
-  quantity: number;
-}
+export class MealParamsDto extends createZodDto(MealParamsSchema) {}
 
-export class GetMealsDto {
-  @IsDateString()
-  date: string;
-
-  @IsOptional()
-  @IsEnum(MealType)
-  mealType?: MealType;
-}
-
-export class MealParamsDto {
-  @IsString()
-  mealId: string;
-}
-
-export class UpdateMealDto {
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  quantity?: number;
-}
+export class UpdateMealDto extends createZodDto(UpdateMealSchema) {}

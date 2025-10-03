@@ -4,12 +4,17 @@ import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/ico
 import RestaurantIcon from "@mui/icons-material/Restaurant"
 import { useDiary } from "../../context/DiaryContext.jsx"
 
-function MealSection({ mealType, onAddMeal }) {
+function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded }) {
   const { selectedDate, getDayEntries, removeDishFromMeal } = useDiary()
   const entries = getDayEntries(selectedDate)
   const dishes = entries[mealType] || []
 
-  const totalCalories = dishes.reduce((sum, dish) => sum + dish.calories, 0)
+
+  // Always use real meal data when provided (even if empty), only fallback to context data if meals prop is undefined
+  const displayMeals = meals !== undefined ? meals : dishes
+  const totalCalories = displayMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0)
+  
+  console.log(`MealSection ${mealType} - displayMeals:`, displayMeals)
 
   return (
     <Box
@@ -65,11 +70,15 @@ function MealSection({ mealType, onAddMeal }) {
       </Box>
 
       {/* Dishes List */}
-      {dishes.length > 0 ? (
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+          <Typography variant="body2" sx={{ color: "#999" }}>Đang tải...</Typography>
+        </Box>
+      ) : displayMeals.length > 0 ? (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {dishes.map((dish) => (
+          {displayMeals.map((meal) => (
             <Box
-              key={dish.entryId}
+              key={meal.id || meal.entryId}
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -81,7 +90,7 @@ function MealSection({ mealType, onAddMeal }) {
             >
               <Box sx={{ flex: 1 }}>
                 <Typography variant="body1" sx={{ fontWeight: 500, color: "#4CAF50", mb: 0.5 }}>
-                  {dish.name}
+                  {meal.name}
                 </Typography>
                 <Box
                   sx={{
@@ -91,20 +100,25 @@ function MealSection({ mealType, onAddMeal }) {
                   }}
                 >
                   <Typography variant="body2" sx={{ color: "#4CAF50" }}>
-                    {dish.calories} cal
+                    {meal.calories || 0} cal
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#999" }}>
-                    Protein: {dish.protein}g
+                    Protein: {meal.protein || 0}g
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#999" }}>
-                    Fat: {dish.fat}g
+                    Fat: {meal.fat || 0}g
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#999" }}>
-                    Carbs: {dish.carbs}g
+                    Carbs: {meal.carbs || 0}g
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#999" }}>
-                    Fiber: {dish.fiber}g
+                    Fiber: {meal.fiber || 0}g
                   </Typography>
+                  {meal.quantity && (
+                    <Typography variant="body2" sx={{ color: "#999" }}>
+                      Số lượng: {meal.quantity}g
+                    </Typography>
+                  )}
                 </Box>
               </Box>
               <Box sx={{ display: "flex", gap: 0.5 }}>
@@ -114,7 +128,10 @@ function MealSection({ mealType, onAddMeal }) {
                 <IconButton
                   size="small"
                   sx={{ color: "#f44336" }}
-                  onClick={() => removeDishFromMeal(mealType, dish.entryId)}
+                  onClick={() => {
+                    // Handle delete - could call API here
+                    if (onMealAdded) onMealAdded()
+                  }}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -155,3 +172,4 @@ function MealSection({ mealType, onAddMeal }) {
 }
 
 export default MealSection
+

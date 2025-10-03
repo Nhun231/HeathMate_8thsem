@@ -9,7 +9,7 @@ export class CalculationRepo {
   constructor(
     @InjectModel(Calculation.name)
     private calculationModel: Model<CalculationDocument>,
-  ) {}
+  ) { }
 
   async create(calculation: Calculation): Promise<Calculation> {
     return await this.calculationModel.create(calculation);
@@ -46,11 +46,14 @@ export class CalculationRepo {
   }
 
   // Find lastest calculation record by userId
-  async findLatestByUserId(userId: Types.ObjectId) {
-  return this.calculationModel
-    .findOne({ userId })
-    .sort({ createdAt: -1 })
-    .exec();
-}
+  async findLatestByUserId(
+    userId: Types.ObjectId
+  ): Promise<CalculationDocument | null> {
+    return this.calculationModel
+      .findOne({ userId })
+      .sort({ createdAt: -1 })
+      .exec();
+
+  }
 
 }

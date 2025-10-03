@@ -1,51 +1,82 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Meal, MealDocument } from './schema/meal.schema';
+import { DeleteResult } from 'mongodb';
+import { Meal, MealDocument, MealType } from './schema/meal.schema';
 
 @Injectable()
 export class MealRepo {
-    constructor(
-        @InjectModel(Meal.name)
-        private readonly mealModel: Model<MealDocument>,
-    ) { }
+  constructor(
+    @InjectModel(Meal.name) private mealModel: Model<MealDocument>,
+  ) { }
 
-    async create(data: Partial<Meal>): Promise<Meal> {
-        return this.mealModel.create(data);
+  async create(meal: Partial<Meal>): Promise<MealDocument> {
+    return await this.mealModel.create(meal);
+  }
+
+  async findById(id: Types.ObjectId): Promise<MealDocument | null> {
+    return this.mealModel.findById(id).exec();
+  }
+
+  async findByUserIdAndDate(
+    userId: Types.ObjectId,
+    startDate: Date,
+    endDate: Date,
+    mealType?: MealType,
+  ): Promise<MealDocument[]> {
+    const filter: any = {
+      userId,
+      date: { $gte: startDate, $lt: endDate },
+    };
+
+    if (mealType) {
+      filter.mealType = mealType;
     }
 
-    async findById(id: Types.ObjectId | string) {
-        return this.mealModel.findById(id).exec();
-    }
+    return this.mealModel
+      .find(filter)
+      .populate('dishId', 'name')
+      .populate('ingredientId', 'name')
+      .sort({ mealType: 1, createdAt: 1 })
+      .exec();
+  }
 
-    async findByUserAndDate(userId: string, date: Date) {
-        const start = new Date(date);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(date);
-        end.setHours(23, 59, 59, 999);
+  async findByUserIdAndDateRange(
+    userId: Types.ObjectId,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<MealDocument[]> {
+    return this.mealModel
+      .find({
+        userId,
+        date: { $gte: startDate, $lt: endDate },
+      })
+      .exec();
+  }
 
-        return this.mealModel
-            .find({
-                userId: new Types.ObjectId(userId),
-                createdAt: { $gte: start, $lte: end },
-            })
-            .exec();
-    }
+  async update(
+    id: Types.ObjectId,
+    data: Partial<Meal>,
+  ): Promise<MealDocument | null> {
+    return this.mealModel
+      .findByIdAndUpdate(id, data, { new: true })
+      .exec();
+  }
 
-    async findByUser(userId: string) {
-        return this.mealModel
-            .find({ userId: new Types.ObjectId(userId) })
-            .exec();
-    }
+  async delete(id: Types.ObjectId): Promise<DeleteResult> {
+    return this.mealModel.deleteOne({ _id: id }).exec();
+  }
 
-    async update(id: string, data: Partial<Meal>) {
-        return this.mealModel
-            .findByIdAndUpdate(id, data, { new: true })
-            .exec();
-    }
+  async findByUserId(userId: Types.ObjectId): Promise<MealDocument[]> {
+    return this.mealModel.find({ userId }).exec();
+  }
 
-    async delete(id: string): Promise<any> {
-        return this.mealModel.deleteOne({ _id: id });
-    }
-
+  async getLatestRecord(userId: Types.ObjectId): Promise<MealDocument | null> {
+    return this.mealModel
+      .findOne({ userId })
+      .sort({ createdAt: -1 })
+      .populate('dishId', 'name')
+      .populate('ingredientId', 'name')
+      .exec();
+  }
 }

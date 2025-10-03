@@ -17,12 +17,19 @@ export class IngredientController {
         return this.ingredientService.importFromExcel()
     }
 
+    // Get user's custom ingredients only (must be before general GET route)
+    @Get('/my-ingredients')
+    async getMyIngredients(@Query() query: PaginateDto, @ActiveUser('userId') userId: Types.ObjectId): Promise<PaginatedResult<IngredientDocument>> {
+        return this.ingredientService.findUserCustomIngredients(query, userId);
+    }
+
     // Get all ingredients
     @Get()
     async findAllIngredient(@Query() query: PaginateDto, @ActiveUser('userId') userId?: Types.ObjectId, @ActiveUser('roleName') roleName?: string): Promise<PaginatedResult<IngredientDocument>> {
         return this.ingredientService.findAllPaginate(query, userId, roleName);
     }
 
+    // Create ingredient (custom or public based on user role and isPublic flag)
     @Post()
     async createIngredient(
         @Body() body: CreateIngredientBodyDTO,

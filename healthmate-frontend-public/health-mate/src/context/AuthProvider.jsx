@@ -23,20 +23,30 @@ const AuthProvider = ({ children }) => {
   const alertShownRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const nav = useNavigate();
+
+  // Log auth state changes for debugging
+  useEffect(() => {
+    console.log("Auth state updated:", auth);
+  }, [auth]);
   // Set token from localStorage on mount
   useLayoutEffect(() => {
-    const storedToken = localStorage.getItem("accessToken");
-    if (storedToken) {
-      try {
-        const decodedUser = jwtDecode(storedToken);
-        // the decoded user will be an object with {id:...,role:..., email:...}that is signed in payload
-        setAuth({ accessToken: storedToken, user: decodedUser });
-      } catch (e) {
-        console.error("Invalid stored token", e);
-        localStorage.removeItem("accessToken");
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem("accessToken");
+      if (storedToken) {
+          try {
+            const decodedUser = jwtDecode(storedToken);
+            const userInfo = await axios.get(`${BASE_URL}/users/${decodedUser.userId}`);
+            console.log("Setting auth with:", { accessToken: storedToken, user: userInfo.data });
+            setAuth({ accessToken: storedToken, user: userInfo.data });
+          } catch (e) {
+          console.error("Invalid stored token", e);
+          localStorage.removeItem("accessToken");
+        }
       }
-    }
-    setLoading(false); // <-- set loading to false after check
+      setLoading(false); 
+    };
+
+    initializeAuth();
   }, []);
   useLayoutEffect(() => {
     const authInterceptor = axios.interceptors.request.use((config) => {

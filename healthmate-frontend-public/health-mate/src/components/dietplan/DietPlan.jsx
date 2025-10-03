@@ -23,8 +23,7 @@ const DietPlan = () => {
     const [result, setResult] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
 
-    const handleNavigate = () => navigate('/customer');
-
+    const handleNavigateToCustomer = () => navigate('/customer-homepage');
     const handleSubmit = async () => {
         try {
             setErrorMsg('');
@@ -209,7 +208,7 @@ const DietPlan = () => {
                     variant="contained"
                     color="success"
                     fullWidth
-                    onClick={handleNavigate}
+                    onClick={handleNavigateToCustomer}
                     sx={{
                         borderRadius: 50,
                         py: 1.5,

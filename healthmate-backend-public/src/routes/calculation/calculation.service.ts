@@ -16,7 +16,7 @@ export class CalculationService {
     private readonly calculationRepo: CalculationRepo,
     private readonly nutrientCalculatorService: NutrientsCalculatorService,
     private readonly sharedUserRepository: SharedUserRepository,
-  ) {}
+  ) { }
 
   async createCalculation({
     data,
@@ -115,7 +115,7 @@ export class CalculationService {
 
   // Find lastest calculation record by userId
   async findLatestByUserId(userId: Types.ObjectId) {
-  return this.calculationRepo.findLatestByUserId(userId);
-}
+    return this.calculationRepo.findLatestByUserId(userId);
+  }
 
 }

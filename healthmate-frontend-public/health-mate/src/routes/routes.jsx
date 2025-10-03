@@ -13,8 +13,12 @@ import Calculate from "../components/calculate/Calculate.jsx";
 import CustomerHomePage from "../components/homepage/CustomerHomePage.jsx";
 import SetGoal from "../components/dietplan/SetGoal.jsx";
 import DietPlan from "../components/dietplan/DietPlan.jsx";
+import DietPlanProgress from "../components/dietplan/DietPlanProgress.jsx";
+
 import FoodDiary from "../components/diary/FoodDiary.jsx";
 import { DiaryProvider } from "../context/DiaryContext.jsx";
+import CustomerPage from "../components/homepage/CustomerPage.jsx";
+import OAuth from "../pages/authentication/OAuth.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import EditProfilePage from "../pages/EditProfilePage.jsx";
 class AuthLayout extends Component {
@@ -37,28 +41,16 @@ const router = createBrowserRouter([
     element: <LoginForm />,
   },
   {
+    path: "/oauth-google-callback",
+    element: <OAuth />,
+  },
+  {
     path: "/forgot-password",
     element: <ForgotPassword />,
   },
   {
     path: "/guest-homepage",
     element: <GuestHomePage />,
-  },
-  {
-    path: "/calculate",
-    element: <Calculate />,
-  },
-  {
-    path: "/customer",
-    element: <CustomerHomePage />,
-  },
-  {
-    path: "/set-goal",
-    element: <SetGoal />,
-  },
-  {
-    path: "/dietplan",
-    element: <DietPlan />,
   },
 
   // {
@@ -86,7 +78,26 @@ const router = createBrowserRouter([
             path: "/",
             element: <DefaultRedirect />,
           },
-
+          {
+            path: "/calculate",
+            element: <Calculate />,
+          },
+          {
+            path: "/customer-homepage",
+            element: <CustomerPage />,
+          },
+          {
+            path: "/set-goal",
+            element: <SetGoal />,
+          },
+          {
+            path: "/dietplan",
+            element: <DietPlan />,
+          },
+          {
+            path: "/dietplan/progress",
+            element: <DietPlanProgress />,
+          },
           // {
           //     path: "/homepage",
           //     element: (

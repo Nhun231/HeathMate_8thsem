@@ -73,6 +73,11 @@ const RegisterForm = () => {
                 message: "Vui lòng điền đầy đủ tất cả các trường!",
                 severity: "warning",
             });
+            
+            // Auto close warning alert after 3 seconds
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
             return;
         }
         if (!isValidPhoneNumber(formData.phoneNumber)) {
@@ -81,6 +86,11 @@ const RegisterForm = () => {
                 message: "Số điện thoại phải gồm đúng 10 chữ số!",
                 severity: "warning",
             });
+            
+            // Auto close warning alert after 3 seconds
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
             return;
         }
         try{
@@ -100,6 +110,11 @@ const RegisterForm = () => {
             const code = extractBackendErrorCode(error) || error?.message;
             const vi = translateErrorCode(code) || "Đăng ký thất bại. Vui lòng kiểm tra thông tin và thử lại.";
             setAlert({ show: true, message: vi, severity: "error" });
+            
+            // Auto close error alert after 3 seconds
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
         }
 
     }
@@ -112,6 +127,11 @@ const RegisterForm = () => {
                 message: "Vui lòng điền email để nhận mã OTP.",
                 severity: "warning",
             });
+            
+            // Auto close warning alert after 3 seconds
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
             return;
         }
 
@@ -122,6 +142,11 @@ const RegisterForm = () => {
                 message: emailValid.message,
                 severity: "warning",
             });
+            
+            // Auto close warning alert after 3 seconds
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
             return;
         }
         try {
@@ -138,6 +163,11 @@ const RegisterForm = () => {
             const code = extractBackendErrorCode(error) || error?.message;
             const vi = translateErrorCode(code) || "Không thể gửi OTP. Vui lòng thử lại.";
             setAlert({ show: true, message: vi, severity: "error" });
+            
+            // Auto close error alert after 3 seconds
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
         }
     }
 
@@ -148,6 +178,11 @@ const RegisterForm = () => {
                 message: "Hãy điền email",
                 severity: "warning",
             });
+            
+            // Auto close warning alert after 3 seconds
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
             return null;
         }
         setFormData({

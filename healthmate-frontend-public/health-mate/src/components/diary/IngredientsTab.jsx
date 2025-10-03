@@ -6,7 +6,7 @@ import RestaurantIcon from "@mui/icons-material/Restaurant"
 import IngredientService from "../../services/Ingredient"
 import MealService from "../../services/Meal"
 
-function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient, selectedDate }) {
+function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient }) {
   const [ingredients, setIngredients] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -93,11 +93,12 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient, selec
       
       const ingredientQuantity = quantities[ingredient._id] || 100
       
-      // Add ingredient to meal via backend API
+      // Add ingredient to meal via backend API (use current date)
+      const currentDate = new Date() // Use current date object
       const mealData = await MealService.addIngredientToMeal(
         ingredient._id,
         ingredientQuantity,
-        selectedDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        currentDate, // Pass Date object, MealService will convert to ISO
         mealTypeMap[mealType] || 'snack'
       )
       

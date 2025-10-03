@@ -1,10 +1,13 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Ip,
   Post,
+  Query,
+  Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { IsPublic } from 'src/shared/decorators/auth.decorator';
@@ -13,16 +16,23 @@ import { UserAgent } from 'src/shared/decorators/user-agent.decorator';
 import { MessageResponseDTO } from 'src/shared/dtos/response.dto';
 import {
   ForgotPasswordBodyDTO,
+  GetAuthorizationUrlResponseDTO,
   LoginBodyDTO,
   LogOutBodyDTO,
   RefreshTokenBodyDTO,
   RegisterBodyDTO,
   SendOTPBodyDTO,
 } from './auth.dto';
+import { GoogleService } from './google.service';
+import type { Response } from 'express';
+import envConfig from 'src/shared/utils/config';
 
 @Controller('v1/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly googleService: GoogleService,
+  ) { }
 
   @Post('register')
   @IsPublic()
@@ -79,5 +89,43 @@ export class AuthController {
   @ZodSerializerDto(MessageResponseDTO)
   forgotPassword(@Body() body: ForgotPasswordBodyDTO) {
     return this.authService.forgotPassword(body);
+  }
+
+  @Get('google')
+  @IsPublic()
+  @ZodSerializerDto(GetAuthorizationUrlResponseDTO)
+  googleAuth(@UserAgent() userAgent: string, @Ip() ip: string) {
+    return this.googleService.getGoogleAuthUrl({
+      userAgent,
+      ip,
+    });
+  }
+
+  @Get('google/callback')
+  @IsPublic()
+  async googleCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const data = await this.googleService.googleCallback({
+        code,
+        state,
+      });
+
+      return res.redirect(
+        `${envConfig.GOOGLE_CLIENT_REDIRECT_URI}?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unknown error when login with Google';
+
+      return res.redirect(
+        `${envConfig.GOOGLE_CLIENT_REDIRECT_URI}?errorMessage=${message}`,
+      );
+    }
   }
 }

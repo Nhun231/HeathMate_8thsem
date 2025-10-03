@@ -41,6 +41,10 @@ const ForgotPassword = () => {
                     message: "Hãy điền email",
                     severity: "warning",
                 });
+                
+                setTimeout(() => {
+                    setAlert({ ...alert, show: false });
+                }, 3000);
                 return null;
             }
             const response = await sendOTP({ email: formData.email, type: 'FORGOT_PASSWORD' });
@@ -52,6 +56,10 @@ const ForgotPassword = () => {
             const code = extractBackendErrorCode(error) || error?.message;
             const vi = translateErrorCode(code) || "Không thể gửi OTP. Vui lòng thử lại.";
             setAlert({ show: true, message: vi, severity: "error" });
+            
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
         }
     }
     const handleResendOtp = async () => {
@@ -61,6 +69,10 @@ const ForgotPassword = () => {
                 message: "Hãy điền email",
                 severity: "warning",
             });
+            
+            setTimeout(() => {
+                setAlert({ ...alert, show: false });
+            }, 3000);
             return null;
         }
         setFormData({

@@ -145,7 +145,7 @@ const HomePage = () => {
                             iconUrl: "https://img.icons8.com/fluency/48/healthy-food.png",
                             title: "Lên thực đơn khoa học",
                             desc: "Tùy chỉnh chế độ ăn phù hợp với mục tiêu của bạn",
-                            path: "/",
+                            path: "/diary",
                         },
                     ].map((item, index) => (
                         <Grid

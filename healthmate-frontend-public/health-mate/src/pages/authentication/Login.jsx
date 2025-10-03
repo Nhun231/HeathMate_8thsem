@@ -5,7 +5,10 @@ import GoogleIcon from '@mui/icons-material/Google';
 import {login} from "../../services/authService/LoginService.js";
 import CustomAlert from "../../components/common/Alert.jsx";
 import { extractBackendErrorCode, translateErrorCode } from "../../utils/errorTranslations.js";
+import {useNavigate} from "react-router-dom";
+import axios from "../../api/axios.js";
 const LoginForm = () => {
+    const navigate = useNavigate();
     const [alert, setAlert] = useState({
         show: false,
         message: '',
@@ -15,7 +18,7 @@ const LoginForm = () => {
         email: "",
         password: "",
     })
-
+    const [error, setError] = useState(null);
     const [showPassword, setShowPassword] = useState(false)
     const checkEmpty = (formData) => {
         return Object.values(formData).some((value) => !value || value.trim() === "")
@@ -37,7 +40,7 @@ const LoginForm = () => {
             });
             return;
         }
-        try{
+        try {
             const res = await login(formData);
             localStorage.setItem("accessToken", res.data.accessToken)
             setAlert({
@@ -46,18 +49,28 @@ const LoginForm = () => {
                 severity: "success",
             });
             setTimeout(() => {
-                setAlert({ ...alert, show: false });
+                setAlert({...alert, show: false});
+                navigate("/customer-homepage")
             }, 3000);
-        }catch(error){
+        } catch (error) {
             const code = extractBackendErrorCode(error) || error?.message;
             const vi = translateErrorCode(code) || "Đăng nhập thất bại. Vui lòng kiểm tra email/mật khẩu.";
-            setAlert({ show: true, message: vi, severity: "error" });
+            setAlert({show: true, message: vi, severity: "error"});
             setTimeout(() => {
-                setAlert({ ...alert, show: false });
+                setAlert({...alert, show: false});
             }, 3000);
         }
-
     }
+
+  const handleGoogleLogin = async () => {
+      try {
+          const response = await axios.get('auth/google');
+          // Redirect to Google auth page
+          window.location.href = response.data.url;
+      } catch {
+          setError('Failed to initiate Google login');
+      }
+  }
     return  (
         <Box
             sx={{
@@ -259,6 +272,7 @@ const LoginForm = () => {
                                 Hoặc
                             </Typography>
                         </Box>
+                        {error && <div className='error'>{error}</div>}
                         <Button
                             type="submit"
                             fullWidth
@@ -278,6 +292,7 @@ const LoginForm = () => {
                                 justifyContent: "center",
                                 gap: 1, // space between icon and text
                             }}
+                onClick={handleGoogleLogin}
                         >
                             <GoogleIcon sx={{ color: "#6b7280" }} /> {/* Tailwind grey-500 */}
                             Tiếp tục với Google
@@ -290,4 +305,4 @@ const LoginForm = () => {
     )
 }
 
-export default LoginForm
+export default LoginForm;
