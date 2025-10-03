@@ -19,13 +19,20 @@ import CreateNewDish from "./CreateNewDish"
 import IngredientsTab from "./IngredientsTab"
 import CustomIngredientsTab from "./CustomIngredientsTab"
 
-function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate }) {
+function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate, onMealAdded }) {
   const [activeTab, setActiveTab] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue)
     setSearchQuery("")
+  }
+
+  const handleMealAdded = () => {
+    if (onMealAdded) {
+      onMealAdded()
+    }
+    onClose()
   }
 
   const handleClose = () => {
@@ -49,7 +56,9 @@ function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate }) {
       PaperProps={{
         sx: {
           borderRadius: 3,
-          maxHeight: "90vh",
+          height: "80vh",
+          width: "90vw",
+          maxWidth: "800px",
         },
       }}
     >
@@ -177,11 +186,11 @@ function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate }) {
         )}
 
         {/* Tab Content */}
-        <Box sx={{ p: 2, maxHeight: "50vh", overflowY: "auto" }}>
-          {activeTab === 0 && <AvailableDishes searchQuery={searchQuery} mealType={mealType} onClose={handleClose} onAddDish={onAddDish} />}
-          {activeTab === 1 && <CreateNewDish mealType={mealType} onClose={handleClose} onAddDish={onAddDish} selectedDate={selectedDate} />}
-          {activeTab === 2 && <IngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleClose} onAddIngredient={handleAddIngredient} selectedDate={selectedDate} />}
-          {activeTab === 3 && <CustomIngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleClose} onAddIngredient={handleAddIngredient} selectedDate={selectedDate} />}
+        <Box sx={{ p: 2, height: "calc(80vh - 200px)", overflowY: "auto" }}>
+          {activeTab === 0 && <AvailableDishes searchQuery={searchQuery} mealType={mealType} onClose={handleMealAdded} onAddDish={onAddDish} />}
+          {activeTab === 1 && <CreateNewDish mealType={mealType} onClose={handleMealAdded} onAddDish={onAddDish} />}
+          {activeTab === 2 && <IngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleMealAdded} onAddIngredient={handleAddIngredient} />}
+          {activeTab === 3 && <CustomIngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleMealAdded} onAddIngredient={handleAddIngredient} />}
         </Box>
       </DialogContent>
     </Dialog>

@@ -8,7 +8,7 @@ import DishService from "../../services/Dish"
 import IngredientService from "../../services/Ingredient"
 import MealService from "../../services/Meal"
 
-function CreateNewDish({ mealType, onClose, onAddDish, selectedDate }) {
+function CreateNewDish({ mealType, onClose, onAddDish }) {
   const [dishName, setDishName] = useState("")
   const [description, setDescription] = useState("")
   const [servings, setServings] = useState(1)
@@ -21,8 +21,9 @@ function CreateNewDish({ mealType, onClose, onAddDish, selectedDate }) {
   useEffect(() => {
     const fetchIngredients = async () => {
       try {
-        const response = await IngredientService.list({ limit: 100 })
+        const response = await IngredientService.list({limit: 522})
         setAvailableIngredients(response.items || [])
+        console.log(response.items.length)
       } catch (err) {
         console.error('Error fetching ingredients:', err)
       }
@@ -81,10 +82,11 @@ function CreateNewDish({ mealType, onClose, onAddDish, selectedDate }) {
       }
 
       // Add the created dish to the meal
+      const currentDate = new Date() // Use current date object
       const mealData = await MealService.addDishToMeal(
         createdDish._id,
         100, // Default serving size
-        selectedDate.toISOString().split('T')[0],
+        currentDate, // Pass Date object, MealService will convert to ISO
         mealTypeMap[mealType] || 'snack'
       )
 
@@ -131,7 +133,7 @@ function CreateNewDish({ mealType, onClose, onAddDish, selectedDate }) {
   const updateIngredientAmount = (ingredientId, newAmount) => {
     setSelectedIngredients(prev => prev.map(ing => 
       ing.ingredient._id === ingredientId 
-        ? { ...ing, amount: Math.max(1, newAmount) }
+        ? { ...ing, amount:  newAmount }
         : ing
     ))
   }

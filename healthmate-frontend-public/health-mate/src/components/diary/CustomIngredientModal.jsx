@@ -15,12 +15,18 @@ import {
   Select,
   MenuItem,
   Alert,
-  CircularProgress
+  CircularProgress,
+  FormControlLabel,
+  Checkbox
 } from "@mui/material"
-import { Close as CloseIcon, Save as SaveIcon } from "@mui/icons-material"
+import { Close as CloseIcon, Save as SaveIcon, AdminPanelSettings as AdminIcon } from "@mui/icons-material"
 import IngredientService from "../../services/Ingredient"
+import { useAuth } from "../../context/AuthProvider"
 
 function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'Admin'
+  
   const [formData, setFormData] = useState({
     name: "",
     type: "",
@@ -29,7 +35,8 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
     fatPer100g: "",
     carbsPer100g: "",
     fiberPer100g: "",
-    sugarPer100g: ""
+    sugarPer100g: "",
+    isPublic: false // New field for admin to create public ingredients
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
@@ -64,7 +71,8 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
         fatPer100g: ingredient.fatPer100g?.toString() || "",
         carbsPer100g: ingredient.carbsPer100g?.toString() || "",
         fiberPer100g: ingredient.fiberPer100g?.toString() || "",
-        sugarPer100g: ingredient.sugarPer100g?.toString() || ""
+        sugarPer100g: ingredient.sugarPer100g?.toString() || "",
+        isPublic: ingredient.belongsTo === null // If belongsTo is null, it's a public ingredient
       })
     } else {
       setFormData({
@@ -75,7 +83,8 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
         fatPer100g: "",
         carbsPer100g: "",
         fiberPer100g: "",
-        sugarPer100g: ""
+        sugarPer100g: "",
+        isPublic: false
       })
     }
     setErrors({})
@@ -83,7 +92,7 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
   }, [ingredient, open])
 
   const handleChange = (field) => (event) => {
-    const value = event.target.value
+    const value = field === 'isPublic' ? event.target.checked : event.target.value
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -154,24 +163,31 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
         fatPer100g: parseFloat(formData.fatPer100g),
         carbsPer100g: parseFloat(formData.carbsPer100g),
         fiberPer100g: parseFloat(formData.fiberPer100g),
-        sugarPer100g: parseFloat(formData.sugarPer100g)
+        sugarPer100g: parseFloat(formData.sugarPer100g),
+        ...(isAdmin && { isPublic: formData.isPublic }) // Only include isPublic for admins
       }
 
       let result
       if (ingredient) {
         // Update existing ingredient
         result = await IngredientService.update(ingredient._id, ingredientData)
+        const updateMessage = isAdmin && formData.isPublic 
+          ? "Cập nhật nguyên liệu công khai thành công!" 
+          : "Cập nhật nguyên liệu thành công!"
         setAlert({
           show: true,
-          message: "Cập nhật nguyên liệu thành công!",
+          message: updateMessage,
           severity: "success"
         })
       } else {
         // Create new ingredient
         result = await IngredientService.create(ingredientData)
+        const createMessage = isAdmin && formData.isPublic 
+          ? "Tạo nguyên liệu công khai thành công!" 
+          : "Tạo nguyên liệu mới thành công!"
         setAlert({
           show: true,
-          message: "Tạo nguyên liệu mới thành công!",
+          message: createMessage,
           severity: "success"
         })
       }
@@ -211,7 +227,12 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 2 }
+        sx: { 
+          borderRadius: 2,
+          height: "70vh",
+          width: "90vw",
+          maxWidth: "600px",
+        }
       }}
     >
       <DialogTitle sx={{ 
@@ -233,7 +254,7 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
         </Button>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 3 }}>
+      <DialogContent sx={{ pt: 3, height: "calc(70vh - 120px)", overflowY: "auto" }}>
         {alert.show && (
           <Alert 
             severity={alert.severity} 
@@ -264,7 +285,7 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
           </Box>
 
           {/* Food Group Field */}
-          <Box>
+          <Box sx={{ mb: isAdmin ? 3 : 0 }}>
             <FormControl fullWidth error={!!errors.type}>
               <InputLabel>Nhóm thực phẩm *</InputLabel>
               <Select
@@ -287,6 +308,46 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
               )}
             </FormControl>
           </Box>
+
+          {/* Admin Only: Public Ingredient Option */}
+          {isAdmin && (
+            <Box sx={{ 
+              p: 2, 
+              bgcolor: "#f8f9fa", 
+              borderRadius: 1, 
+              border: "1px solid #e9ecef",
+              display: "flex",
+              alignItems: "center",
+              gap: 1
+            }}>
+              <AdminIcon sx={{ color: "#ff9800", fontSize: 20 }} />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.isPublic}
+                    onChange={handleChange('isPublic')}
+                    disabled={loading}
+                    sx={{
+                      color: "#ff9800",
+                      "&.Mui-checked": {
+                        color: "#ff9800",
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      Tạo nguyên liệu công khai
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#666" }}>
+                      Nguyên liệu sẽ hiển thị cho tất cả người dùng
+                    </Typography>
+                  </Box>
+                }
+              />
+            </Box>
+          )}
         </Box>
 
         {/* Nutritional Information Section */}

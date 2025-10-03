@@ -29,6 +29,7 @@ export class IngredientController {
         return this.ingredientService.findAllPaginate(query, userId, roleName);
     }
 
+    // Create ingredient (custom or public based on user role and isPublic flag)
     @Post()
     async createIngredient(
         @Body() body: CreateIngredientBodyDTO,

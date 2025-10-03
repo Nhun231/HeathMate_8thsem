@@ -23,7 +23,7 @@ import {
 import IngredientService from "../../services/Ingredient"
 import CustomIngredientModal from "./CustomIngredientModal"
 
-function CustomIngredientsTab({ searchQuery, onAddIngredient, mealType, selectedDate, onClose }) {
+function CustomIngredientsTab({ searchQuery, onAddIngredient, mealType, onClose }) {
   const [ingredients, setIngredients] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -149,11 +149,11 @@ function CustomIngredientsTab({ searchQuery, onAddIngredient, mealType, selected
       
       const MealService = await import('../../services/Meal')
       
-      // Add ingredient to meal via backend API with default 100g
+      const currentDate = new Date() 
       const mealData = await MealService.default.addIngredientToMeal(
         ingredient._id,
-        100, // Default quantity
-        selectedDate.toISOString().split('T')[0],
+        100, 
+        currentDate, 
         mealTypeMap[mealType] || 'snack'
       )
       
@@ -389,7 +389,16 @@ function CustomIngredientsTab({ searchQuery, onAddIngredient, mealType, selected
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            minWidth: "400px",
+            maxWidth: "500px",
+          }
+        }}
+      >
         <DialogTitle>Xác nhận xóa</DialogTitle>
         <DialogContent>
           <Typography>

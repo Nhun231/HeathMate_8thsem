@@ -21,8 +21,8 @@ export class Meal {
   @Prop({ required: true, enum: MealType })
   mealType: MealType;
 
-  @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'Dish' })
-  dishId: mongoose.Types.ObjectId;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Dish' })
+  dishId?: mongoose.Types.ObjectId;
 
   @Prop({ required: true, min: 0 })
   quantity: number;

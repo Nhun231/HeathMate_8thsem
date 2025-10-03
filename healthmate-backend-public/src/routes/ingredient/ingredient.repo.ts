@@ -47,7 +47,6 @@ export class IngredientRepo {
         .find(filter)
         .skip(skip)
         .limit(limit)
-        .sort({ name: 1 })
         .exec(),
       this.ingredientModel.countDocuments(filter),
     ]);

@@ -109,12 +109,39 @@ export class IngredientService {
 
     async create(data: any, userId: any, roleName: string): Promise<IngredientDocument> {
         try {
-            // Admin creates public ingredient (no belongsTo)
-            // Customer creates private ingredient (belongsTo = userId)
-            const payload = {
-                ...data,
-                belongsTo: roleName === Rolename.Customer ? userId : undefined,
-            } as Partial<Ingredient>;
+            // Validate that userId is provided
+            if (!userId) {
+                throw new Error('User ID is required to create ingredient');
+            }
+            
+            // Check if this should be a public ingredient (admin creating with isPublic flag)
+            const isPublicIngredient = data.isPublic === true && roleName === Rolename.Admin;
+            
+            // Create a copy of data without the isPublic flag
+            const { isPublic, ...ingredientData } = data;
+            
+            let payload: Partial<Ingredient>;
+            
+            if (isPublicIngredient) {
+                // Admin creating public ingredient
+                payload = {
+                    ...ingredientData,
+                    belongsTo: null, // Public ingredients don't belong to anyone
+                } as Partial<Ingredient>;
+                
+                console.log('Creating public ingredient with payload:', payload);
+            } else {
+                // Regular user creating custom ingredient OR admin creating personal ingredient
+                payload = {
+                    ...ingredientData,
+                    belongsTo: new Types.ObjectId(userId), // Assign to creating user
+                } as Partial<Ingredient>;
+                
+                console.log('Creating custom ingredient with payload:', payload);
+            }
+            
+            console.log('UserId:', userId, 'RoleName:', roleName, 'IsPublic:', isPublicIngredient);
+            
             return this.ingredientRepo.create(payload);
         } catch (error) {
             console.error('[IngredientService.create] Unexpected error:', error);

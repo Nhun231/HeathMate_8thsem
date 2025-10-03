@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from "@nestjs/mongoose";
 import { Dish, DishDocument } from "./schema/dish.schema";
+import { Ingredient, IngredientDocument } from "../ingredient/schema/ingredient.schema";
 import { Model, Types } from "mongoose";
 import { PaginateDto } from "../../shared/dtos/paginate.dto";
 import { PaginatedResult } from "../../shared/interfaces/paginated-result.interface";
@@ -11,7 +12,8 @@ import { DishRepo } from './dish.repo';
 @Injectable()
 export class DishService {
     constructor(
-        private readonly dishRepo: DishRepo
+        private readonly dishRepo: DishRepo,
+        @InjectModel(Ingredient.name) private ingredientModel: Model<IngredientDocument>,
     ) {}
 
     private validateObjectId(id: string): void {
@@ -20,41 +22,59 @@ export class DishService {
         }
     }
 
-    private calculateNutritionalValues(ingredients: any[]): {
+    private async calculateNutritionalValues(ingredients: any[]): Promise<{
         totalCalories: number;
         totalCarbs: number;
         totalProtein: number;
         totalFat: number;
         totalFiber: number;
         totalSugar: number;
-    } {
-        return ingredients.reduce((totals, ingredient) => {
-            if (!ingredient || ingredient.deprecated) {
-                return totals;
-            }
-            const amount = ingredient.amount;
-            const nutrition = ingredient.ingredient;
-            if (!nutrition) {
-                return totals;
-            }
-            // Calculate nutritional values based on amount (assuming nutrition is per 100g)
-            const factor = amount / 100;
-            return {
-                totalCalories: totals.totalCalories + ((nutrition.caloPer100g || 0) * factor),
-                totalCarbs: totals.totalCarbs + ((nutrition.carbsPer100g || 0) * factor),
-                totalProtein: totals.totalProtein + ((nutrition.proteinPer100g || 0) * factor),
-                totalFat: totals.totalFat + ((nutrition.fatPer100g || 0) * factor),
-                totalFiber: totals.totalFiber + ((nutrition.fiberPer100g || 0) * factor),
-                totalSugar: totals.totalSugar + ((nutrition.sugarPer100g || 0) * factor),
-            };
-        }, {
+    }> {
+        let totals = {
             totalCalories: 0,
             totalCarbs: 0,
             totalProtein: 0,
             totalFat: 0,
             totalFiber: 0,
             totalSugar: 0,
-        });
+        };
+
+        for (const ingredient of ingredients) {
+            if (!ingredient || ingredient.deprecated) {
+                continue;
+            }
+
+            const amount = ingredient.amount;
+            let nutrition;
+
+            // If ingredient is already populated (has nutritional data)
+            if (ingredient.ingredient && typeof ingredient.ingredient === 'object' && ingredient.ingredient.caloPer100g !== undefined) {
+                nutrition = ingredient.ingredient;
+            } else {
+                // If ingredient is just an ID, fetch the full ingredient data
+                const ingredientId = ingredient.ingredient;
+                const ingredientDoc = await this.ingredientModel.findById(ingredientId).exec();
+                if (!ingredientDoc) {
+                    continue;
+                }
+                nutrition = ingredientDoc;
+            }
+
+            if (!nutrition) {
+                continue;
+            }
+
+            // Calculate nutritional values based on amount (assuming nutrition is per 100g)
+            const factor = amount / 100;
+            totals.totalCalories += (nutrition.caloPer100g || 0) * factor;
+            totals.totalCarbs += (nutrition.carbsPer100g || 0) * factor;
+            totals.totalProtein += (nutrition.proteinPer100g || 0) * factor;
+            totals.totalFat += (nutrition.fatPer100g || 0) * factor;
+            totals.totalFiber += (nutrition.fiberPer100g || 0) * factor;
+            totals.totalSugar += (nutrition.sugarPer100g || 0) * factor;
+        }
+
+        return totals;
     }
 
     async findAllPaginate(dto: PaginateDto, userId?: any, roleName?: string): Promise<PaginatedResult<DishDocument>> {
@@ -105,7 +125,7 @@ export class DishService {
             } as Partial<Dish>;
 
             // Calculate nutritional values
-            const nutritionalValues = this.calculateNutritionalValues(data.ingredients);
+            const nutritionalValues = await this.calculateNutritionalValues(data.ingredients);
             payload.totalCalories = nutritionalValues.totalCalories;
             payload.totalCarbs = nutritionalValues.totalCarbs;
             payload.totalProtein = nutritionalValues.totalProtein;
@@ -140,7 +160,7 @@ export class DishService {
 
             // Update nutritional values if ingredients are being updated
             if (data.ingredients) {
-                const nutritionalValues = this.calculateNutritionalValues(data.ingredients);
+                const nutritionalValues = await this.calculateNutritionalValues(data.ingredients);
                 data.totalCalories = nutritionalValues.totalCalories;
                 data.totalCarbs = nutritionalValues.totalCarbs;
                 data.totalProtein = nutritionalValues.totalProtein;

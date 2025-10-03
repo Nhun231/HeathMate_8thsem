@@ -98,7 +98,6 @@ export class MealService {
         userId: new Types.ObjectId(userId),
         date,
         mealType,
-        dishId: undefined, // No dish for ingredients
         ingredientId: new Types.ObjectId(addIngredientDto.ingredientId),
         quantity: addIngredientDto.quantity,
         isIngredient: true,
