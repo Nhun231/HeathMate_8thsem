@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Container, Typography, Paper, Grid, Box } from "@mui/material";
+import { Container, Typography, Paper, Grid, Box, Button } from "@mui/material";
 import {
   LineChart,
   Line,
@@ -11,6 +11,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { useNavigate } from "react-router-dom";
 import { getCurrentDietPlan } from "../../services/DietPlan";
 import { getAllCalculations } from "../../services/Calculation";
 
@@ -23,6 +24,7 @@ const DietPlanProgress = () => {
   const [targetWeight, setTargetWeight] = useState(0);
   const [currentWeight, setCurrentWeight] = useState(0);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const goalMap = {
     GainWeight: "Tăng cân",
@@ -36,9 +38,14 @@ const DietPlanProgress = () => {
         const token = localStorage.getItem("accessToken");
         const plan = await getCurrentDietPlan(token);
         const calcs = await getAllCalculations(token);
-
-        if (!plan || !calcs || calcs.length === 0) {
-          setError("Chưa có kế hoạch dinh dưỡng hoặc dữ liệu tính toán.");
+        if (!plan) {
+          setError("");
+          setDietPlan(null);
+          return;
+        }
+        if (!calcs || calcs.length === 0) {
+          setError("");
+          setCalculations([]);
           return;
         }
 
@@ -65,9 +72,40 @@ const DietPlanProgress = () => {
   }, []);
 
   if (loading) return <Typography>Đang tải...</Typography>;
-  if (error) return <Typography>{error}</Typography>;
-  if (!dietPlan)
-    return <Typography>Chưa có kế hoạch dinh dưỡng nào.</Typography>;
+
+  if (!dietPlan) {
+    return (
+      <Box textAlign="center" mt={5}>
+        <Typography color="error">
+          Chưa có kế hoạch dinh dưỡng. Bạn cần lập kế hoạch.
+        </Typography>
+        <Button
+          variant="contained"
+          sx={{ mt: 2 }}
+          onClick={() => navigate("/set-goal")}
+        >
+          Lập kế hoạch ngay
+        </Button>
+      </Box>
+    );
+  }
+
+  if (calculations.length === 0) {
+    return (
+      <Box textAlign="center" mt={5}>
+        <Typography color="error">
+          Chưa có dữ liệu tính toán. Bạn cần nhập dữ liệu cân nặng.
+        </Typography>
+        <Button
+          variant="contained"
+          sx={{ mt: 2 }}
+          onClick={() => navigate("/calculate")}
+        >
+          Nhập dữ liệu ngay
+        </Button>
+      </Box>
+    );
+  }
 
   // Pie chart - tiến trình ngày
   const today = new Date();
@@ -181,6 +219,11 @@ const DietPlanProgress = () => {
               <Typography variant="body1" fontSize="1.1rem">
                 <strong>Calo mỗi ngày: {dietPlan.dailyCalories} calo</strong>
               </Typography>
+              <Typography variant="body1" fontSize="1.1rem">
+                <strong>
+                  Cân nặng mong muốn: {dietPlan.targetWeightChange} calo
+                </strong>
+              </Typography>
             </Box>
           </Grid>
         </Grid>
@@ -230,7 +273,7 @@ const DietPlanProgress = () => {
                   label={{
                     value: "(ngày)",
                     position: "right", 
-                    offset: -30
+                    offset: -30,
                   }}
                 />
 
@@ -283,9 +326,7 @@ const DietPlanProgress = () => {
               <Typography variant="h6" mb={2}>
                 Trung bình calories
               </Typography>
-              <Box
-              >
-              </Box>
+              <Box></Box>
             </Box>
           </Grid>
         </Grid>

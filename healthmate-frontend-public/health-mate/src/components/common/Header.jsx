@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, Menu, MenuItem } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+    const [anchorEl, setAnchorEl] = useState(null);
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     setIsLoggedIn(!!token);
   }, []);
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+      };
 
+     const handleClose = () => {
+        setAnchorEl(null);
+      };
+    const handleLogout = async () => {
+
+    }
   return (
     <AppBar
       position='sticky'
@@ -35,7 +44,7 @@ const Header = () => {
           }}
         >
           <Link
-            to='/customer'
+            to='/customer-homepage'
             style={{ color: 'inherit', textDecoration: 'none' }}
           >
             HealthMate
@@ -62,10 +71,33 @@ const Header = () => {
                             </Button>
                             <Button
                                 color="inherit"
-                                onClick={() => navigate("/set-goal")}
-                                sx={{ fontWeight: "bold" }}>
-                                Lập kế hoạch ăn uống
+                                onClick={handleClick}
+                                sx={{ fontWeight: 'bold' }}
+                            >
+                                Kế hoạch ăn uống
                             </Button>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={Boolean(anchorEl)}
+                                onClose={handleClose}
+                            >
+                                <MenuItem
+                                onClick={() => {
+                                    navigate('/set-goal');
+                                    handleClose();
+                                }}
+                                >
+                                Lập kế hoạch ăn uống
+                                </MenuItem>
+                                <MenuItem
+                                onClick={() => {
+                                    navigate('/dietplan/progress');
+                                    handleClose();
+                                }}
+                                >
+                                Theo dõi kế hoạch ăn uống
+                                </MenuItem>
+                            </Menu>
                             <Button
                                 color="inherit"
                                 onClick={() => navigate("/my-profile")}
@@ -75,10 +107,7 @@ const Header = () => {
                             </Button>
                             <Button
                                 color="inherit"
-                                onClick={() => {
-                                    localStorage.clear();
-                                    navigate("/login");
-                                }}
+                                onClick={ handleLogout}
                                 sx={{ fontWeight: "bold" }}
                             >
                                 Đăng xuất

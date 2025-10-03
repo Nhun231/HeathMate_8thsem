@@ -125,9 +125,9 @@ function FoodDiary() {
       
       let totalCalories = 0
       
-      if (response && response.items) {
-        console.log('Processing meals:', response.items) // Debug log
-        response.items.forEach(meal => {
+      if (response) {
+        console.log('Processing meals:', response) // Debug log
+        response.forEach(meal => {
           console.log('Processing meal:', meal) // Debug log
           const mealType = meal.mealType
           if (groupedMeals[mealType]) {

@@ -118,7 +118,7 @@ export class MealService {
     try {
       const startDate = new Date(getMealsDto.date);
       const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // next day
-
+      console.log(startDate,"-",endDate)
       return await this.mealRepo.findByUserIdAndDate(
         new Types.ObjectId(userId),
         startDate,
@@ -223,7 +223,9 @@ export class MealService {
   }> {
     try {
       const startDate = new Date(date);
-      const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
 
       const meals = await this.mealRepo.findByUserIdAndDateRange(
         new Types.ObjectId(userId),

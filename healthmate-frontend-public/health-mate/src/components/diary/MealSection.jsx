@@ -4,14 +4,11 @@ import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/ico
 import RestaurantIcon from "@mui/icons-material/Restaurant"
 import { useDiary } from "../../context/DiaryContext.jsx"
 
-function MealSection({ mealType, meals = [], loading = false, onAddMeal, onMealAdded }) {
+function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded }) {
   const { selectedDate, getDayEntries, removeDishFromMeal } = useDiary()
   const entries = getDayEntries(selectedDate)
   const dishes = entries[mealType] || []
 
-  // Debug logs
-  console.log(`MealSection ${mealType} - meals prop:`, meals)
-  console.log(`MealSection ${mealType} - context dishes:`, dishes)
 
   // Always use real meal data when provided (even if empty), only fallback to context data if meals prop is undefined
   const displayMeals = meals !== undefined ? meals : dishes
