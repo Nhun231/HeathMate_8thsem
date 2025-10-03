@@ -8,10 +8,11 @@ import { Calculation, CalculationSchema } from './schema/calculation.schema';
 @Module({
   controllers: [CalculationController],
   providers: [CalculationService, CalculationRepo],
+  exports: [CalculationRepo],
   imports: [
     MongooseModule.forFeature([
       { name: Calculation.name, schema: CalculationSchema },
     ]),
   ],
 })
-export class CalculationModule {}
+export class CalculationModule { }

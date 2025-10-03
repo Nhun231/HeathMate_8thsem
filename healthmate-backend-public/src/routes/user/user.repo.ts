@@ -29,8 +29,6 @@ export class UserRepository {
         'roleId',
       ],
       populateFields: ['roleId'],
-      page: 0,
-      limit: 0
     });
 
     return queryUsers;

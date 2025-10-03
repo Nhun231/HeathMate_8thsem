@@ -60,14 +60,6 @@ const router = createBrowserRouter([
     path: "/dietplan",
     element: <DietPlan />,
   },
-  {
-    path: "/my-profile",
-    element: <DietPlan />,
-  },
-  {
-    path: "/edit-profile",
-    element: <DietPlan />,
-  },
 
   // {
   //     path: "/login",
@@ -125,6 +117,14 @@ const router = createBrowserRouter([
           {
             path: "*",
             element: <NotFoundPage />,
+          },
+          {
+            path: "/my-profile",
+            element: <ProfilePage />,
+          },
+          {
+            path: "/edit-profile",
+            element: <EditProfilePage />,
           },
         ],
       },
