@@ -5,17 +5,26 @@ import {
     Typography,
     Button,
     Box,
+    Menu,
+    MenuItem
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 const Header = () => {
     const navigate = useNavigate();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+    const [anchorEl, setAnchorEl] = useState(null);
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
         setIsLoggedIn(!!token);
     }, []);
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+      };
+
+     const handleClose = () => {
+        setAnchorEl(null);
+      };
 
     return (
         <AppBar
@@ -62,10 +71,33 @@ const Header = () => {
                             </Button>
                             <Button
                                 color="inherit"
-                                onClick={() => navigate("/set-goal")}
-                                sx={{ fontWeight: "bold" }}>
-                                Lập kế hoạch ăn uống
+                                onClick={handleClick}
+                                sx={{ fontWeight: 'bold' }}
+                            >
+                                Kế hoạch ăn uống
                             </Button>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={Boolean(anchorEl)}
+                                onClose={handleClose}
+                            >
+                                <MenuItem
+                                onClick={() => {
+                                    navigate('/set-goal');
+                                    handleClose();
+                                }}
+                                >
+                                Lập kế hoạch ăn uống
+                                </MenuItem>
+                                <MenuItem
+                                onClick={() => {
+                                    navigate('/dietplan/progress');
+                                    handleClose();
+                                }}
+                                >
+                                Theo dõi kế hoạch ăn uống
+                                </MenuItem>
+                            </Menu>
                             <Button
                                 color="inherit"
                                 onClick={() => navigate("/my-profile")}
