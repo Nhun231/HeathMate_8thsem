@@ -16,7 +16,6 @@ import { IngredientModule } from "./routes/ingredient/ingredient.module";
 import { DietPlanModule } from './routes/dietplan/dietplan.module';
 import { DishModule } from './routes/dish/dish.module';
 import { MealModule } from './routes/meal/meal.module';
-import { FoodDiaryModule } from "./routes/diary/diary.module";
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -33,7 +32,6 @@ import { FoodDiaryModule } from "./routes/diary/diary.module";
     DietPlanModule,
     DishModule,
     MealModule,
-    FoodDiaryModule
   ],
   controllers: [AppController],
   providers: [

@@ -28,6 +28,13 @@ const ProfilePage = () => {
       : 0);
 
   useEffect(() => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      setError("Bạn chưa đăng nhập!");
+      setLoading(false);
+      return;
+    }
+
     (async () => {
       try {
         const userRes = await getCurrentUser();
@@ -176,6 +183,14 @@ const ProfilePage = () => {
                   : "--/--/----"
               }
             />
+            <InfoItem
+              label="Số điện thoại"
+              value={
+                userData?.phoneNumber
+                  ? `*******${userData.phoneNumber.slice(-3)}`
+                  : ""
+              }
+            />
           </div>
         </div>
 
@@ -204,6 +219,32 @@ const ProfilePage = () => {
                 physicalData?.activityLevel
                   ? getVietnameseActivityLevel(physicalData.activityLevel)
                   : "--"
+              }
+            />
+            <InfoItem
+              label="Thành phần dinh dưỡng"
+              value={
+                physicalData ? (
+                  <>
+                    <span>
+                      <strong>Carbs:</strong> {physicalData.carbs}g
+                    </span>{" "}
+                    &nbsp;|&nbsp;
+                    <span>
+                      <strong>Protein:</strong> {physicalData.protein}g
+                    </span>{" "}
+                    &nbsp;|&nbsp;
+                    <span>
+                      <strong>Fat:</strong> {physicalData.fat}g
+                    </span>{" "}
+                    &nbsp;|&nbsp;
+                    <span>
+                      <strong>Fiber:</strong> {physicalData.fiber}g
+                    </span>
+                  </>
+                ) : (
+                  "--"
+                )
               }
             />
           </div>

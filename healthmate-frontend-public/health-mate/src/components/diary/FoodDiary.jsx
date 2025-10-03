@@ -16,13 +16,13 @@ import {
   Card,
   CardContent,
   CardActionArea,
+  LinearProgress,
 } from "@mui/material";
 import { useDiary } from "../../context/DiaryContext.jsx";
 import MealSection from "./MealSection";
 import AddMealModal from "./AddMealModal";
 import HistoryView from "./HistoryView";
 import { useNavigate } from "react-router-dom";
-import baseAxios from "../../api/axios.js";
 import CustomAlert from "../common/Alert.jsx";
 import MealService from "../../services/Meal";
 import {
@@ -31,7 +31,7 @@ import {
   DinnerDining as DinnerIcon,
   LocalCafe as SnackIcon,
 } from "@mui/icons-material";
-
+import { getLatestCalculation } from "../../services/CalculateService.js";
 function FoodDiary() {
   const navigate = useNavigate();
   const { selectedDate, getTotalCalories } = useDiary();
@@ -40,6 +40,15 @@ function FoodDiary() {
   const [selectedMealType, setSelectedMealType] = useState(null);
   const [mealTypeDialogOpen, setMealTypeDialogOpen] = useState(false);
   const totalCalories = getTotalCalories(selectedDate);
+  const [totalNutrition, setTotalNutrition] = useState({
+    calories: 0,
+    protein: 0,
+    fat: 0,
+    carbs: 0,
+    fiber: 0,
+    sugar: 0,
+  });
+
   const [calculationData, setCalculationData] = useState(null);
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -124,7 +133,14 @@ function FoodDiary() {
       };
 
       let totalCalories = 0;
-
+      const updatedTotals = {
+        calories: 0,
+        protein: 0,
+        fat: 0,
+        carbs: 0,
+        fiber: 0,
+        sugar: 0,
+      };
       if (response) {
         console.log("Processing meals:", response); // Debug log
         response.forEach((meal) => {
@@ -149,6 +165,11 @@ function FoodDiary() {
             console.log("Processed meal data:", mealData); // Debug log
             groupedMeals[mealType].push(mealData);
             totalCalories += meal.calories || 0;
+            updatedTotals.protein += meal.protein || 0;
+            updatedTotals.fat += meal.fat || 0;
+            updatedTotals.carbs += meal.carbs || 0;
+            updatedTotals.fiber += meal.fiber || 0;
+            updatedTotals.sugar += meal.sugar || 0;
           }
         });
       }
@@ -156,6 +177,7 @@ function FoodDiary() {
       console.log("Final grouped meals:", groupedMeals); // Debug log
       setMealsData(groupedMeals);
       setTotalCaloriesToday(totalCalories);
+      setTotalNutrition(updatedTotals);
     } catch (error) {
       console.error("Error loading meals:", error);
     } finally {
@@ -171,7 +193,7 @@ function FoodDiary() {
   useEffect(() => {
     const checkCalculateData = async () => {
       try {
-        const res = await baseAxios.get("/calculation/latest");
+        const res = await getLatestCalculation();
         if (res.data && res.data.tdee) {
           setCalculationData(res.data);
         } else {
@@ -305,42 +327,151 @@ function FoodDiary() {
                 boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
+              {/* Tiêu đề */}
               <Typography
                 variant="h6"
-                sx={{ color: "#4CAF50", fontWeight: 500, mb: 1 }}
+                sx={{ color: "#4CAF50", fontWeight: 500, mb: 2 }}
               >
                 Nhật ký ăn uống hôm nay
               </Typography>
+
+              {/* Vòng tròn calories */}
+              <Box sx={{ position: "relative", display: "inline-flex" }}>
+                {/* Track nền xám */}
+                <CircularProgress
+                  variant="determinate"
+                  value={100}
+                  size={150}
+                  thickness={5}
+                  sx={{
+                    color: "#e0e0e0",
+                    position: "absolute",
+                    left: 0,
+                  }}
+                />
+                {/* Fill màu xanh */}
+                <CircularProgress
+                  variant="determinate"
+                  value={
+                    mealsLoading
+                      ? 0
+                      : Math.min(
+                          (totalCaloriesToday / calculationData.tdee) * 100,
+                          100
+                        )
+                  }
+                  size={150}
+                  thickness={5}
+                  sx={{ color: "#4CAF50" }}
+                />
+
+                {/* Text bên trong */}
+                <Box
+                  sx={{
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    right: 0,
+                    position: "absolute",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {mealsLoading
+                      ? "..."
+                      : `${Math.round(totalCaloriesToday)} / ${Math.round(
+                          calculationData.tdee
+                        )}`}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#999" }}>
+                    calories
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Các chỉ số nhỏ phía dưới */}
               <Box
                 sx={{
                   display: "flex",
-                  alignItems: "baseline",
-                  justifyContent: "center",
-                  gap: 1,
+                  justifyContent: "space-around",
+                  mt: 4,
+                  px: 2,
                 }}
               >
-                <Typography
-                  variant="h3"
-                  sx={{ color: "#4CAF50", fontWeight: 600 }}
-                >
-                  {mealsLoading ? "..." : totalCaloriesToday}
-                </Typography>
-                <Typography variant="body1" sx={{ color: "#999" }}>
-                  calories
-                </Typography>
+                {[
+                  {
+                    label: "Carbs",
+                    current: totalNutrition.carbs,
+                    target: calculationData.carbs,
+                    color: "#FF9800",
+                  },
+                  {
+                    label: "Protein",
+                    current: totalNutrition.protein,
+                    target: calculationData.protein,
+                    color: "#2196F3",
+                  },
+                  {
+                    label: "Fat",
+                    current: totalNutrition.fat,
+                    target: calculationData.fat,
+                    color: "#E91E63",
+                  },
+                  {
+                    label: "Fiber",
+                    current: totalNutrition.fiber,
+                    target: calculationData.fiber,
+                    color: "#9C27B0",
+                  },
+                ].map((item) => (
+                  <Box
+                    key={item.label}
+                    sx={{ textAlign: "center", width: "22%" }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 500,
+                        color: item.color,
+                        mb: 1,
+                      }}
+                    >
+                      {item.label}
+                    </Typography>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 600, color: item.color }}
+                    >
+                      {mealsLoading
+                        ? "--"
+                        : `${Number(item.current || 0).toFixed(1)} / ${Number(
+                            item.target || 0
+                          ).toFixed(1)}g`}
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={
+                        mealsLoading
+                          ? 0
+                          : Math.min((item.current / item.target) * 100, 100)
+                      }
+                      sx={{
+                        height: 6,
+                        borderRadius: 5,
+                        mt: 1,
+                        bgcolor: "#f0f0f0",
+                        "& .MuiLinearProgress-bar": {
+                          backgroundColor: item.color,
+                        },
+                      }}
+                    />
+                  </Box>
+                ))}
               </Box>
-              <Box
-                sx={{
-                  width: 60,
-                  height: 3,
-                  bgcolor: "#4CAF50",
-                  mx: "auto",
-                  mt: 2,
-                  borderRadius: 2,
-                }}
-              />
             </Box>
-
             {/* Meal Sections */}
             <MealSection
               mealType="Bữa sáng"

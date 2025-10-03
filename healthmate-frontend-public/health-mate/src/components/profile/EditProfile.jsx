@@ -24,6 +24,7 @@ const EditProfilePage = () => {
     height: "",
     weight: "",
     activityLevel: "",
+    phoneNumber: "",
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,7 @@ const EditProfilePage = () => {
           height: physical.height || "",
           weight: physical.weight || "",
           activityLevel: physical.activityLevel || "",
+          phoneNumber: user.phoneNumber || "",
         });
       } catch (err) {
         setAlert({
@@ -119,13 +121,22 @@ const EditProfilePage = () => {
   if (loading) return <div className="container p-4">Loading...</div>;
 
   const fields = [
-    { label: "Họ và tên", name: "fullname", type: "text", maxLength: 100 },
+    { label: "Họ và tên", name: "fullname", type: "text", maxLength: 64 },
     { label: "Email", name: "email", type: "email", disabled: true },
     {
       label: "Giới tính",
       name: "gender",
       type: "select",
-      options: ["Male", "Female"],
+      options: [
+        { value: "Male", label: "Nam" },
+        { value: "Female", label: "Nữ" },
+      ],
+    },
+    {
+      label: "Số điện thoại",
+      name: "phoneNumber",
+      type: "text",
+      disabled: true,
     },
     { label: "Ngày sinh", name: "dob", type: "date" },
     { label: "Chiều cao (cm)", name: "height", type: "text" },
@@ -172,12 +183,25 @@ const EditProfilePage = () => {
                       onChange={handleChange}
                       disabled={f.disabled}
                     >
-                      <option value="">Chọn {f.label.toLowerCase()}</option>
-                      {f.options?.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
+                      <option value="">
+                        {f.name === "gender"
+                          ? "Chọn giới tính"
+                          : f.name === "activityLevel"
+                          ? "Chọn cường độ vận động"
+                          : `Chọn ${f.label.toLowerCase()}`}
+                      </option>
+
+                      {f.options?.map((opt) =>
+                        typeof opt === "string" ? (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ) : (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        )
+                      )}
                     </select>
                   ) : (
                     <input
@@ -188,7 +212,11 @@ const EditProfilePage = () => {
                         errors[f.name] ? " error" : ""
                       }`}
                       value={
-                        f.type === "date" && data[f.name]
+                        f.name === "phoneNumber"
+                          ? data.phoneNumber
+                            ? `*******${data.phoneNumber.slice(-3)}`
+                            : ""
+                          : f.type === "date" && data[f.name]
                           ? new Date(data[f.name]).toISOString().split("T")[0]
                           : data[f.name]
                       }

@@ -17,7 +17,7 @@ export const validateField = (name, value) => {
             if (!value.trim()) err = "Họ và tên không được để trống";
             else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(value))
                 err = "Họ và tên chỉ được chứa chữ cái và khoảng trắng";
-            else if (value.length > 100) err = "Họ và tên tối đa 100 ký tự";
+            else if (value.length > 64) err = "Họ và tên tối đa 64 ký tự";
             break;
 
         case "gender":
