@@ -76,6 +76,9 @@ export default function Calculate() {
                 message: "Vui lòng nhập đầy đủ và hợp lệ.",
                 severity: "warning",
             });
+            setTimeout(()=>{
+               setAlert({ ...alert, show: false });
+            }, 3000)
             return;
         }
 
@@ -86,6 +89,9 @@ export default function Calculate() {
                 message: "Bạn cần đăng nhập để tính toán.",
                 severity: "error",
             });
+            setTimeout(()=>{
+                setAlert({ ...alert, show: false });
+            }, 3000)
             return;
         }
 
@@ -112,6 +118,9 @@ export default function Calculate() {
                 message: "Tính toán thất bại. Vui lòng thử lại!",
                 severity: "error",
             });
+            setTimeout(()=>{
+                setAlert({ ...alert, show: false });
+            }, 3000)
         }
     };
 

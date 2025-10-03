@@ -40,12 +40,12 @@ export class MealService {
       // Calculate nutrition values based on quantity
       const factor = addDishDto.quantity / 100; // assuming quantity is in grams
       const nutrition = {
-        calories: (dish.totalCalories || 0) * factor,
-        protein: (dish.totalProtein || 0) * factor,
-        fat: (dish.totalFat || 0) * factor,
-        carbs: (dish.totalCarbs || 0) * factor,
-        fiber: (dish.totalFiber || 0) * factor,
-        sugar: (dish.totalSugar || 0) * factor,
+        calories: Math.round(((dish.totalCalories || 0) * factor) * 10) / 10,
+        protein: Math.round(((dish.totalProtein || 0) * factor) * 10) / 10,
+        fat: Math.round(((dish.totalFat || 0) * factor) * 10) / 10,
+        carbs: Math.round(((dish.totalCarbs || 0) * factor) * 10) / 10,
+        fiber: Math.round(((dish.totalFiber || 0) * factor) * 10) / 10,
+        sugar: Math.round(((dish.totalSugar || 0) * factor) * 10) / 10,
       };
 
       const mealData = {
@@ -86,12 +86,12 @@ export class MealService {
       // Calculate nutrition values based on quantity
       const factor = addIngredientDto.quantity / 100; // assuming quantity is in grams
       const nutrition = {
-        calories: (ingredient.caloPer100g || 0) * factor,
-        protein: (ingredient.proteinPer100g || 0) * factor,
-        fat: (ingredient.fatPer100g || 0) * factor,
-        carbs: (ingredient.carbsPer100g || 0) * factor,
-        fiber: (ingredient.fiberPer100g || 0) * factor,
-        sugar: (ingredient.sugarPer100g || 0) * factor,
+        calories: Math.round(((ingredient.caloPer100g || 0) * factor) * 10) / 10,
+        protein: Math.round(((ingredient.proteinPer100g || 0) * factor) * 10) / 10,
+        fat: Math.round(((ingredient.fatPer100g || 0) * factor) * 10) / 10,
+        carbs: Math.round(((ingredient.carbsPer100g || 0) * factor) * 10) / 10,
+        fiber: Math.round(((ingredient.fiberPer100g || 0) * factor) * 10) / 10,
+        sugar: Math.round(((ingredient.sugarPer100g || 0) * factor) * 10) / 10,
       };
 
       const mealData = {
@@ -117,6 +117,7 @@ export class MealService {
   async getMeals(userId: string, getMealsDto: GetMealsDto): Promise<MealDocument[]> {
     try {
       const startDate = new Date(getMealsDto.date);
+      startDate.setHours(0,0,0,0)
       const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // next day
       console.log(startDate,"-",endDate)
       return await this.mealRepo.findByUserIdAndDate(
@@ -152,22 +153,22 @@ export class MealService {
         if (meal.isIngredient && meal.ingredientId) {
           const ingredient = await this.ingredientModel.findById(meal.ingredientId).exec();
           if (ingredient) {
-            meal.calories = (ingredient.caloPer100g || 0) * factor;
-            meal.protein = (ingredient.proteinPer100g || 0) * factor;
-            meal.fat = (ingredient.fatPer100g || 0) * factor;
-            meal.carbs = (ingredient.carbsPer100g || 0) * factor;
-            meal.fiber = (ingredient.fiberPer100g || 0) * factor;
-            meal.sugar = (ingredient.sugarPer100g || 0) * factor;
+            meal.calories = Math.round(((ingredient.caloPer100g || 0) * factor) * 10) / 10;
+            meal.protein = Math.round(((ingredient.proteinPer100g || 0) * factor) * 10) / 10;
+            meal.fat = Math.round(((ingredient.fatPer100g || 0) * factor) * 10) / 10;
+            meal.carbs = Math.round(((ingredient.carbsPer100g || 0) * factor) * 10) / 10;
+            meal.fiber = Math.round(((ingredient.fiberPer100g || 0) * factor) * 10) / 10;
+            meal.sugar = Math.round(((ingredient.sugarPer100g || 0) * factor) * 10) / 10;
           }
         } else if (meal.dishId) {
           const dish = await this.dishModel.findById(meal.dishId).exec();
           if (dish) {
-            meal.calories = (dish.totalCalories || 0) * factor;
-            meal.protein = (dish.totalProtein || 0) * factor;
-            meal.fat = (dish.totalFat || 0) * factor;
-            meal.carbs = (dish.totalCarbs || 0) * factor;
-            meal.fiber = (dish.totalFiber || 0) * factor;
-            meal.sugar = (dish.totalSugar || 0) * factor;
+            meal.calories = Math.round(((dish.totalCalories || 0) * factor) * 10) / 10;
+            meal.protein = Math.round(((dish.totalProtein || 0) * factor) * 10) / 10;
+            meal.fat = Math.round(((dish.totalFat || 0) * factor) * 10) / 10;
+            meal.carbs = Math.round(((dish.totalCarbs || 0) * factor) * 10) / 10;
+            meal.fiber = Math.round(((dish.totalFiber || 0) * factor) * 10) / 10;
+            meal.sugar = Math.round(((dish.totalSugar || 0) * factor) * 10) / 10;
           }
         }
         
@@ -257,6 +258,14 @@ export class MealService {
         summary.totalSugar += meal.sugar;
         summary.mealsByType[meal.mealType].push(meal);
       });
+
+      // Round summary totals to 1 decimal place
+      summary.totalCalories = Math.round(summary.totalCalories * 10) / 10;
+      summary.totalProtein = Math.round(summary.totalProtein * 10) / 10;
+      summary.totalFat = Math.round(summary.totalFat * 10) / 10;
+      summary.totalCarbs = Math.round(summary.totalCarbs * 10) / 10;
+      summary.totalFiber = Math.round(summary.totalFiber * 10) / 10;
+      summary.totalSugar = Math.round(summary.totalSugar * 10) / 10;
 
       return summary;
     } catch (error) {
