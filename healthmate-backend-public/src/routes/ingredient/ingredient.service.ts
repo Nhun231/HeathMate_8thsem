@@ -8,12 +8,13 @@ import {PaginatedResult} from "../../shared/interfaces/paginated-result.interfac
 import {IngredientForbiddenError, IngredientNotFoundError} from "./ingredient.error";
 import { Rolename } from '../../shared/constants/role.constant';
 import { Types } from 'mongoose';
+import { IngredientRepo } from './ingredient.repo';
 
 
 @Injectable()
 export class IngredientService {
     constructor(
-        @InjectModel(Ingredient.name) private ingredientModel: Model<IngredientDocument>,
+        private readonly ingredientRepo: IngredientRepo,
         @InjectModel('Dish') private dishModel: Model<any>
     ) {}
 
@@ -37,8 +38,8 @@ export class IngredientService {
             sugarPer100g: row['Sugar'],
         }))
         console.log("Service",ingredients.at(0));
-        await this.ingredientModel.deleteMany({})
-        return this.ingredientModel.insertMany(ingredients);
+        await this.ingredientRepo.deleteMany({})
+        return this.ingredientRepo.insertMany(ingredients);
     }
     async findAllPaginate(dto: PaginateDto, userId?: any, roleName?: string): Promise<PaginatedResult<IngredientDocument>> {
         const { page = 1, limit = 20, type, search } = dto;
@@ -61,26 +62,18 @@ export class IngredientService {
         }
 
         try {
-            const total = await this.ingredientModel.countDocuments(filter).exec();
+            const result = await this.ingredientRepo.findAllPaginated(page, limit, filter, search);
 
-            if (total === 0) {
+            if (result.total === 0) {
                 throw new IngredientNotFoundError('No ingredients found with the given filter');
             }
 
-            const skip = (page - 1) * limit;
-            const items = await this.ingredientModel
-                .find(filter)
-                .sort({ _id: 1 })
-                .skip(skip)
-                .limit(limit)
-                .exec();
-
             return {
-                items,
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
+                items: result.items,
+                total: result.total,
+                page: result.page,
+                limit: result.limit,
+                totalPages: result.totalPages,
             };
         } catch (error) {
             if (error instanceof IngredientNotFoundError) {
@@ -91,15 +84,65 @@ export class IngredientService {
         }
     }
 
+    async findUserCustomIngredients(dto: PaginateDto, userId: any): Promise<PaginatedResult<IngredientDocument>> {
+        const { page = 1, limit = 20, search } = dto;
+        
+        try {
+            const result = await this.ingredientRepo.findByUserIdPaginated(userId, page, limit, {}, search);
+
+            if (result.total === 0) {
+                return {
+                    items: [],
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                };
+            }
+
+            return result;
+        } catch (error) {
+            console.error('[IngredientService.findUserCustomIngredients] Unexpected error:', error);
+            throw new Error('Failed to fetch custom ingredients');
+        }
+    }
+
     async create(data: any, userId: any, roleName: string): Promise<IngredientDocument> {
         try {
-            // Admin creates public ingredient (no belongsTo)
-            // Customer creates private ingredient (belongsTo = userId)
-            const payload = {
-                ...data,
-                belongsTo: roleName === Rolename.Customer ? userId : undefined,
-            } as Partial<Ingredient>;
-            return this.ingredientModel.create(payload);
+            // Validate that userId is provided
+            if (!userId) {
+                throw new Error('User ID is required to create ingredient');
+            }
+            
+            // Check if this should be a public ingredient (admin creating with isPublic flag)
+            const isPublicIngredient = data.isPublic === true && roleName === Rolename.Admin;
+            
+            // Create a copy of data without the isPublic flag
+            const { isPublic, ...ingredientData } = data;
+            
+            let payload: Partial<Ingredient>;
+            
+            if (isPublicIngredient) {
+                // Admin creating public ingredient
+                payload = {
+                    ...ingredientData,
+                    belongsTo: null, // Public ingredients don't belong to anyone
+                } as Partial<Ingredient>;
+                
+                console.log('Creating public ingredient with payload:', payload);
+            } else {
+                // Regular user creating custom ingredient OR admin creating personal ingredient
+                payload = {
+                    ...ingredientData,
+                    belongsTo: new Types.ObjectId(userId), // Assign to creating user
+                } as Partial<Ingredient>;
+                
+                console.log('Creating custom ingredient with payload:', payload);
+            }
+            
+            console.log('UserId:', userId, 'RoleName:', roleName, 'IsPublic:', isPublicIngredient);
+            
+            return this.ingredientRepo.create(payload);
         } catch (error) {
             console.error('[IngredientService.create] Unexpected error:', error);
             throw new Error('Failed to create ingredient');
@@ -109,7 +152,7 @@ export class IngredientService {
     async update(ingredientId: string, data: any, userId: any, roleName: string): Promise<IngredientDocument> {
         try {
             this.validateObjectId(ingredientId);
-            const doc = await this.ingredientModel.findById(ingredientId).exec();
+            const doc = await this.ingredientRepo.findById(new Types.ObjectId(ingredientId));
             if (!doc) throw new IngredientNotFoundError('Ingredient not found');
             // Permission
             const isPublic = !doc.belongsTo || String(doc.belongsTo).trim() === '';
@@ -123,9 +166,8 @@ export class IngredientService {
                 }
             }
 
-            Object.assign(doc, data);
-            await doc.save();
-            return doc;
+            const updatedDoc = await this.ingredientRepo.update(new Types.ObjectId(ingredientId), data);
+            return updatedDoc!;
         } catch (error) {
             if (error instanceof IngredientNotFoundError || error instanceof IngredientForbiddenError) {
                 throw error;
@@ -138,7 +180,7 @@ export class IngredientService {
     async delete(ingredientId: string, userId: any, roleName: string): Promise<void> {
         try {
             this.validateObjectId(ingredientId);
-            const doc = await this.ingredientModel.findById(ingredientId).exec();
+            const doc = await this.ingredientRepo.findById(new Types.ObjectId(ingredientId));
             if (!doc) throw new IngredientNotFoundError('Ingredient not found');
 
             const isPublic = !doc.belongsTo || String(doc.belongsTo).trim() === '';
@@ -169,7 +211,7 @@ export class IngredientService {
                     const activeItems = dish.ingredients.filter((i: any) => !i.deprecated);
                     // Fetch ingredient docs for accurate nutrition
                     const ingredientIds = activeItems.map((i: any) => i.ingredient);
-                    const ingDocs = await this.ingredientModel.find({ _id: { $in: ingredientIds } }).lean();
+                    const ingDocs = await this.ingredientRepo.findAll();
                     const idToIng: Record<string, any> = {};
                     for (const ing of ingDocs) idToIng[String(ing._id)] = ing;
                     let totals = { totalCalories: 0, totalCarbs: 0, totalProtein: 0, totalFat: 0, totalFiber: 0, totalSugar: 0 };
@@ -195,7 +237,7 @@ export class IngredientService {
             }
 
             // Finally, delete the ingredient document
-            await this.ingredientModel.deleteOne({ _id: ingredientId }).exec();
+            await this.ingredientRepo.delete(new Types.ObjectId(ingredientId));
         } catch (error) {
             if (error instanceof IngredientNotFoundError || error instanceof IngredientForbiddenError) {
                 throw error;

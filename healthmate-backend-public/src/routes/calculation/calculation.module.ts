@@ -13,6 +13,6 @@ import { Calculation, CalculationSchema } from './schema/calculation.schema';
       { name: Calculation.name, schema: CalculationSchema },
     ]),
   ],
-  exports: [CalculationRepo], 
+  exports: [CalculationRepo],
 })
 export class CalculationModule {}

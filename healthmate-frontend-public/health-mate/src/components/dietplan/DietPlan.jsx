@@ -23,8 +23,8 @@ const DietPlan = () => {
     const [result, setResult] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
 
-    const handleNavigate = () => navigate('/customer');
-
+    const handleNavigateToCustomer = () => navigate('/customer-homepage');
+    const handleNavigateToProgress = () => navigate('/dietplan/progress');
     const handleSubmit = async () => {
         try {
             setErrorMsg('');
@@ -209,7 +209,7 @@ const DietPlan = () => {
                     variant="contained"
                     color="success"
                     fullWidth
-                    onClick={handleNavigate}
+                    onClick={handleNavigateToCustomer}
                     sx={{
                         borderRadius: 50,
                         py: 1.5,
@@ -225,6 +225,27 @@ const DietPlan = () => {
                     }
                 >
                     Xem nhật ký hôm nay
+                </Button>
+                <Button
+                    variant="contained"
+                    color="success"
+                    fullWidth
+                    onClick={handleNavigateToProgress}
+                    sx={{
+                        borderRadius: 50,
+                        py: 1.5,
+                        fontWeight: 'bold',
+                        fontSize: 16,
+                        backgroundColor: '#4CAF50',
+                        '&:hover': { backgroundColor: '#388E3C' },
+                        mt: 5,
+                    }}
+                    disabled={
+                        !goal ||
+                        (goal !== 'MaintainWeight' && !weightChange)
+                    }
+                >
+                    Xem tiến độ kế hoạch
                 </Button>
             </Paper>
         </Container>

@@ -3,7 +3,7 @@ import { ActivityLevel, Gender } from '../constants/auth.constant';
 import {
   InvalidActivityLevelException,
   InvalidGenderException,
-} from '../error';
+} from '../utils/error';
 
 @Injectable()
 export class NutrientsCalculatorService {

@@ -1,6 +1,6 @@
 // seed.ts
 import mongoose, { Model } from 'mongoose';
-import envConfig from 'src/shared/config';
+import envConfig from 'src/shared/utils/config';
 import { UserStatus } from 'src/shared/constants/auth.constant';
 import { Rolename } from 'src/shared/constants/role.constant';
 import { HashingService } from 'src/shared/services/hashing.service';

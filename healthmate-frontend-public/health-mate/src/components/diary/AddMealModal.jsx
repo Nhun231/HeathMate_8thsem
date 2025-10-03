@@ -11,20 +11,28 @@ import {
   TextField,
   InputAdornment,
 } from "@mui/material"
-import { Close as CloseIcon, Search as SearchIcon, Add as AddIcon } from "@mui/icons-material"
+import { Close as CloseIcon, Search as SearchIcon, Add as AddIcon, PersonOutline as PersonOutlineIcon } from "@mui/icons-material"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
 import EggIcon from "@mui/icons-material/Egg"
 import AvailableDishes from "./AvailableDishes"
 import CreateNewDish from "./CreateNewDish"
 import IngredientsTab from "./IngredientsTab"
+import CustomIngredientsTab from "./CustomIngredientsTab"
 
-function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate }) {
+function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate, onMealAdded }) {
   const [activeTab, setActiveTab] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue)
     setSearchQuery("")
+  }
+
+  const handleMealAdded = () => {
+    if (onMealAdded) {
+      onMealAdded()
+    }
+    onClose()
   }
 
   const handleClose = () => {
@@ -43,12 +51,14 @@ function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate }) {
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
           borderRadius: 3,
-          maxHeight: "90vh",
+          height: "80vh",
+          width: "90vw",
+          maxWidth: "800px",
         },
       }}
     >
@@ -128,17 +138,31 @@ function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate }) {
               sx={{
                 bgcolor: activeTab === 2 ? "#E8F5E9" : "transparent",
                 borderRadius: "8px 8px 0 0",
+                mr: 1,
+              }}
+            />
+            <Tab
+              icon={<PersonOutlineIcon />}
+              iconPosition="start"
+              label="Nguyên liệu của tôi"
+              sx={{
+                bgcolor: activeTab === 3 ? "#E8F5E9" : "transparent",
+                borderRadius: "8px 8px 0 0",
               }}
             />
           </Tabs>
         </Box>
 
         {/* Search Bar */}
-        {(activeTab === 0 || activeTab === 2) && (
+        {(activeTab === 0 || activeTab === 2 || activeTab === 3) && (
           <Box sx={{ p: 2, borderBottom: "1px solid #f0f0f0" }}>
             <TextField
               fullWidth
-              placeholder={activeTab === 0 ? "Tìm kiếm món ăn..." : "Tìm kiếm nguyên liệu..."}
+              placeholder={
+                activeTab === 0 ? "Tìm kiếm món ăn..." : 
+                activeTab === 3 ? "Tìm kiếm nguyên liệu của tôi..." :
+                "Tìm kiếm nguyên liệu..."
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
@@ -162,10 +186,11 @@ function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate }) {
         )}
 
         {/* Tab Content */}
-        <Box sx={{ p: 2, maxHeight: "50vh", overflowY: "auto" }}>
-          {activeTab === 0 && <AvailableDishes searchQuery={searchQuery} mealType={mealType} onClose={handleClose} onAddDish={onAddDish} />}
-          {activeTab === 1 && <CreateNewDish mealType={mealType} onClose={handleClose} onAddDish={onAddDish} selectedDate={selectedDate} />}
-          {activeTab === 2 && <IngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleClose} onAddIngredient={handleAddIngredient} selectedDate={selectedDate} />}
+        <Box sx={{ p: 2, height: "calc(80vh - 200px)", overflowY: "auto" }}>
+          {activeTab === 0 && <AvailableDishes searchQuery={searchQuery} mealType={mealType} onClose={handleMealAdded} onAddDish={onAddDish} />}
+          {activeTab === 1 && <CreateNewDish mealType={mealType} onClose={handleMealAdded} onAddDish={onAddDish} />}
+          {activeTab === 2 && <IngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleMealAdded} onAddIngredient={handleAddIngredient} />}
+          {activeTab === 3 && <CustomIngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleMealAdded} onAddIngredient={handleAddIngredient} />}
         </Box>
       </DialogContent>
     </Dialog>

@@ -11,3 +11,17 @@ export const createCalculation = async (payload, token) => {
         throw e;
     }
 };
+
+export const getAllCalculations = async (token) => {
+    try {
+      const { data } = await baseAxios.get("/calculation/user/list", {
+          headers: { 
+            Authorization: `Bearer ${token}` 
+          },
+        });
+    return data;
+  } catch (e) {
+    console.error("API getAllCalculations error:", e);
+    throw e;
+  }
+};

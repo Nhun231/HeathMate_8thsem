@@ -6,11 +6,12 @@ import { Dish, DishDocument } from '../dish/schema/dish.schema';
 import { Ingredient, IngredientDocument } from '../ingredient/schema/ingredient.schema';
 import { AddDishToMealDto, AddIngredientToMealDto, GetMealsDto, UpdateMealDto } from './meal.dto';
 import { MealNotFoundError, MealForbiddenError } from './meal.error';
+import { MealRepo } from './meal.repo';
 
 @Injectable()
 export class MealService {
   constructor(
-    @InjectModel(Meal.name) private mealModel: Model<MealDocument>,
+    private readonly mealRepo: MealRepo,
     @InjectModel(Dish.name) private dishModel: Model<DishDocument>,
     @InjectModel(Ingredient.name) private ingredientModel: Model<IngredientDocument>,
   ) {}
@@ -47,7 +48,7 @@ export class MealService {
         sugar: (dish.totalSugar || 0) * factor,
       };
 
-      const meal = new this.mealModel({
+      const mealData = {
         userId: new Types.ObjectId(userId),
         date,
         mealType,
@@ -55,9 +56,9 @@ export class MealService {
         quantity: addDishDto.quantity,
         isIngredient: false,
         ...nutrition,
-      });
+      };
 
-      return await meal.save();
+      return await this.mealRepo.create(mealData);
     } catch (error) {
       if (error instanceof MealNotFoundError) {
         throw error;
@@ -93,18 +94,17 @@ export class MealService {
         sugar: (ingredient.sugarPer100g || 0) * factor,
       };
 
-      const meal = new this.mealModel({
+      const mealData = {
         userId: new Types.ObjectId(userId),
         date,
         mealType,
-        dishId: null, // No dish for ingredients
         ingredientId: new Types.ObjectId(addIngredientDto.ingredientId),
         quantity: addIngredientDto.quantity,
         isIngredient: true,
         ...nutrition,
-      });
+      };
 
-      return await meal.save();
+      return await this.mealRepo.create(mealData);
     } catch (error) {
       if (error instanceof MealNotFoundError) {
         throw error;
@@ -116,24 +116,15 @@ export class MealService {
 
   async getMeals(userId: string, getMealsDto: GetMealsDto): Promise<MealDocument[]> {
     try {
-      const filter: any = {
-        userId: new Types.ObjectId(userId),
-        date: {
-          $gte: new Date(getMealsDto.date),
-          $lt: new Date(new Date(getMealsDto.date).getTime() + 24 * 60 * 60 * 1000), // next day
-        },
-      };
+      const startDate = new Date(getMealsDto.date);
+      const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // next day
 
-      if (getMealsDto.mealType) {
-        filter.mealType = getMealsDto.mealType;
-      }
-
-      return await this.mealModel
-        .find(filter)
-        .populate('dishId', 'name')
-        .populate('ingredientId', 'name')
-        .sort({ mealType: 1, createdAt: 1 })
-        .exec();
+      return await this.mealRepo.findByUserIdAndDate(
+        new Types.ObjectId(userId),
+        startDate,
+        endDate,
+        getMealsDto.mealType,
+      );
     } catch (error) {
       console.error('[MealService.getMeals] Unexpected error:', error);
       throw new Error('Failed to fetch meals');
@@ -144,7 +135,7 @@ export class MealService {
     try {
       this.validateObjectId(mealId);
       
-      const meal = await this.mealModel.findById(mealId).exec();
+      const meal = await this.mealRepo.findById(new Types.ObjectId(mealId));
       if (!meal) {
         throw new MealNotFoundError('Meal not found');
       }
@@ -183,7 +174,11 @@ export class MealService {
         meal.quantity = updateMealDto.quantity;
       }
 
-      return await meal.save();
+      const updatedMeal = await this.mealRepo.update(new Types.ObjectId(mealId), meal);
+      if (!updatedMeal) {
+        throw new MealNotFoundError('Failed to update meal');
+      }
+      return updatedMeal;
     } catch (error) {
       if (error instanceof MealNotFoundError || error instanceof MealForbiddenError) {
         throw error;
@@ -197,7 +192,7 @@ export class MealService {
     try {
       this.validateObjectId(mealId);
       
-      const meal = await this.mealModel.findById(mealId).exec();
+      const meal = await this.mealRepo.findById(new Types.ObjectId(mealId));
       if (!meal) {
         throw new MealNotFoundError('Meal not found');
       }
@@ -207,7 +202,7 @@ export class MealService {
         throw new MealForbiddenError('Cannot delete meal you do not own');
       }
 
-      await this.mealModel.deleteOne({ _id: mealId }).exec();
+      await this.mealRepo.delete(new Types.ObjectId(mealId));
     } catch (error) {
       if (error instanceof MealNotFoundError || error instanceof MealForbiddenError) {
         throw error;
@@ -230,12 +225,11 @@ export class MealService {
       const startDate = new Date(date);
       const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
 
-      const meals = await this.mealModel
-        .find({
-          userId: new Types.ObjectId(userId),
-          date: { $gte: startDate, $lt: endDate },
-        })
-        .exec();
+      const meals = await this.mealRepo.findByUserIdAndDateRange(
+        new Types.ObjectId(userId),
+        startDate,
+        endDate,
+      );
 
       const summary = {
         totalCalories: 0,

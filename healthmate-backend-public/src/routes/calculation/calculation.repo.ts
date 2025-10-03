@@ -9,7 +9,7 @@ export class CalculationRepo {
   constructor(
     @InjectModel(Calculation.name)
     private calculationModel: Model<CalculationDocument>,
-  ) { }
+  ) {}
 
   async create(calculation: Calculation): Promise<Calculation> {
     return await this.calculationModel.create(calculation);
@@ -20,7 +20,9 @@ export class CalculationRepo {
   }
 
   async findByUserId(userId: Types.ObjectId) {
-    return this.calculationModel.find({ userId });
+    return this.calculationModel.find({
+      userId,
+    });
   }
 
   async findTodayRecord(userId: Types.ObjectId) {
@@ -41,5 +43,14 @@ export class CalculationRepo {
 
   async delete(id: Types.ObjectId): Promise<DeleteResult> {
     return this.calculationModel.deleteOne({ _id: id });
+  }
+
+  async getLatestRecord(userId: Types.ObjectId): Promise<CalculationDocument | null> {
+    return this.calculationModel
+      .findOne({
+        userId,
+      })
+      .sort({ createdAt: -1 })
+      .exec();
   }
 }

@@ -1,16 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from "@nestjs/mongoose";
 import { Dish, DishDocument } from "./schema/dish.schema";
+import { Ingredient, IngredientDocument } from "../ingredient/schema/ingredient.schema";
 import { Model, Types } from "mongoose";
 import { PaginateDto } from "../../shared/dtos/paginate.dto";
 import { PaginatedResult } from "../../shared/interfaces/paginated-result.interface";
 import { DishForbiddenError, DishNotFoundError } from "./dish.error";
 import { Rolename } from '../../shared/constants/role.constant';
+import { DishRepo } from './dish.repo';
 
 @Injectable()
 export class DishService {
     constructor(
-        @InjectModel(Dish.name) private dishModel: Model<DishDocument>
+        private readonly dishRepo: DishRepo,
+        @InjectModel(Ingredient.name) private ingredientModel: Model<IngredientDocument>,
     ) {}
 
     private validateObjectId(id: string): void {
@@ -19,41 +22,59 @@ export class DishService {
         }
     }
 
-    private calculateNutritionalValues(ingredients: any[]): {
+    private async calculateNutritionalValues(ingredients: any[]): Promise<{
         totalCalories: number;
         totalCarbs: number;
         totalProtein: number;
         totalFat: number;
         totalFiber: number;
         totalSugar: number;
-    } {
-        return ingredients.reduce((totals, ingredient) => {
-            if (!ingredient || ingredient.deprecated) {
-                return totals;
-            }
-            const amount = ingredient.amount;
-            const nutrition = ingredient.ingredient;
-            if (!nutrition) {
-                return totals;
-            }
-            // Calculate nutritional values based on amount (assuming nutrition is per 100g)
-            const factor = amount / 100;
-            return {
-                totalCalories: totals.totalCalories + ((nutrition.caloPer100g || 0) * factor),
-                totalCarbs: totals.totalCarbs + ((nutrition.carbsPer100g || 0) * factor),
-                totalProtein: totals.totalProtein + ((nutrition.proteinPer100g || 0) * factor),
-                totalFat: totals.totalFat + ((nutrition.fatPer100g || 0) * factor),
-                totalFiber: totals.totalFiber + ((nutrition.fiberPer100g || 0) * factor),
-                totalSugar: totals.totalSugar + ((nutrition.sugarPer100g || 0) * factor),
-            };
-        }, {
+    }> {
+        let totals = {
             totalCalories: 0,
             totalCarbs: 0,
             totalProtein: 0,
             totalFat: 0,
             totalFiber: 0,
             totalSugar: 0,
-        });
+        };
+
+        for (const ingredient of ingredients) {
+            if (!ingredient || ingredient.deprecated) {
+                continue;
+            }
+
+            const amount = ingredient.amount;
+            let nutrition;
+
+            // If ingredient is already populated (has nutritional data)
+            if (ingredient.ingredient && typeof ingredient.ingredient === 'object' && ingredient.ingredient.caloPer100g !== undefined) {
+                nutrition = ingredient.ingredient;
+            } else {
+                // If ingredient is just an ID, fetch the full ingredient data
+                const ingredientId = ingredient.ingredient;
+                const ingredientDoc = await this.ingredientModel.findById(ingredientId).exec();
+                if (!ingredientDoc) {
+                    continue;
+                }
+                nutrition = ingredientDoc;
+            }
+
+            if (!nutrition) {
+                continue;
+            }
+
+            // Calculate nutritional values based on amount (assuming nutrition is per 100g)
+            const factor = amount / 100;
+            totals.totalCalories += (nutrition.caloPer100g || 0) * factor;
+            totals.totalCarbs += (nutrition.carbsPer100g || 0) * factor;
+            totals.totalProtein += (nutrition.proteinPer100g || 0) * factor;
+            totals.totalFat += (nutrition.fatPer100g || 0) * factor;
+            totals.totalFiber += (nutrition.fiberPer100g || 0) * factor;
+            totals.totalSugar += (nutrition.sugarPer100g || 0) * factor;
+        }
+
+        return totals;
     }
 
     async findAllPaginate(dto: PaginateDto, userId?: any, roleName?: string): Promise<PaginatedResult<DishDocument>> {
@@ -72,27 +93,18 @@ export class DishService {
         }
 
         try {
-            const total = await this.dishModel.countDocuments(filter).exec();
+            const result = await this.dishRepo.findAllPaginated(page, limit, filter);
 
-            if (total === 0) {
+            if (result.total === 0) {
                 throw new DishNotFoundError('No dishes found with the given filter');
             }
 
-            const skip = (page - 1) * limit;
-            const items = await this.dishModel
-                .find(filter)
-                .populate('ingredients.ingredient')
-                .sort({ _id: 1 })
-                .skip(skip)
-                .limit(limit)
-                .exec();
-
             return {
-                items,
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
+                items: result.items,
+                total: result.total,
+                page: result.page,
+                limit: result.limit,
+                totalPages: result.totalPages,
             };
         } catch (error) {
             if (error instanceof DishNotFoundError) {
@@ -113,7 +125,7 @@ export class DishService {
             } as Partial<Dish>;
 
             // Calculate nutritional values
-            const nutritionalValues = this.calculateNutritionalValues(data.ingredients);
+            const nutritionalValues = await this.calculateNutritionalValues(data.ingredients);
             payload.totalCalories = nutritionalValues.totalCalories;
             payload.totalCarbs = nutritionalValues.totalCarbs;
             payload.totalProtein = nutritionalValues.totalProtein;
@@ -121,7 +133,7 @@ export class DishService {
             payload.totalFiber = nutritionalValues.totalFiber;
             payload.totalSugar = nutritionalValues.totalSugar;
 
-            return this.dishModel.create(payload);
+            return this.dishRepo.create(payload);
         } catch (error) {
             console.error('[DishService.create] Unexpected error:', error);
             throw new Error('Failed to create dish');
@@ -131,7 +143,7 @@ export class DishService {
     async update(dishId: string, data: any, userId: any, roleName: string): Promise<DishDocument> {
         try {
             this.validateObjectId(dishId);
-            const doc = await this.dishModel.findById(dishId).populate('ingredients.ingredient').exec();
+            const doc = await this.dishRepo.findById(new Types.ObjectId(dishId));
             if (!doc) throw new DishNotFoundError('Dish not found');
 
             // Ownership rules
@@ -148,7 +160,7 @@ export class DishService {
 
             // Update nutritional values if ingredients are being updated
             if (data.ingredients) {
-                const nutritionalValues = this.calculateNutritionalValues(data.ingredients);
+                const nutritionalValues = await this.calculateNutritionalValues(data.ingredients);
                 data.totalCalories = nutritionalValues.totalCalories;
                 data.totalCarbs = nutritionalValues.totalCarbs;
                 data.totalProtein = nutritionalValues.totalProtein;
@@ -157,9 +169,8 @@ export class DishService {
                 data.totalSugar = nutritionalValues.totalSugar;
             }
 
-            Object.assign(doc, data);
-            await doc.save();
-            return doc;
+            const updatedDoc = await this.dishRepo.update(new Types.ObjectId(dishId), data);
+            return updatedDoc!;
         } catch (error) {
             if (error instanceof DishNotFoundError || error instanceof DishForbiddenError) {
                 throw error;
@@ -172,7 +183,7 @@ export class DishService {
     async delete(dishId: string, userId: any, roleName: string): Promise<void> {
         try {
             this.validateObjectId(dishId);
-            const doc = await this.dishModel.findById(dishId).exec();
+            const doc = await this.dishRepo.findById(new Types.ObjectId(dishId));
             if (!doc) throw new DishNotFoundError('Dish not found');
 
             const isPublic = !doc.belongsTo || String(doc.belongsTo).trim() === '';
@@ -186,7 +197,7 @@ export class DishService {
                 }
             }
 
-            await this.dishModel.deleteOne({ _id: dishId }).exec();
+            await this.dishRepo.delete(new Types.ObjectId(dishId));
         } catch (error) {
             if (error instanceof DishNotFoundError || error instanceof DishForbiddenError) {
                 throw error;
@@ -199,7 +210,7 @@ export class DishService {
     async findById(dishId: string, userId: any, roleName: string): Promise<DishDocument> {
         try {
             this.validateObjectId(dishId);
-            const doc = await this.dishModel.findById(dishId).populate('ingredients.ingredient').exec();
+            const doc = await this.dishRepo.findById(new Types.ObjectId(dishId));
             if (!doc) throw new DishNotFoundError('Dish not found');
 
             // Ownership rules
