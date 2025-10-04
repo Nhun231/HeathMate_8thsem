@@ -42,6 +42,7 @@
     "nestjs-paginate": "^12.8.3",
     "nestjs-zod": "^5.0.1",
     "otpauth": "^9.4.1",
+    "recharts": "^3.2.1",
     "reflect-metadata": "^0.2.2",
     "request-ip": "^3.3.0",
     "resend": "^6.0.2",

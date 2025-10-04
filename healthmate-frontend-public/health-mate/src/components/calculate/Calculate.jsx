@@ -18,7 +18,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import "../../styles/themeCalculate.css";
-//import { createCalculation } from "../../services/Calculation";
 import {
   createCalculation,
   getLatestCalculation,
@@ -34,17 +33,14 @@ const activityLevels = [
   { value: "Light", label: "Vận động nhẹ", desc: "Tập 1–3 buổi/tuần" },
   { value: "Moderate", label: "Vận động vừa", desc: "Tập 4–5 buổi/tuần" },
   { value: "Active", label: "Vận động nhiều", desc: "Tập 6–7 buổi/tuần" },
-  {
-    value: "VeryActive",
-    label: "Vận động cực nhiều",
-    desc: "Cấp độ vận động viên",
-  },
+  { value: "VeryActive", label: "Vận động cực nhiều", desc: "Cấp độ vận động viên" },
 ];
 
 export default function Calculate() {
   const [form, setForm] = useState({
-    gender: "Nam",
-    age: "22",
+    gender: "",
+    dob: "",
+    age: "",
     height: "",
     weight: "",
     activity: "Sedentary",
@@ -55,11 +51,24 @@ export default function Calculate() {
   const [alert, setAlert] = useState({
     show: false,
     message: "",
-    severity: "info", // success | error | warning | info
+    severity: "info",
   });
 
   const resultRef = useRef(null);
   const navigate = useNavigate();
+
+  //Tính tuổi
+  const calculateAge = (dob) => {
+    if (!dob) return "";
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : "";
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,13 +77,11 @@ export default function Calculate() {
         const userData = userRes?.data;
 
         if (userData) {
-          const age = userData?.dob
-            ? new Date().getFullYear() - new Date(userData.dob).getFullYear()
-            : "";
-
+          const age = calculateAge(userData?.dob);
           setForm((prev) => ({
             ...prev,
             gender: userData?.gender || prev.gender,
+            dob: userData?.dob || "",
             age: age.toString(),
           }));
         }
@@ -102,10 +109,14 @@ export default function Calculate() {
     fetchData();
   }, []);
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
-
-  //const handleGender = (gender) => setForm({ ...form, gender });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "dob") {
+      setForm({ ...form, dob: value, age: calculateAge(value) });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
+  };
 
   const validateForm = () => {
     const newErr = { height: "", weight: "" };
@@ -143,15 +154,23 @@ export default function Calculate() {
     }
 
     try {
+      // update age + gender
+      await updateCurrentUser({
+        gender: form.gender,
+        dob: form.dob,
+      });
+
+      // save calculation
       const res = await createCalculation({
         height: Number(form.height),
         weight: Number(form.weight),
         activityLevel: form.activity,
       });
       setResult(res.data);
+
       setAlert({
         show: true,
-        message: "Tính toán thành công!",
+        message: "Tính toán thành công và đã cập nhật thông tin cá nhân!",
         severity: "success",
       });
       setTimeout(() => setAlert({ ...alert, show: false }), 3000);
@@ -159,7 +178,7 @@ export default function Calculate() {
       console.error(err);
       setAlert({
         show: true,
-        message: "Tính toán thất bại. Vui lòng thử lại!",
+        message: "Có lỗi xảy ra. Vui lòng thử lại!",
         severity: "error",
       });
     }
@@ -175,17 +194,7 @@ export default function Calculate() {
     <Container maxWidth="lg" className="tdee-wrapper">
       {/* Alert */}
       {alert.show && (
-        <Box
-          sx={{
-            position: "fixed",
-            top: 16,
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "90%",
-            maxWidth: 500,
-            zIndex: 9999,
-          }}
-        >
+        <Box sx={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", width: "90%", maxWidth: 500, zIndex: 9999 }}>
           <CustomAlert
             message={alert.message}
             variant={alert.severity}
@@ -208,31 +217,32 @@ export default function Calculate() {
           {/* Cột trái */}
           <Grid item xs={12} md={6}>
             <Typography className="label">Giới tính</Typography>
-            <Box className="gender-buttons">
-              <button
-                disabled
-                className={form.gender === "Male" ? "active" : ""}
-                //onClick={() => handleGender("Nam")}
-              >
-                NAM
-              </button>
-              <button
-                disabled
-                className={form.gender === "Female" ? "active" : ""}
-                //onClick={() => handleGender("Nữ")}
-              >
-                NỮ
-              </button>
-            </Box>
+            <RadioGroup
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              row
+            >
+              <FormControlLabel value="Male" control={<Radio />} label="Nam" />
+              <FormControlLabel value="Female" control={<Radio />} label="Nữ" />
+            </RadioGroup>
+
+            <Typography className="label">Ngày sinh</Typography>
+            <TextField
+              fullWidth
+              type="date"
+              name="dob"
+              value={form.dob}
+              onChange={handleChange}
+              className="input-box"
+            />
 
             <Typography className="label">Tuổi</Typography>
             <TextField
               fullWidth
               disabled
-              name="age"
               value={form.age}
-              //onChange={handleChange}
-              placeholder="Nhập độ tuổi..."
+              placeholder="Tuổi sẽ hiển thị ở đây"
               className="input-box"
             />
 
@@ -261,11 +271,7 @@ export default function Calculate() {
             />
 
             <Box textAlign="center" mt={3}>
-              <Button
-                variant="contained"
-                color="success"
-                onClick={handleSubmit}
-              >
+              <Button variant="contained" color="success" onClick={handleSubmit}>
                 TÍNH TOÁN
               </Button>
             </Box>
