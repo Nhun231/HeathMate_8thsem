@@ -1,9 +1,11 @@
 import { Types } from 'mongoose';
-import { ActivityLevel } from 'src/shared/constants/auth.constant';
+import { ActivityLevel, Gender } from 'src/shared/constants/auth.constant';
 import z from 'zod';
 
 export const CalculationCreateBodySchema = z
   .object({
+    age: z.number().positive(),
+    gender: z.enum([Gender.Male, Gender.Female]),
     height: z.number().positive(),
     weight: z.number().positive(),
     activityLevel: z.enum([
