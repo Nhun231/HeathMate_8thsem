@@ -15,6 +15,7 @@ import {IngredientModule} from "./routes/ingredient/ingredient.module";
 import { DietPlanModule } from './routes/dietplan/dietplan.module';
 import { DishModule } from './routes/dish/dish.module';
 import { MealModule } from './routes/meal/meal.module';
+import { PermissionModule } from './routes/permission/permission.module';
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { MealModule } from './routes/meal/meal.module';
     IngredientModule,
     DietPlanModule,
     DishModule,
-    MealModule
+    MealModule,
+    PermissionModule
   ],
   controllers: [AppController],
   providers: [

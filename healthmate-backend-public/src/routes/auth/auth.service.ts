@@ -49,7 +49,7 @@ export class AuthService {
     try {
       const clientRoleId = await this.rolesService.getClientRole();
 
-      console.log(clientRoleId);
+      // console.log(clientRoleId);
       // Validate verification code
       await this.validateVerificationCode({
         email: body.email,
@@ -256,8 +256,6 @@ export class AuthService {
       }
       return { message: 'Logout successfully' };
     } catch (error) {
-      // Trường hợp đã refresh token rồi, hãy thông báo cho user biết
-      // refresh token của họ đã bị đánh cắp
       if (isNotFoundError(error)) {
         throw RefreshTokenAlreadyUsedException;
       }
@@ -331,11 +329,11 @@ export class AuthService {
       type: TypeOfVerificationCode.FORGOT_PASSWORD,
     });
 
-    console.log(body.newPassword);
-    console.log(user.password);
+    // console.log(body.newPassword);
+    // console.log(user.password);
     // update new password
     const hashedPassword = await this.hashingService.hashPassword(newPassword);
-    console.log(hashedPassword);
+    // console.log(hashedPassword);
 
     const $updateUser = this.authRepository.updateUser(
       { _id: user._id },
