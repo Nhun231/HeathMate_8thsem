@@ -25,7 +25,7 @@ import {
 } from './auth.dto';
 import { GoogleService } from './google.service';
 import type { Response } from 'express';
-import envConfig from 'src/shared/config';
+import envConfig from 'src/shared/utils/config';
 
 @Controller('v1/auth')
 export class AuthController {

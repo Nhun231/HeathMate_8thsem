@@ -3,7 +3,7 @@ import z from 'zod';
 
 export const GetPermissionParamsSchema = z
   .object({
-    permissionId: z.coerce.number(),
+    permissionId: z.string(),
   })
   .strict();
 
@@ -27,8 +27,12 @@ export const CreatePermissionBodySchema = z
 
 export const UpdatePermissionBodySchema = CreatePermissionBodySchema;
 
-export type GetPermissionParams = z.infer<typeof GetPermissionParamsSchema>;
+export type GetPermissionParamsType = z.infer<typeof GetPermissionParamsSchema>;
 
-export type CreatePermissionBody = z.infer<typeof CreatePermissionBodySchema>;
+export type CreatePermissionBodyType = z.infer<
+  typeof CreatePermissionBodySchema
+>;
 
-export type UpdatePermissionBody = z.infer<typeof UpdatePermissionBodySchema>;
+export type UpdatePermissionBodyType = z.infer<
+  typeof UpdatePermissionBodySchema
+>;

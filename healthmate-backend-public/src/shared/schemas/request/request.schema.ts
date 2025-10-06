@@ -12,7 +12,7 @@ export const QuerySchema = z
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 10)),
-    sort: z.string().optional(), // name,-age
+    sort: z.string().optional(),
   })
   .loose();
 
