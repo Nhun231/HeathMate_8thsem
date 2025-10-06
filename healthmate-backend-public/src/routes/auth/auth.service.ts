@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { TokenService } from 'src/shared/services/token.service';
 import { RolesService } from './role.service';
@@ -49,7 +49,6 @@ export class AuthService {
     try {
       const clientRoleId = await this.rolesService.getClientRole();
 
-      console.log(clientRoleId);
       // Validate verification code
       await this.validateVerificationCode({
         email: body.email,
@@ -190,7 +189,7 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new Error('User not found');
+        throw new NotFoundException('User not found');
       }
 
       const roleId = (user.roleId as RoleDocument)._id ?? user.roleId;
@@ -331,11 +330,8 @@ export class AuthService {
       type: TypeOfVerificationCode.FORGOT_PASSWORD,
     });
 
-    console.log(body.newPassword);
-    console.log(user.password);
     // update new password
     const hashedPassword = await this.hashingService.hashPassword(newPassword);
-    console.log(hashedPassword);
 
     const $updateUser = this.authRepository.updateUser(
       { _id: user._id },
