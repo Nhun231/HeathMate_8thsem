@@ -73,11 +73,6 @@ const RegisterForm = () => {
                 message: "Vui lòng điền đầy đủ tất cả các trường!",
                 severity: "warning",
             });
-            
-            // Auto close warning alert after 3 seconds
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
             return;
         }
         if (!isValidPhoneNumber(formData.phoneNumber)) {
@@ -86,11 +81,6 @@ const RegisterForm = () => {
                 message: "Số điện thoại phải gồm đúng 10 chữ số!",
                 severity: "warning",
             });
-            
-            // Auto close warning alert after 3 seconds
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
             return;
         }
         try{
@@ -104,17 +94,12 @@ const RegisterForm = () => {
             setTimeout(()=>{
                 console.log("đợi thông báo")
                 navigate("/login")
-            }, 3000)
+            }, 2000)
 
         }catch(error){
             const code = extractBackendErrorCode(error) || error?.message;
             const vi = translateErrorCode(code) || "Đăng ký thất bại. Vui lòng kiểm tra thông tin và thử lại.";
             setAlert({ show: true, message: vi, severity: "error" });
-            
-            // Auto close error alert after 3 seconds
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
         }
 
     }
@@ -127,11 +112,6 @@ const RegisterForm = () => {
                 message: "Vui lòng điền email để nhận mã OTP.",
                 severity: "warning",
             });
-            
-            // Auto close warning alert after 3 seconds
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
             return;
         }
 
@@ -142,11 +122,6 @@ const RegisterForm = () => {
                 message: emailValid.message,
                 severity: "warning",
             });
-            
-            // Auto close warning alert after 3 seconds
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
             return;
         }
         try {
@@ -163,11 +138,6 @@ const RegisterForm = () => {
             const code = extractBackendErrorCode(error) || error?.message;
             const vi = translateErrorCode(code) || "Không thể gửi OTP. Vui lòng thử lại.";
             setAlert({ show: true, message: vi, severity: "error" });
-            
-            // Auto close error alert after 3 seconds
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
         }
     }
 
@@ -178,11 +148,6 @@ const RegisterForm = () => {
                 message: "Hãy điền email",
                 severity: "warning",
             });
-            
-            // Auto close warning alert after 3 seconds
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
             return null;
         }
         setFormData({
@@ -219,23 +184,13 @@ const RegisterForm = () => {
             }}
         >
             {alert.show && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 16,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: '90%',
-                        maxWidth: 500,
-                        zIndex: 9999,
-                    }}
-                >
-                    <CustomAlert
-                        message={alert.message}
-                        variant={alert.severity}
-                        onClose={() => setAlert({ ...alert, show: false })}
-                    />
-                </Box>
+                <CustomAlert
+                    message={alert.message}
+                    variant={alert.severity}
+                    onClose={() => setAlert({ ...alert, show: false })}
+                    sticky={true}
+                    autoCloseDelay={2000}
+                />
             )}
         <Card
             sx={{

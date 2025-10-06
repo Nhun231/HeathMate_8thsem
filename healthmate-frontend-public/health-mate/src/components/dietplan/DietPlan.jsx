@@ -82,6 +82,8 @@ const DietPlan = () => {
                             message={errorMsg}
                             variant="error"
                             onClose={() => setErrorMsg('')}
+                            sticky={true}
+                            autoCloseDelay={2000}
                         />
                     </Box>
                 )}

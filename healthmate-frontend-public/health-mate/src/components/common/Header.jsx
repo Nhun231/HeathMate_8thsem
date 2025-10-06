@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Menu, MenuItem } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
+import baseAxios from "../../api/axios.js";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -18,7 +19,15 @@ const Header = () => {
         setAnchorEl(null);
       };
     const handleLogout = async () => {
-
+        try{
+            await baseAxios.post('/auth/logout', {refreshToken: localStorage.getItem("refreshToken")});
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            navigate('/guest-homepage');
+        }catch(err){
+            console.log("logout error:", err);
+            alert("Đăng xuất thất bại")
+        }
     }
   return (
     <AppBar

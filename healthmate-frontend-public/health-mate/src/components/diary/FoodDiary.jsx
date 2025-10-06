@@ -110,11 +110,7 @@ function FoodDiary() {
     try {
       setMealsLoading(true)
       const today = new Date()
-        console.log("ngày:", today)
       const response = await MealService.getMeals(today)
-      
-      console.log('Meal API Response:', response) // Debug log
-      
       // Group meals by meal type
       const groupedMeals = {
         breakfast: [],
@@ -126,9 +122,7 @@ function FoodDiary() {
       let totalCalories = 0
       
       if (response) {
-        console.log('Processing meals:', response) // Debug log
         response.forEach(meal => {
-          console.log('Processing meal:', meal) // Debug log
           const mealType = meal.mealType
           if (groupedMeals[mealType]) {
             const mealData = {
@@ -199,7 +193,7 @@ function FoodDiary() {
             // Add a small delay so user can see the alert message
             const timer = setTimeout(() => {
                 navigate('/calculate');
-            }, 3000); 
+            }, 2000); 
             
             return () => clearTimeout(timer);
         }
@@ -222,23 +216,13 @@ function FoodDiary() {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", pb: 4 }}>
         {alert.show && (
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: 16,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '90%',
-                    maxWidth: 500,
-                    zIndex: 9999,
-                }}
-            >
-                <CustomAlert
-                    message={alert.message}
-                    variant={alert.severity}
-                    onClose={() => setAlert({ ...alert, show: false })}
-                />
-            </Box>
+            <CustomAlert
+                message={alert.message}
+                variant={alert.severity}
+                onClose={() => setAlert({ ...alert, show: false })}
+                sticky={true}
+                autoCloseDelay={2000}
+            />
         )}
       <Container maxWidth="md">
         {/* Header */}

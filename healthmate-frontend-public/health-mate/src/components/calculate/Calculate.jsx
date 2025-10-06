@@ -76,9 +76,6 @@ export default function Calculate() {
                 message: "Vui lòng nhập đầy đủ và hợp lệ.",
                 severity: "warning",
             });
-            setTimeout(()=>{
-               setAlert({ ...alert, show: false });
-            }, 3000)
             return;
         }
 
@@ -89,9 +86,6 @@ export default function Calculate() {
                 message: "Bạn cần đăng nhập để tính toán.",
                 severity: "error",
             });
-            setTimeout(()=>{
-                setAlert({ ...alert, show: false });
-            }, 3000)
             return;
         }
 
@@ -110,7 +104,6 @@ export default function Calculate() {
                 message: "Tính toán thành công!",
                 severity: "success",
             });
-            setTimeout(() => setAlert({ ...alert, show: false }), 3000);
         } catch (err) {
             console.error(err);
             setAlert({
@@ -118,9 +111,6 @@ export default function Calculate() {
                 message: "Tính toán thất bại. Vui lòng thử lại!",
                 severity: "error",
             });
-            setTimeout(()=>{
-                setAlert({ ...alert, show: false });
-            }, 3000)
         }
     };
 
@@ -134,23 +124,13 @@ export default function Calculate() {
         <Container maxWidth="lg" className="tdee-wrapper">
             {/* Alert */}
             {alert.show && (
-                <Box
-                    sx={{
-                        position: "fixed",
-                        top: 16,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: "90%",
-                        maxWidth: 500,
-                        zIndex: 9999,
-                    }}
-                >
-                    <CustomAlert
-                        message={alert.message}
-                        variant={alert.severity}
-                        onClose={() => setAlert({ ...alert, show: false })}
-                    />
-                </Box>
+                <CustomAlert
+                    message={alert.message}
+                    variant={alert.severity}
+                    onClose={() => setAlert({ ...alert, show: false })}
+                    sticky={true}
+                    autoCloseDelay={2000}
+                />
             )}
 
             <Typography variant="h4" align="center" className="title">

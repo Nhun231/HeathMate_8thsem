@@ -36,7 +36,6 @@ const AuthProvider = ({ children }) => {
           try {
             const decodedUser = jwtDecode(storedToken);
             const userInfo = await axios.get(`${BASE_URL}/users/${decodedUser.userId}`);
-            console.log("Setting auth with:", { accessToken: storedToken, user: userInfo.data });
             setAuth({ accessToken: storedToken, user: userInfo.data });
           } catch (e) {
           console.error("Invalid stored token", e);
@@ -48,13 +47,14 @@ const AuthProvider = ({ children }) => {
 
     initializeAuth();
   }, []);
+
+  //
   useLayoutEffect(() => {
     const authInterceptor = axios.interceptors.request.use((config) => {
       const accessToken = localStorage.getItem("accessToken");
       if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
       }
-      console.log("Request config with auth:", config);
       return config;
     });
     return () => {
@@ -80,17 +80,19 @@ const AuthProvider = ({ children }) => {
           originalRequest._retry = true;
           try {
             // call to refresh Refresh token
-            const response = await axios.get(`${BASE_URL}/auth/refresh-token`, {
-              withCredentials: true,
+            const response = await axios.post(`${BASE_URL}/auth/refresh-token`, {
+              refreshToken: localStorage.getItem("refreshToken"),
             });
-            console.log("Through cookie refresh");
+            console.log("Through refresh");
             // console.log("csrf response",response);
             // localStorage.setItem("csrfToken",response.data.data);
             //marked as retried
             setIsRefreshing(false);
             // Save new access token
             const newAccessToken = response.data.accessToken;
+            const newRefreshToken = response.data.refreshToken;
             localStorage.setItem("accessToken", newAccessToken);
+            localStorage.setItem("refreshToken", newRefreshToken)
             //retry failed request
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
             return axios(originalRequest);
