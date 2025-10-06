@@ -43,6 +43,7 @@ const LoginForm = () => {
         try {
             const res = await login(formData);
             localStorage.setItem("accessToken", res.data.accessToken)
+            localStorage.setItem("refreshToken", res.data.refreshToken)
             setAlert({
                 show: true,
                 message: "Đăng nhập thành công, chào mừng tới với HealthMate!",
@@ -51,14 +52,11 @@ const LoginForm = () => {
             setTimeout(() => {
                 setAlert({...alert, show: false});
                 navigate("/customer-homepage")
-            }, 3000);
+            }, 2000);
         } catch (error) {
             const code = extractBackendErrorCode(error) || error?.message;
             const vi = translateErrorCode(code) || "Đăng nhập thất bại. Vui lòng kiểm tra email/mật khẩu.";
             setAlert({show: true, message: vi, severity: "error"});
-            setTimeout(() => {
-                setAlert({...alert, show: false});
-            }, 3000);
         }
     }
 
@@ -87,23 +85,13 @@ const LoginForm = () => {
             }}
         >
             {alert.show && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 16,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: '90%',
-                        maxWidth: 500,
-                        zIndex: 9999,
-                    }}
-                >
-                    <CustomAlert
-                        message={alert.message}
-                        variant={alert.severity}
-                        onClose={() => setAlert({ ...alert, show: false })}
-                    />
-                </Box>
+                <CustomAlert
+                    message={alert.message}
+                    variant={alert.severity}
+                    onClose={() => setAlert({ ...alert, show: false })}
+                    sticky={true}
+                    autoCloseDelay={2000}
+                />
             )}
         <Card
             sx={{

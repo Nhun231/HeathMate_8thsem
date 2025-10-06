@@ -21,7 +21,7 @@ function CreateNewDish({ mealType, onClose, onAddDish }) {
   useEffect(() => {
     const fetchIngredients = async () => {
       try {
-        const response = await IngredientService.list({limit: 522})
+        const response = await IngredientService.list({limit: 1000})
         setAvailableIngredients(response.items || [])
         console.log(response.items.length)
       } catch (err) {

@@ -25,11 +25,11 @@ import HistoryView from "./HistoryView";
 import { useNavigate } from "react-router-dom";
 import CustomAlert from "../common/Alert.jsx";
 import MealService from "../../services/Meal";
-import {
-  WbSunny as BreakfastIcon,
-  LunchDining as LunchIcon,
-  DinnerDining as DinnerIcon,
-  LocalCafe as SnackIcon,
+import { 
+  WbSunny as BreakfastIcon, 
+  LunchDining as LunchIcon, 
+  DinnerDining as DinnerIcon, 
+  LocalCafe as SnackIcon 
 } from "@mui/icons-material";
 import { getLatestCalculation } from "../../services/CalculateService.js";
 function FoodDiary() {
@@ -69,61 +69,57 @@ function FoodDiary() {
   const [totalCaloriesToday, setTotalCaloriesToday] = useState(0);
   // Meal types with icons and colors
   const mealTypes = [
-    {
-      name: "Bữa sáng",
-      icon: <BreakfastIcon sx={{ fontSize: 40 }} />,
+    { 
+      name: "Bữa sáng", 
+      icon: <BreakfastIcon sx={{ fontSize: 40 }} />, 
       color: "#FF9800",
-      description: "Bắt đầu ngày mới với năng lượng",
+      description: "Bắt đầu ngày mới với năng lượng"
     },
-    {
-      name: "Bữa trưa",
-      icon: <LunchIcon sx={{ fontSize: 40 }} />,
+    { 
+      name: "Bữa trưa", 
+      icon: <LunchIcon sx={{ fontSize: 40 }} />, 
       color: "#4CAF50",
-      description: "Bữa ăn chính giữa ngày",
+      description: "Bữa ăn chính giữa ngày"
     },
-    {
-      name: "Bữa tối",
-      icon: <DinnerIcon sx={{ fontSize: 40 }} />,
+    { 
+      name: "Bữa tối", 
+      icon: <DinnerIcon sx={{ fontSize: 40 }} />, 
       color: "#2196F3",
-      description: "Kết thúc ngày với bữa tối",
+      description: "Kết thúc ngày với bữa tối"
     },
-    {
-      name: "Ăn vặt",
-      icon: <SnackIcon sx={{ fontSize: 40 }} />,
+    { 
+      name: "Ăn vặt", 
+      icon: <SnackIcon sx={{ fontSize: 40 }} />, 
       color: "#9C27B0",
-      description: "Thưởng thức món ăn nhẹ",
-    },
-  ];
+      description: "Thưởng thức món ăn nhẹ"
+    }
+  ]
 
   const handleOpenAddMeal = (mealType) => {
-    setSelectedMealType(mealType);
-    setAddMealModalOpen(true);
-    setMealTypeDialogOpen(false);
-  };
+    setSelectedMealType(mealType)
+    setAddMealModalOpen(true)
+    setMealTypeDialogOpen(false)
+  }
 
   const handleCloseAddMeal = () => {
-    setAddMealModalOpen(false);
-    setSelectedMealType(null);
-  };
+    setAddMealModalOpen(false)
+    setSelectedMealType(null)
+  }
 
   const handleOpenMealTypeDialog = () => {
-    setMealTypeDialogOpen(true);
-  };
+    setMealTypeDialogOpen(true)
+  }
 
   const handleCloseMealTypeDialog = () => {
-    setMealTypeDialogOpen(false);
-  };
+    setMealTypeDialogOpen(false)
+  }
 
   // Load meals for today
   const loadTodaysMeals = async () => {
     try {
-      setMealsLoading(true);
-      const today = new Date();
-      console.log("ngày:", today);
-      const response = await MealService.getMeals(today);
-
-      console.log("Meal API Response:", response); // Debug log
-
+      setMealsLoading(true)
+      const today = new Date()
+      const response = await MealService.getMeals(today)
       // Group meals by meal type
       const groupedMeals = {
         breakfast: [],
@@ -142,10 +138,8 @@ function FoodDiary() {
         sugar: 0,
       };
       if (response) {
-        console.log("Processing meals:", response); // Debug log
-        response.forEach((meal) => {
-          console.log("Processing meal:", meal); // Debug log
-          const mealType = meal.mealType;
+        response.forEach(meal => {
+          const mealType = meal.mealType
           if (groupedMeals[mealType]) {
             const mealData = {
               id: meal._id,
@@ -216,18 +210,18 @@ function FoodDiary() {
       }
     };
 
-    checkCalculateData();
-  }, []);
-  useEffect(() => {
-    if (shouldRedirect) {
-      // Add a small delay so user can see the alert message
-      const timer = setTimeout(() => {
-        navigate("/calculate");
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [shouldRedirect, navigate]);
+        checkCalculateData();
+    }, []);
+    useEffect(() => {
+        if (shouldRedirect) {
+            // Add a small delay so user can see the alert message
+            const timer = setTimeout(() => {
+                navigate('/calculate');
+            }, 2000);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [shouldRedirect, navigate]);
 
   // Load meals when component mounts
   useEffect(() => {
@@ -236,39 +230,24 @@ function FoodDiary() {
     }
   }, [view]);
 
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="100vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+                <CircularProgress />
+            </Box>
+        );
+    }
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", pb: 4 }}>
-      {alert.show && (
-        <Box
-          sx={{
-            position: "absolute",
-            top: 16,
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "90%",
-            maxWidth: 500,
-            zIndex: 9999,
-          }}
-        >
-          <CustomAlert
-            message={alert.message}
-            variant={alert.severity}
-            onClose={() => setAlert({ ...alert, show: false })}
-          />
-        </Box>
-      )}
+        {alert.show && (
+            <CustomAlert
+                message={alert.message}
+                variant={alert.severity}
+                onClose={() => setAlert({ ...alert, show: false })}
+                sticky={true}
+                autoCloseDelay={2000}
+            />
+        )}
       <Container maxWidth="md">
         {/* Header */}
         <Box
@@ -473,32 +452,32 @@ function FoodDiary() {
               </Box>
             </Box>
             {/* Meal Sections */}
-            <MealSection
-              mealType="Bữa sáng"
+            <MealSection 
+              mealType="Bữa sáng" 
               meals={mealsData.breakfast}
               loading={mealsLoading}
-              onAddMeal={() => handleOpenAddMeal("Bữa sáng")}
+              onAddMeal={() => handleOpenAddMeal("Bữa sáng")} 
               onMealAdded={handleMealAdded}
             />
-            <MealSection
-              mealType="Bữa trưa"
+            <MealSection 
+              mealType="Bữa trưa" 
               meals={mealsData.lunch}
               loading={mealsLoading}
-              onAddMeal={() => handleOpenAddMeal("Bữa trưa")}
+              onAddMeal={() => handleOpenAddMeal("Bữa trưa")} 
               onMealAdded={handleMealAdded}
             />
-            <MealSection
-              mealType="Bữa tối"
+            <MealSection 
+              mealType="Bữa tối" 
               meals={mealsData.dinner}
               loading={mealsLoading}
-              onAddMeal={() => handleOpenAddMeal("Bữa tối")}
+              onAddMeal={() => handleOpenAddMeal("Bữa tối")} 
               onMealAdded={handleMealAdded}
             />
-            <MealSection
-              mealType="Ăn vặt"
+            <MealSection 
+              mealType="Ăn vặt" 
               meals={mealsData.snack}
               loading={mealsLoading}
-              onAddMeal={() => handleOpenAddMeal("Ăn vặt")}
+              onAddMeal={() => handleOpenAddMeal("Ăn vặt")} 
               onMealAdded={handleMealAdded}
             />
 
@@ -542,10 +521,7 @@ function FoodDiary() {
                   borderColor: "#4CAF50",
                   color: "#4CAF50",
                   py: 1.5,
-                  "&:hover": {
-                    borderColor: "#45a049",
-                    bgcolor: "rgba(76, 175, 80, 0.04)",
-                  },
+                  "&:hover": { borderColor: "#45a049", bgcolor: "rgba(76, 175, 80, 0.04)" },
                 }}
                 onClick={() => setView("history")}
               >
@@ -559,17 +535,17 @@ function FoodDiary() {
       </Container>
 
       {/* Meal Type Selection Dialog */}
-      <Dialog
-        open={mealTypeDialogOpen}
+      <Dialog 
+        open={mealTypeDialogOpen} 
         onClose={handleCloseMealTypeDialog}
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: {
+          sx: { 
             borderRadius: 2,
             width: "90vw",
             maxWidth: "500px",
-          },
+          }
         }}
       >
         <DialogTitle
@@ -591,29 +567,31 @@ function FoodDiary() {
           <Grid container spacing={2}>
             {mealTypes.map((meal) => (
               <Grid item xs={6} key={meal.name}>
-                <Card
-                  sx={{
+                <Card 
+                  sx={{ 
                     height: 140, // Fixed height for all cards
                     border: "1px solid #e0e0e0",
                     "&:hover": {
                       borderColor: meal.color,
-                      boxShadow: `0 4px 12px ${meal.color}20`,
-                    },
+                      boxShadow: `0 4px 12px ${meal.color}20`
+                    }
                   }}
                 >
-                  <CardActionArea
+                  <CardActionArea 
                     onClick={() => handleOpenAddMeal(meal.name)}
-                    sx={{
-                      p: 2,
+                    sx={{ 
+                      p: 2, 
                       height: "100%",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       textAlign: "center",
-                      justifyContent: "center", // Center content vertically
+                      justifyContent: "center" // Center content vertically
                     }}
                   >
-                    <Box sx={{ color: meal.color, mb: 1 }}>{meal.icon}</Box>
+                    <Box sx={{ color: meal.color, mb: 1 }}>
+                      {meal.icon}
+                    </Box>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                       {meal.name}
                     </Typography>
@@ -628,21 +606,24 @@ function FoodDiary() {
         </DialogContent>
 
         <DialogActions sx={{ p: 3, bgcolor: "#f5f5f5" }}>
-          <Button onClick={handleCloseMealTypeDialog} sx={{ color: "#666" }}>
+          <Button
+            onClick={handleCloseMealTypeDialog}
+            sx={{ color: "#666" }}
+          >
             Hủy
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Add Meal Modal */}
-      <AddMealModal
-        open={addMealModalOpen}
-        onClose={handleCloseAddMeal}
+      <AddMealModal 
+        open={addMealModalOpen} 
+        onClose={handleCloseAddMeal} 
         mealType={selectedMealType}
         onMealAdded={handleMealAdded}
       />
     </Box>
-  );
+  )
 }
 
-export default FoodDiary;
+export default FoodDiary

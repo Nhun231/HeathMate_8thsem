@@ -36,16 +36,12 @@ const ForgotPassword = () => {
     const handleSendOtp = async () => {
         try {
             if(!formData.email){
-                setAlert({
-                    show: true,
-                    message: "Hãy điền email",
-                    severity: "warning",
-                });
-                
-                setTimeout(() => {
-                    setAlert({ ...alert, show: false });
-                }, 3000);
-                return null;
+            setAlert({
+                show: true,
+                message: "Hãy điền email",
+                severity: "warning",
+            });
+            return null;
             }
             const response = await sendOTP({ email: formData.email, type: 'FORGOT_PASSWORD' });
             console.log("OTP sent", response);
@@ -56,10 +52,6 @@ const ForgotPassword = () => {
             const code = extractBackendErrorCode(error) || error?.message;
             const vi = translateErrorCode(code) || "Không thể gửi OTP. Vui lòng thử lại.";
             setAlert({ show: true, message: vi, severity: "error" });
-            
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
         }
     }
     const handleResendOtp = async () => {
@@ -69,10 +61,6 @@ const ForgotPassword = () => {
                 message: "Hãy điền email",
                 severity: "warning",
             });
-            
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
             return null;
         }
         setFormData({
@@ -98,14 +86,11 @@ const ForgotPassword = () => {
             setTimeout(() => {
                 setAlert({ ...alert, show: false });
                 navigate("/login")
-            }, 3000);
+            }, 2000);
         }catch(error){
             const code = extractBackendErrorCode(error) || error?.message;
             const vi = translateErrorCode(code) || "Đổi mật khẩu thất bại. Vui lòng kiểm tra mã OTP và thử lại.";
             setAlert({ show: true, message: vi, severity: "error" });
-            setTimeout(() => {
-                setAlert({ ...alert, show: false });
-            }, 3000);
         }
 
     }
@@ -125,23 +110,13 @@ const ForgotPassword = () => {
             }}
         >
             {alert.show && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 16,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: '90%',
-                        maxWidth: 500,
-                        zIndex: 9999,
-                    }}
-                >
-                    <CustomAlert
-                        message={alert.message}
-                        variant={alert.severity}
-                        onClose={() => setAlert({ ...alert, show: false })}
-                    />
-                </Box>
+                <CustomAlert
+                    message={alert.message}
+                    variant={alert.severity}
+                    onClose={() => setAlert({ ...alert, show: false })}
+                    sticky={true}
+                    autoCloseDelay={2000}
+                />
             )}
             <Card
                 sx={{
