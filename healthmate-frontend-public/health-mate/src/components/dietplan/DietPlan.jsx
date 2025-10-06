@@ -13,6 +13,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { createDietPlan } from '../../services/DietPlan';
 import CustomAlert from '../common/Alert';
 import { translateErrorCode, extractBackendErrorCode } from '../../utils/errorTranslations';
+import Header from '../common/Header';
 
 const DietPlan = () => {
     const location = useLocation();
@@ -53,13 +54,15 @@ const DietPlan = () => {
             const code = extractBackendErrorCode(error);
             const friendly =
                 translateErrorCode(code) ||
-                'Đã xảy ra lỗi. Vui lòng thử lại sau.';
+                'Đã xảy ra lỗi. Vui lòng kiểm tra lại thông tin hoặc thử lại sau.';
             setErrorMsg(friendly);
             console.error('DietPlan error:', error);
         }
     };
 
     return (
+        <>
+        <Header />
         <Container maxWidth="md" sx={{ mt: 8 }}>
             <Paper
                 elevation={6}
@@ -227,6 +230,7 @@ const DietPlan = () => {
                 </Button>
             </Paper>
         </Container>
+        </>
     );
 };
 

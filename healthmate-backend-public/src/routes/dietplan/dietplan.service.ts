@@ -6,6 +6,9 @@ import {
   NotFoundUserCalculationException,
   NotFoundDietPlanException,
   InvalidTargetWeightChangeException,
+  TargetWeightTooHighException,
+  TargetWeightTooLowException,
+  TargetWeightExcess
 } from './dietplan.error';
 import {
   DietPlanCreateBodyType,
@@ -29,7 +32,7 @@ export class DietPlanService {
     const allCalculations =
       await this.calculationRepo.findByUserId(userObjectId);
     if (!allCalculations || allCalculations.length === 0) {
-      throw NotFoundUserCalculationException;
+      throw new NotFoundUserCalculationException;
     }
 
     // Get the latest calculation
@@ -168,10 +171,13 @@ export class DietPlanService {
         throw new InvalidTargetWeightChangeException();
       }
       if (goal === 'LoseWeight' && targetWeightChange >= currentWeight) {
-        throw new InvalidTargetWeightChangeException();
+        throw new TargetWeightTooHighException;
       }
       if (goal === 'GainWeight' && targetWeightChange <= currentWeight) {
-        throw new InvalidTargetWeightChangeException();
+        throw new TargetWeightTooLowException;
+      }
+      if (Math.abs(targetWeightChange - currentWeight) > currentWeight * 0.3) {
+        throw new TargetWeightExcess();
       }
 
       const actualWeightChange = targetWeightChange - currentWeight;
@@ -182,7 +188,6 @@ export class DietPlanService {
 
       dailyCalories = goal === 'LoseWeight' ? TDEE - kcalGap : TDEE + kcalGap;
       durationDays = Math.ceil(totalKcal / kcalGap); // if maxCalGap > totalKcal / 30 then duration is 30, else kcalGap=maxCalGap then the duration is > 30
-
       endDate = new Date();
       endDate.setDate(endDate.getDate() + durationDays);
     }
