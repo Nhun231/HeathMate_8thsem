@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import envConfig from '../config';
+import envConfig from '../utils/config';
 
 @Injectable()
 export class APIKeyGuard implements CanActivate {
