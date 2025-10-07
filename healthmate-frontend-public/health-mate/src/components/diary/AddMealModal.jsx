@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogTitle,
@@ -18,14 +18,55 @@ import AvailableDishes from "./AvailableDishes"
 import CreateNewDish from "./CreateNewDish"
 import IngredientsTab from "./IngredientsTab"
 import CustomIngredientsTab from "./CustomIngredientsTab"
+import IngredientService from "../../services/Ingredient"
 
 function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate, onMealAdded }) {
   const [activeTab, setActiveTab] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
+  
+  // CreateNewDish state - lifted to parent to preserve across tab switches
+  const [createDishState, setCreateDishState] = useState({
+    dishName: "",
+    description: "",
+    servings: 1,
+    selectedIngredients: [],
+    availableIngredients: [],
+    loading: false,
+    error: null,
+    ingredientsLoading: false
+  })
+
+  // Function to fetch ingredients (can be called multiple times)
+  const fetchIngredients = async () => {
+    try {
+      updateCreateDishState({ ingredientsLoading: true })
+      // Load all ingredients without pagination - use a high limit to get everything
+      const response = await IngredientService.list({ limit: 1000 })
+      console.log('Loaded ingredients:', response.items?.length || 0, 'total')
+      setCreateDishState(prev => ({
+        ...prev,
+        availableIngredients: response.items || [],
+        ingredientsLoading: false
+      }))
+    } catch (err) {
+      console.error('Error fetching ingredients:', err)
+      updateCreateDishState({ ingredientsLoading: false })
+    }
+  }
+
+  // Fetch all available ingredients for CreateNewDish Autocomplete
+  useEffect(() => {
+    fetchIngredients()
+  }, [])
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue)
     setSearchQuery("")
+    
+    // Refresh ingredients when switching to CreateNewDish tab
+    if (newValue === 1) {
+      fetchIngredients()
+    }
   }
 
   const handleMealAdded = () => {
@@ -35,10 +76,46 @@ function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate, onMeal
     onClose()
   }
 
+  const handleIngredientAdded = () => {
+    // Refresh ingredients list when a new ingredient is added
+    fetchIngredients()
+    if (onMealAdded) {
+      onMealAdded()
+    }
+    onClose()
+  }
+
   const handleClose = () => {
     setActiveTab(0)
     setSearchQuery("")
+    // Reset CreateNewDish state when closing modal
+    setCreateDishState({
+      dishName: "",
+      description: "",
+      servings: 1,
+      selectedIngredients: [],
+      availableIngredients: createDishState.availableIngredients, // Keep ingredients loaded
+      loading: false,
+      error: null
+    })
     onClose()
+  }
+
+  // Functions to update CreateNewDish state
+  const updateCreateDishState = (updates) => {
+    setCreateDishState(prev => ({ ...prev, ...updates }))
+  }
+
+  const resetCreateDishState = () => {
+    setCreateDishState(prev => ({
+      ...prev,
+      dishName: "",
+      description: "",
+      servings: 1,
+      selectedIngredients: [],
+      loading: false,
+      error: null
+    }))
   }
 
   const handleAddIngredient = (dishData) => {
@@ -188,9 +265,18 @@ function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate, onMeal
         {/* Tab Content */}
         <Box sx={{ p: 2, height: "calc(80vh - 200px)", overflowY: "auto" }}>
           {activeTab === 0 && <AvailableDishes searchQuery={searchQuery} mealType={mealType} onClose={handleMealAdded} onAddDish={onAddDish} />}
-          {activeTab === 1 && <CreateNewDish mealType={mealType} onClose={handleMealAdded} onAddDish={onAddDish} />}
-          {activeTab === 2 && <IngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleMealAdded} onAddIngredient={handleAddIngredient} />}
-          {activeTab === 3 && <CustomIngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleMealAdded} onAddIngredient={handleAddIngredient} />}
+          {activeTab === 1 && (
+            <CreateNewDish 
+              mealType={mealType} 
+              onClose={handleMealAdded} 
+              onAddDish={onAddDish}
+              state={createDishState}
+              updateState={updateCreateDishState}
+              resetState={resetCreateDishState}
+            />
+          )}
+          {activeTab === 2 && <IngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleIngredientAdded} onAddIngredient={handleAddIngredient} />}
+          {activeTab === 3 && <CustomIngredientsTab searchQuery={searchQuery} mealType={mealType} onClose={handleIngredientAdded} onAddIngredient={handleAddIngredient} />}
         </Box>
       </DialogContent>
     </Dialog>

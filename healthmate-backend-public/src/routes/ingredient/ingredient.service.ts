@@ -42,7 +42,7 @@ export class IngredientService {
         return this.ingredientRepo.insertMany(ingredients);
     }
     async findAllPaginate(dto: PaginateDto, userId?: any, roleName?: string): Promise<PaginatedResult<IngredientDocument>> {
-        const { page = 1, limit = 20, type, search } = dto;
+        const { page = 1, limit = 20, type, search, publicOnly } = dto;
 
         const filter: any = {};
         if (type) {
@@ -54,11 +54,16 @@ export class IngredientService {
             filter.name = { $regex: search, $options: 'i' };
         }
 
-        // Visibility rules
-        if (roleName === Rolename.Customer && userId) {
-            filter.$or = [{ belongsTo: null }, { belongsTo: { $exists: false } }, { belongsTo: userId }];
-        } else if (roleName === Rolename.Admin) {
+        // Handle publicOnly parameter
+        if (publicOnly) {
             filter.$or = [{ belongsTo: null }, { belongsTo: { $exists: false } }];
+        } else {
+            // Visibility rules
+            if (roleName === Rolename.Customer && userId) {
+                filter.$or = [{ belongsTo: null }, { belongsTo: { $exists: false } }, { belongsTo: userId }];
+            } else if (roleName === Rolename.Admin) {
+                filter.$or = [{ belongsTo: null }, { belongsTo: { $exists: false } }];
+            }
         }
 
         try {
@@ -154,19 +159,41 @@ export class IngredientService {
             this.validateObjectId(ingredientId);
             const doc = await this.ingredientRepo.findById(new Types.ObjectId(ingredientId));
             if (!doc) throw new IngredientNotFoundError('Ingredient not found');
-            // Permission
-            const isPublic = !doc.belongsTo || String(doc.belongsTo).trim() === '';
+            
+            // Check if this should be a public ingredient (admin updating with isPublic flag)
+            const isPublicIngredient = data.isPublic === true && roleName === Rolename.Admin;
+            
+            // Create a copy of data without the isPublic flag
+            const { isPublic, ...ingredientData } = data;
+            
+            let payload: any;
+            
+            if (isPublicIngredient) {
+                // Admin updating to public ingredient
+                payload = {
+                    ...ingredientData,
+                    belongsTo: null, // Public ingredients don't belong to anyone
+                };
+                
+                console.log('Updating ingredient to public with payload:', payload);
+            } else {
+                // Regular update - keep existing belongsTo or use provided data
+                payload = ingredientData;
+            }
+            
+            // Permission check
+            const isCurrentlyPublic = !doc.belongsTo || String(doc.belongsTo).trim() === '';
             if (roleName === Rolename.Customer) {
-                if (isPublic || String(doc.belongsTo) !== String(userId)) {
+                if (isCurrentlyPublic || String(doc.belongsTo) !== String(userId)) {
                     throw new IngredientForbiddenError('Cannot update ingredient you do not own');
                 }
             } else if (roleName === Rolename.Admin) {
-                if (!isPublic) {
+                if (!isCurrentlyPublic && !isPublicIngredient) {
                     throw new IngredientForbiddenError('Admin cannot update customer-owned ingredient');
                 }
             }
 
-            const updatedDoc = await this.ingredientRepo.update(new Types.ObjectId(ingredientId), data);
+            const updatedDoc = await this.ingredientRepo.update(new Types.ObjectId(ingredientId), payload);
             return updatedDoc!;
         } catch (error) {
             if (error instanceof IngredientNotFoundError || error instanceof IngredientForbiddenError) {

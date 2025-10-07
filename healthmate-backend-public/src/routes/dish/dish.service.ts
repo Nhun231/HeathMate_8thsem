@@ -78,7 +78,7 @@ export class DishService {
     }
 
     async findAllPaginate(dto: PaginateDto, userId?: any, roleName?: string): Promise<PaginatedResult<DishDocument>> {
-        const { page = 1, limit = 20, type } = dto;
+        const { page = 1, limit = 20, type, search } = dto;
 
         const filter: any = {};
         if (type) {
@@ -93,7 +93,7 @@ export class DishService {
         }
 
         try {
-            const result = await this.dishRepo.findAllPaginated(page, limit, filter);
+            const result = await this.dishRepo.findAllPaginated(page, limit, filter, search);
 
             if (result.total === 0) {
                 throw new DishNotFoundError('No dishes found with the given filter');

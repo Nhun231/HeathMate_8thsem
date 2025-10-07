@@ -36,10 +36,23 @@ export class IngredientRepo {
     const skip = (page - 1) * limit;
 
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { type: { $regex: search, $options: 'i' } },
-      ];
+      const searchFilter = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { type: { $regex: search, $options: 'i' } },
+        ]
+      };
+      
+      // Combine existing filters with search filter using $and
+      if (filter.$or) {
+        filter.$and = [
+          { $or: filter.$or },
+          searchFilter
+        ];
+        delete filter.$or;
+      } else {
+        Object.assign(filter, searchFilter);
+      }
     }
 
     const [data, total] = await Promise.all([
@@ -75,10 +88,19 @@ export class IngredientRepo {
     filter.belongsTo = userId;
 
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { type: { $regex: search, $options: 'i' } },
+      const searchFilter = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { type: { $regex: search, $options: 'i' } },
+        ]
+      };
+      
+      // Combine belongsTo filter with search filter using $and
+      filter.$and = [
+        { belongsTo: userId },
+        searchFilter
       ];
+      delete filter.belongsTo; // Remove the direct belongsTo since it's now in $and
     }
 
     const [data, total] = await Promise.all([

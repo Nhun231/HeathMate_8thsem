@@ -10,6 +10,7 @@ export const PaginateSchema = z
     // ---- Search and filtering ----
     type: z.string().optional(),
     search: z.string().optional(),
+    publicOnly: z.coerce.boolean().optional(),
     
     // ---- Keyset pagination ----
     cursor: z.string().optional(), // lastId

@@ -204,9 +204,24 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
 
     } catch (error) {
       console.error('Error saving ingredient:', error)
+      
+      // Extract error message safely
+      let errorMessage = "Có lỗi xảy ra khi lưu nguyên liệu"
+      
+      if (error.response?.data?.message) {
+        // If message is an object, extract the message property
+        if (typeof error.response.data.message === 'object') {
+          errorMessage = error.response.data.message.message || error.response.data.message.code || errorMessage
+        } else {
+          errorMessage = error.response.data.message
+        }
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       setAlert({
         show: true,
-        message: error.response?.data?.message || "Có lỗi xảy ra khi lưu nguyên liệu",
+        message: errorMessage,
         severity: "error"
       })
     } finally {

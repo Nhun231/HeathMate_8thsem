@@ -14,6 +14,7 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient }) {
   const [totalPages, setTotalPages] = useState(1)
   const [selectedTypes, setSelectedTypes] = useState([])
   const [quantities, setQuantities] = useState({}) // Individual quantities for each ingredient
+  const [summary, setSummary] = useState({ total: 0, public: 0, custom: 0 }) // Summary counts
 
   // 14 ingredient types from the images
   const ingredientTypes = [
@@ -55,6 +56,7 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient }) {
         const response = await IngredientService.list(params)
         setIngredients(response.items || [])
         setTotalPages(response.totalPages || 1)
+        setSummary(response.summary || { total: 0, public: 0, custom: 0 })
         
         // Initialize quantities for new ingredients
         const newQuantities = { ...quantities }
@@ -166,6 +168,24 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient }) {
 
   return (
     <Box>
+      {/* Ingredient Summary */}
+      <Box sx={{ mb: 2, p: 2, bgcolor: "#E8F5E9", borderRadius: 2 }}>
+        <Typography variant="subtitle2" sx={{ color: "#4CAF50", fontWeight: 600, mb: 1 }}>
+          Tổng quan nguyên liệu
+        </Typography>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+          <Typography variant="body2" sx={{ color: "#666" }}>
+            Tổng: {summary.total} nguyên liệu
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#4CAF50" }}>
+            Công khai: {summary.public}
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#F57C00" }}>
+            Tùy chỉnh: {summary.custom}
+          </Typography>
+        </Box>
+      </Box>
+
       {/* Filter Controls */}
       <Box sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 2 }}>
         <Typography variant="subtitle2" sx={{ mb: 1, color: "#4CAF50", fontWeight: 600 }}>
@@ -230,9 +250,27 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient }) {
 
           {/* Content */}
           <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#4CAF50", mb: 0.5 }}>
-              {ingredient.name}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#4CAF50" }}>
+                {ingredient.name}
+              </Typography>
+              {/* Custom ingredient flag */}
+              {ingredient.belongsTo && (
+                <Chip
+                  label="Tùy chỉnh"
+                  size="small"
+                  sx={{
+                    bgcolor: "#FFF3E0",
+                    color: "#F57C00",
+                    fontSize: "0.7rem",
+                    height: 20,
+                    "& .MuiChip-label": {
+                      px: 1
+                    }
+                  }}
+                />
+              )}
+            </Box>
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 1 }}>
               <Typography variant="caption" sx={{ color: "#666" }}>
                 Đạm: {ingredient.proteinPer100g?.toFixed(1) || 0}g

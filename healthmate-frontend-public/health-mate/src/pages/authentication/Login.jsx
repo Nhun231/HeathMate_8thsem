@@ -51,7 +51,7 @@ const LoginForm = () => {
             });
             setTimeout(() => {
                 setAlert({...alert, show: false});
-                navigate("/customer-homepage")
+                navigate("/")
             }, 2000);
         } catch (error) {
             const code = extractBackendErrorCode(error) || error?.message;

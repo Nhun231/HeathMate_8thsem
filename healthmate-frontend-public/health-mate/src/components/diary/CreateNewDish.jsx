@@ -1,35 +1,23 @@
 
 
-import { useState, useEffect } from "react"
 import { Box, Typography, TextField, Select, MenuItem, FormControl, Button, Autocomplete, Chip, CircularProgress, Alert } from "@mui/material"
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
 import DishService from "../../services/Dish"
-import IngredientService from "../../services/Ingredient"
 import MealService from "../../services/Meal"
 
-function CreateNewDish({ mealType, onClose, onAddDish }) {
-  const [dishName, setDishName] = useState("")
-  const [description, setDescription] = useState("")
-  const [servings, setServings] = useState(1)
-  const [selectedIngredients, setSelectedIngredients] = useState([])
-  const [availableIngredients, setAvailableIngredients] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-
-  // Fetch available ingredients
-  useEffect(() => {
-    const fetchIngredients = async () => {
-      try {
-        const response = await IngredientService.list({limit: 1000})
-        setAvailableIngredients(response.items || [])
-        console.log(response.items.length)
-      } catch (err) {
-        console.error('Error fetching ingredients:', err)
-      }
-    }
-    fetchIngredients()
-  }, [])
+function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, resetState }) {
+  // Use state from props instead of local state
+  const {
+    dishName,
+    description,
+    servings,
+    selectedIngredients,
+    availableIngredients,
+    loading,
+    error,
+    ingredientsLoading
+  } = state
 
   // Calculate nutritional values
   const calculateNutrition = () => {
@@ -50,13 +38,12 @@ function CreateNewDish({ mealType, onClose, onAddDish }) {
 
   const handleCreateDish = async () => {
     if (!dishName || !description || selectedIngredients.length === 0) {
-      setError('Vui lòng điền đầy đủ thông tin')
+      updateState({ error: 'Vui lòng điền đầy đủ thông tin' })
       return
     }
 
     try {
-      setLoading(true)
-      setError(null)
+      updateState({ loading: true, error: null })
 
       // Create dish via backend API
       const dishData = {
@@ -110,32 +97,38 @@ function CreateNewDish({ mealType, onClose, onAddDish }) {
       onClose()
     } catch (err) {
       console.error('Error creating dish:', err)
-      setError('Không thể tạo món ăn')
+      updateState({ error: 'Không thể tạo món ăn' })
     } finally {
-      setLoading(false)
+      updateState({ loading: false })
     }
   }
 
   const addIngredient = (ingredient) => {
     if (!selectedIngredients.find(ing => ing.ingredient._id === ingredient._id)) {
-      setSelectedIngredients(prev => [...prev, {
-        ingredient,
-        amount: 100, // Default amount
-        unit: 'g'
-      }])
+      updateState({
+        selectedIngredients: [...selectedIngredients, {
+          ingredient,
+          amount: 100, // Default amount
+          unit: 'g'
+        }]
+      })
     }
   }
 
   const removeIngredient = (ingredientId) => {
-    setSelectedIngredients(prev => prev.filter(ing => ing.ingredient._id !== ingredientId))
+    updateState({
+      selectedIngredients: selectedIngredients.filter(ing => ing.ingredient._id !== ingredientId)
+    })
   }
 
   const updateIngredientAmount = (ingredientId, newAmount) => {
-    setSelectedIngredients(prev => prev.map(ing => 
-      ing.ingredient._id === ingredientId 
-        ? { ...ing, amount:  newAmount }
-        : ing
-    ))
+    updateState({
+      selectedIngredients: selectedIngredients.map(ing => 
+        ing.ingredient._id === ingredientId 
+          ? { ...ing, amount: newAmount }
+          : ing
+      )
+    })
   }
 
   if (loading) {
@@ -176,7 +169,7 @@ function CreateNewDish({ mealType, onClose, onAddDish }) {
           fullWidth
           placeholder="Nhập tên món ăn"
           value={dishName}
-          onChange={(e) => setDishName(e.target.value)}
+          onChange={(e) => updateState({ dishName: e.target.value })}
           sx={{
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
@@ -205,7 +198,7 @@ function CreateNewDish({ mealType, onClose, onAddDish }) {
           rows={2}
           placeholder="Mô tả món ăn"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => updateState({ description: e.target.value })}
           sx={{
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
@@ -231,7 +224,7 @@ function CreateNewDish({ mealType, onClose, onAddDish }) {
         <TextField
           type="number"
           value={servings}
-          onChange={(e) => setServings(Math.max(1, Number(e.target.value)))}
+          onChange={(e) => updateState({ servings: Math.max(1, Number(e.target.value)) })}
           sx={{ width: 120 }}
           inputProps={{ min: 1, max: 20 }}
         />
@@ -240,37 +233,54 @@ function CreateNewDish({ mealType, onClose, onAddDish }) {
       {/* Ingredient Selection */}
       <Box>
         <Typography variant="body2" sx={{ color: "#4CAF50", fontWeight: 500, mb: 1 }}>
-          Thêm nguyên liệu *
+          Thêm nguyên liệu * ({availableIngredients.length} có sẵn)
         </Typography>
-        <Autocomplete
-          options={availableIngredients}
-          getOptionLabel={(option) => option.name}
-          onChange={(event, value) => {
-            if (value) {
-              addIngredient(value)
-            }
-          }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Tìm và chọn nguyên liệu"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  "& fieldset": {
-                    borderColor: "#e0e0e0",
+        {ingredientsLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+            <CircularProgress sx={{ color: "#4CAF50" }} />
+          </Box>
+        ) : (
+          <Autocomplete
+            options={availableIngredients}
+            getOptionLabel={(option) => option.name}
+            filterOptions={(options, { inputValue }) => {
+              if (!inputValue) return options
+              
+              // Custom filtering for Vietnamese text
+              const searchTerm = inputValue.toLowerCase().trim()
+              return options.filter((option) => {
+                const ingredientName = option.name.toLowerCase()
+                // Check if the ingredient name contains the search term
+                return ingredientName.includes(searchTerm)
+              })
+            }}
+            onChange={(event, value) => {
+              if (value) {
+                addIngredient(value)
+              }
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder={`Tìm và chọn nguyên liệu (${availableIngredients.length} có sẵn)`}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    "& fieldset": {
+                      borderColor: "#e0e0e0",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#4CAF50",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#4CAF50",
+                    },
                   },
-                  "&:hover fieldset": {
-                    borderColor: "#4CAF50",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#4CAF50",
-                  },
-                },
-              }}
-            />
-          )}
-        />
+                }}
+              />
+            )}
+          />
+        )}
       </Box>
 
       {/* Selected Ingredients */}

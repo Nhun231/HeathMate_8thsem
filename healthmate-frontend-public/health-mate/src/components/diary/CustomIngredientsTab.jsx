@@ -57,7 +57,21 @@ function CustomIngredientsTab({ searchQuery, onAddIngredient, mealType, onClose 
         
       } catch (err) {
         console.error('Error fetching custom ingredients:', err)
-        const errorMessage = err.response?.data?.message || err.message || 'Không thể tải danh sách nguyên liệu tùy chỉnh'
+        
+        // Extract error message safely
+        let errorMessage = 'Không thể tải danh sách nguyên liệu tùy chỉnh'
+        
+        if (err.response?.data?.message) {
+          // If message is an object, extract the message property
+          if (typeof err.response.data.message === 'object') {
+            errorMessage = err.response.data.message.message || err.response.data.message.code || errorMessage
+          } else {
+            errorMessage = err.response.data.message
+          }
+        } else if (err.message) {
+          errorMessage = err.message
+        }
+        
         setError(errorMessage)
       } finally {
         setLoading(false)
