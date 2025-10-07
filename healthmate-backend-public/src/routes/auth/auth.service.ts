@@ -14,6 +14,7 @@ import {
   OTPExpiredException,
   RefreshTokenAlreadyUsedException,
   UnauthorizedAccessException,
+  UserOfRefreshTokenNotFoundException,
 } from './auth.error';
 import {
   TypeOfVerificationCode,
@@ -190,7 +191,7 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new Error('User not found');
+        throw UserOfRefreshTokenNotFoundException;
       }
 
       const roleId = (user.roleId as RoleDocument)._id ?? user.roleId;

@@ -22,6 +22,7 @@ import {
 } from './schemas/verificationCode.schema';
 import { NutrientsCalculatorService } from './services/nutrients-calculator.service';
 import { SharedRoleRepository } from './repositories/shared-role.repo';
+import { Permission, PermissionSchema } from './schemas/permission.schema';
 
 const sharedServices = [
   TokenService,
@@ -53,6 +54,9 @@ const sharedServices = [
     ]),
     MongooseModule.forFeature([
       { name: VerificationCode.name, schema: VerificationCodeSchema },
+    ]),
+    MongooseModule.forFeature([
+      { name: Permission.name, schema: PermissionSchema },
     ]),
     JwtModule,
   ],

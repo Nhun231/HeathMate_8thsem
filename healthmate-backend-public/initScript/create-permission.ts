@@ -8,7 +8,7 @@ import { Model } from 'mongoose';
 import {
   Permission,
   PermissionDocument,
-} from 'src/routes/permission/schema/permission.schema';
+} from 'src/shared/schemas/permission.schema';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule); // ✅ we don’t need to listen()

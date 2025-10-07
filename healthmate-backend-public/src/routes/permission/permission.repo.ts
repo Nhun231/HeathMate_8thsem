@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { QueryBuilder } from 'src/shared/utils/query-builder';
-import { Permission, PermissionDocument } from './schema/permission.schema';
+import {
+  Permission,
+  PermissionDocument,
+} from '../../shared/schemas/permission.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Role, RoleDocument } from 'src/shared/schemas/role.schema';
 import { DeleteResult, Model, Types } from 'mongoose';
