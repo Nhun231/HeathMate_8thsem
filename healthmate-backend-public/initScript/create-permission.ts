@@ -38,7 +38,7 @@ async function bootstrap() {
           layer.route?.stack[0].method,
         ).toUpperCase() as keyof typeof HTTPMethod;
         const moduleName = String(path.split('/')[2]).toUpperCase();
-
+        console.log(path, method, moduleName);
         return {
           path,
           method,

@@ -25,7 +25,7 @@ export const CreatePermissionBodySchema = z
   })
   .strict();
 
-export const UpdatePermissionBodySchema = CreatePermissionBodySchema;
+export const UpdatePermissionBodySchema = CreatePermissionBodySchema.partial();
 
 export type GetPermissionParamsType = z.infer<typeof GetPermissionParamsSchema>;
 

@@ -6,6 +6,7 @@ import {
   CreatePermissionBodyType,
   UpdatePermissionBodyType,
 } from './schema/request/permission.request.schema';
+import { NotFoundPermissionException } from './permission.error';
 
 @Injectable()
 export class PermissionService {
@@ -16,7 +17,15 @@ export class PermissionService {
   }
 
   async findOne(id: string) {
-    return this.permissionRepo.findOne(new Types.ObjectId(id));
+    const permission = await this.permissionRepo.findOne(
+      new Types.ObjectId(id),
+    );
+
+    if (!permission) {
+      throw NotFoundPermissionException;
+    }
+
+    return permission;
   }
 
   async create(permission: CreatePermissionBodyType) {
@@ -24,10 +33,12 @@ export class PermissionService {
   }
 
   async update(id: string, permission: UpdatePermissionBodyType) {
+    await this.findOne(id);
     return this.permissionRepo.update(new Types.ObjectId(id), permission);
   }
 
   async delete(id: string): Promise<DeleteResult> {
+    await this.findOne(id);
     return this.permissionRepo.delete(new Types.ObjectId(id));
   }
 }

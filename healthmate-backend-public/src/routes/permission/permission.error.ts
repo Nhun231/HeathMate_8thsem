@@ -7,3 +7,10 @@ export const PermissionAlreadyExistsException =
       path: 'path',
     },
   ]);
+
+export const NotFoundPermissionException = new UnprocessableEntityException([
+  {
+    message: 'Error.NotFoundPermission',
+    path: 'permissionId',
+  },
+]);

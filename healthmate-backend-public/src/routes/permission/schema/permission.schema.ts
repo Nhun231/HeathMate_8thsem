@@ -20,6 +20,12 @@ export class Permission {
   method: string;
 
   @Prop({
+    type: String,
+    required: true,
+  })
+  module: string;
+
+  @Prop({
     type: [mongoose.Schema.Types.ObjectId],
     ref: Role.name,
     required: true,
