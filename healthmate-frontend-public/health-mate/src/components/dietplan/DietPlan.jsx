@@ -13,8 +13,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { createDietPlan } from '../../services/DietPlan';
 import CustomAlert from '../common/Alert';
 import { translateErrorCode, extractBackendErrorCode } from '../../utils/errorTranslations';
-import Header from '../common/Header';
-
 const DietPlan = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -24,7 +22,7 @@ const DietPlan = () => {
     const [result, setResult] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
 
-    const handleNavigateToCustomer = () => navigate('/customer');
+    const handleNavigateToCustomer = () => navigate('/customer-homepage');
     const handleSubmit = async () => {
         try {
             setErrorMsg('');
@@ -61,8 +59,6 @@ const DietPlan = () => {
     };
 
     return (
-        <>
-        <Header />
         <Container maxWidth="md" sx={{ mt: 8 }}>
             <Paper
                 elevation={6}
@@ -85,6 +81,8 @@ const DietPlan = () => {
                             message={errorMsg}
                             variant="error"
                             onClose={() => setErrorMsg('')}
+                            sticky={true}
+                            autoCloseDelay={2000}
                         />
                     </Box>
                 )}
@@ -230,7 +228,6 @@ const DietPlan = () => {
                 </Button>
             </Paper>
         </Container>
-        </>
     );
 };
 

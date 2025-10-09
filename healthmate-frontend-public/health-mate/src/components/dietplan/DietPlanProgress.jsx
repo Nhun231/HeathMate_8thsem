@@ -14,7 +14,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { getCurrentDietPlan } from "../../services/DietPlan";
 import { getAllCalculations } from "../../services/Calculation";
-import Header from "../common/Header";
 const COLORS = ["#4CAF50", "#E0E0E0"];
 
 const DietPlanProgress = () => {
@@ -147,8 +146,6 @@ const DietPlanProgress = () => {
   }
 
   return (
-    <>
-    <Header />
     <Container sx={{ mt: 5 }}>
       <Typography
         variant="h4"
@@ -334,7 +331,6 @@ const DietPlanProgress = () => {
         </Grid>
       </Paper>
     </Container>
-    </>
   );
 };
 
