@@ -215,7 +215,7 @@ const DietPlanProgress = () => {
               <Typography variant="h5" fontWeight="bold" gutterBottom>
                 Thông tin kế hoạch
               </Typography>
-              <Typography variant="body1" fontSize="1.1rem" mb={1}>
+              <Typography variant="body1" fontSize="1.1rem" >
                 <strong>Mục tiêu: {goalMap[dietPlan.goal]}</strong>
               </Typography>
               <Typography variant="body1" fontSize="1.1rem">

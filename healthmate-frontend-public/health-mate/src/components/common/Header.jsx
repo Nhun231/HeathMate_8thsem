@@ -9,14 +9,28 @@ import {
     MenuItem
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-
+import { getCurrentDietPlan } from "../../services/DietPlan";
 const Header = () => {
     const navigate = useNavigate();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
+    const [hasDietPlan, setHasDietPlan] = useState(false);
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
         setIsLoggedIn(!!token);
+        if (token) {
+      getCurrentDietPlan(token)
+        .then((data) => {
+          if (data) setHasDietPlan(true);
+        })
+        .catch((err) => {
+          if (err?.status === 404 || err?.statusCode === 404) {
+            setHasDietPlan(false);
+          } else {
+            console.error(err);
+          }
+        });
+    }
     }, []);
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -87,7 +101,7 @@ const Header = () => {
                                     handleClose();
                                 }}
                                 >
-                                Lập kế hoạch ăn uống
+                                {hasDietPlan ? "Chỉnh sửa kế hoạch ăn uống" : "Lập kế hoạch ăn uống"}
                                 </MenuItem>
                                 <MenuItem
                                 onClick={() => {

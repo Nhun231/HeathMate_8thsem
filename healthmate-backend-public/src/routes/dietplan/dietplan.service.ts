@@ -44,7 +44,7 @@ export class DietPlanService {
     const currentWeight = latestCalc.weight;
 
     // Calculate diet plan details
-    const { dailyCalories, durationDays, endDate } =
+    const { dailyCalories, durationDays, endDate, targetWeight } =
       this.calculateDietPlanDetails({
         TDEE,
         goal,
@@ -55,31 +55,24 @@ export class DietPlanService {
     // Check if there's an existing current plan
     const existingPlan =
       await this.dietPlanRepo.findCurrentByUserId(userObjectId);
+    const payload = {
+      goal,
+      targetWeightChange: targetWeight,
+      dailyCalories,
+      durationDays,
+      startDate: new Date(),
+      endDate,
+      referenceTDEE: TDEE,
+    };
 
     if (existingPlan) {
       // If exists, update
-      return this.dietPlanRepo.update(existingPlan._id, {
-        goal,
-        targetWeightChange:
-          goal === 'MaintainWeight' ? undefined : targetWeightChange,
-        dailyCalories,
-        durationDays,
-        startDate: new Date(),
-        endDate: goal === 'MaintainWeight' ? undefined : (endDate ?? undefined),
-        referenceTDEE: TDEE,
-      });
+      return this.dietPlanRepo.update(existingPlan._id, payload);
     } else {
       //If not, create new
       return this.dietPlanRepo.create({
         userId: userObjectId,
-        goal,
-        targetWeightChange:
-          goal === 'MaintainWeight' ? undefined : targetWeightChange,
-        dailyCalories,
-        durationDays,
-        startDate: new Date(),
-        endDate: goal === 'MaintainWeight' ? undefined : (endDate ?? undefined),
-        referenceTDEE: TDEE,
+        ...payload,
       });
     }
   }
@@ -110,7 +103,7 @@ export class DietPlanService {
     const currentWeight = latestCalc.weight;
     const newGoal = goal || existingPlan.goal;
 
-    const { dailyCalories, durationDays, endDate } =
+    const { dailyCalories, durationDays, endDate, targetWeight } =
       this.calculateDietPlanDetails({
         TDEE,
         goal: newGoal,
@@ -120,12 +113,10 @@ export class DietPlanService {
 
     return this.dietPlanRepo.update(existingPlan._id, {
       goal: newGoal,
-      targetWeightChange:
-        newGoal === 'MaintainWeight' ? undefined : targetWeightChange,
+      targetWeightChange: targetWeight,
       dailyCalories,
-      durationDays: newGoal === 'MaintainWeight' ? 0 : durationDays,
-      endDate:
-        newGoal === 'MaintainWeight' ? undefined : (endDate ?? undefined),
+      durationDays,
+      endDate,
       referenceTDEE: TDEE,
     });
   }
@@ -157,15 +148,19 @@ export class DietPlanService {
   }: {
     TDEE: number;
     goal: string;
-    targetWeightChange?: number; 
+    targetWeightChange?: number;
     currentWeight: number;
   }) {
     let dailyCalories = TDEE;
     let durationDays = 0;
-    let endDate: Date | null = null;
+    let endDate: Date | undefined;
+    let targetWeight = currentWeight;
 
     if (goal === 'MaintainWeight') {
-      dailyCalories = TDEE;
+      durationDays = 30;
+      endDate = new Date();
+      endDate.setDate(endDate.getDate() + 30);
+      dailyCalories = Math.round(TDEE);
     } else if (goal === 'LoseWeight' || goal === 'GainWeight') {
       if (!targetWeightChange || targetWeightChange <= 0) {
         throw new InvalidTargetWeightChangeException();
@@ -194,8 +189,9 @@ export class DietPlanService {
 
     return {
       dailyCalories: Math.round(dailyCalories),
-      durationDays: goal === 'MaintainWeight' ? 0 : durationDays,
-      endDate: goal === 'MaintainWeight' ? undefined : endDate,
+      durationDays,
+      endDate,
+      targetWeight,
     };
   }
 }
