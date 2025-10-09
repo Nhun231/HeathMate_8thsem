@@ -23,6 +23,7 @@ import {
 import { NutrientsCalculatorService } from './services/nutrients-calculator.service';
 import { SharedRoleRepository } from './repositories/shared-role.repo';
 import { Permission, PermissionSchema } from './schemas/permission.schema';
+import { S3Service } from './services/s3.service';
 
 const sharedServices = [
   TokenService,
@@ -31,6 +32,7 @@ const sharedServices = [
   NutrientsCalculatorService,
   SharedUserRepository,
   SharedRoleRepository,
+  S3Service,
 ];
 
 @Global()

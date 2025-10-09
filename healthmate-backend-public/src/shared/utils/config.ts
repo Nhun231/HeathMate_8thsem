@@ -33,6 +33,9 @@ const configSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string(),
   GOOGLE_REDIRECT_URI: z.url(),
   GOOGLE_CLIENT_REDIRECT_URI: z.url(),
+  S3_REGION: z.string(),
+  S3_ACCESS_KEY: z.string(),
+  S3_SECRET_KEY: z.string(),
   PREFIX_STATIC_ENDPOINT: z.string(),
 });
 
