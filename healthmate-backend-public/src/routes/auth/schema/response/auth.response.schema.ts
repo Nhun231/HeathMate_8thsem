@@ -41,6 +41,10 @@ export const RefreshTokenResponseSchema = z.object({
   refreshToken: z.string(),
 });
 
+export const GetAuthorizationUrlResponseSchema = z.object({
+  url: z.url(),
+});
+
 export type UserType = z.infer<typeof UserSchema>;
 
 export type RegisterResponseType = z.infer<typeof RegisterResponseSchema>;
@@ -51,4 +55,8 @@ export type LoginResponseType = z.infer<typeof LoginResponseSchema>;
 
 export type RefreshTokenResponseType = z.infer<
   typeof RefreshTokenResponseSchema
+>;
+
+export type GetAuthorizationUrlResponseType = z.infer<
+  typeof GetAuthorizationUrlResponseSchema
 >;

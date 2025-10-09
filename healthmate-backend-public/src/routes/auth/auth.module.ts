@@ -15,10 +15,11 @@ import {
 } from 'src/shared/schemas/verificationCode.schema';
 import { RolesService } from './role.service';
 import { AuthRepository } from './auth.repo';
+import { GoogleService } from './google.service';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, RolesService, AuthRepository],
+  providers: [AuthService, RolesService, AuthRepository, GoogleService],
   imports: [
     MongooseModule.forFeature([{ name: Device.name, schema: DeviceSchema }]),
     MongooseModule.forFeature([

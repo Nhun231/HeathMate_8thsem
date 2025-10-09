@@ -1,6 +1,7 @@
 import baseAxios from "../api/axios";
 export const createCalculation = async (payload, token) => {
     try {
+        console.log(payload);
         return await baseAxios.post("/calculation", payload, {
             headers: {
                 Authorization: `Bearer ${token}`,

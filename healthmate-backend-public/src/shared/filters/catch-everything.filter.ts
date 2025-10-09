@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { isUniqueConstraintError } from '../helper';
+import { isUniqueConstraintError } from '../utils/helper';
 
 @Catch()
 export class CatchEverythingFilter implements ExceptionFilter {

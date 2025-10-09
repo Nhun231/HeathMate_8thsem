@@ -21,13 +21,15 @@ import {
   VerificationCodeSchema,
 } from './schemas/verificationCode.schema';
 import { NutrientsCalculatorService } from './services/nutrients-calculator.service';
+import { SharedRoleRepository } from './repositories/shared-role.repo';
 
 const sharedServices = [
   TokenService,
   HashingService,
-  SharedUserRepository,
   EmailService,
   NutrientsCalculatorService,
+  SharedUserRepository,
+  SharedRoleRepository,
 ];
 
 @Global()
@@ -55,4 +57,4 @@ const sharedServices = [
     JwtModule,
   ],
 })
-export class SharedModule {}
+export class SharedModule { }

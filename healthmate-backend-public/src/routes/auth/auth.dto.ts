@@ -7,6 +7,7 @@ import {
   RegisterBodySchema,
   SendOTPBodySchema,
 } from './schema/request/auth.request.schema';
+import { GetAuthorizationUrlResponseSchema } from './schema/response/auth.response.schema';
 
 export class RegisterBodyDTO extends createZodDto(RegisterBodySchema) {}
 
@@ -20,4 +21,8 @@ export class LogOutBodyDTO extends createZodDto(LogOutBodySchema) {}
 
 export class ForgotPasswordBodyDTO extends createZodDto(
   ForgotPasswordBodySchema,
+) {}
+
+export class GetAuthorizationUrlResponseDTO extends createZodDto(
+  GetAuthorizationUrlResponseSchema,
 ) {}

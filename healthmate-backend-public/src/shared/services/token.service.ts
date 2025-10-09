@@ -6,7 +6,7 @@ import {
   RefreshTokenPayload,
   RefreshTokenPayloadCreate,
 } from '../types/jwt.type';
-import envConfig from '../config';
+import envConfig from '../utils/config';
 
 @Injectable()
 export class TokenService {
