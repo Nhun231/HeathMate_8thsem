@@ -17,6 +17,7 @@ import { DishModule } from './routes/dish/dish.module';
 import { MealModule } from './routes/meal/meal.module';
 import { PermissionModule } from './routes/permission/permission.module';
 import { UserModule } from './routes/user/user.module';
+import { MediaModule } from './routes/media/media.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { UserModule } from './routes/user/user.module';
     MealModule,
     UserModule,
     PermissionModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [
