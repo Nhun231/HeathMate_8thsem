@@ -16,7 +16,7 @@ export class CalculationService {
     private readonly calculationRepo: CalculationRepo,
     private readonly nutrientCalculatorService: NutrientsCalculatorService,
     private readonly sharedUserRepository: SharedUserRepository,
-  ) { }
+  ) {}
 
   async createCalculation({
     data,
@@ -25,7 +25,7 @@ export class CalculationService {
     data: CalculationCreateType;
     userId: Types.ObjectId;
   }) {
-    const calculation = await this.calculate({ data, userId });
+    const calculation = this.calculate({ data, userId });
 
     // if there is a record for today, update the existing record
     const existingCalculation =
@@ -38,29 +38,21 @@ export class CalculationService {
     return this.calculationRepo.create(calculation);
   }
 
-  async calculate({
+  calculate({
     data,
     userId,
   }: {
     data: CalculationCreateType;
     userId: Types.ObjectId;
   }) {
-    const { height, weight, activityLevel } = data;
-
-    const userAge = await this.sharedUserRepository.getUserAge(userId);
-    const user = await this.sharedUserRepository.findUnique({ _id: userId });
-
-    if (!user) {
-      throw NotFoundUserCalculationException;
-    }
-    const gender = user.gender;
+    const { age, gender, height, weight, activityLevel } = data;
 
     const { bmr, tdee, bmi, waterNeeded, protein, fat, carbs, fiber } =
       this.nutrientCalculatorService.calculateNutrients({
+        age,
         gender,
         height,
         weight,
-        age: userAge,
         activityLevel,
       });
 
