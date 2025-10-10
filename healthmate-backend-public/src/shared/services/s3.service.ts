@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { S3 } from '@aws-sdk/client-s3';
 import envConfig from '../utils/config';
+import { Upload } from '@aws-sdk/lib-storage';
+import { readFileSync } from 'fs';
 
 @Injectable()
 export class S3Service {
@@ -15,8 +17,33 @@ export class S3Service {
       },
     });
 
-    this.s3.listBuckets({}).then((res) => {
-      console.log(res);
+    // this.s3.listBuckets({}).then((res) => {
+    //   console.log(res);
+    // });
+  }
+
+  uploadedFile({
+    filename,
+    filepath,
+    contentType,
+  }: {
+    filename: string;
+    filepath: string;
+    contentType: string;
+  }) {
+    const parallelUploads3 = new Upload({
+      client: this.s3,
+      params: {
+        Bucket: envConfig.S3_BUCKET_NAME,
+        Key: filename,
+        Body: readFileSync(filepath),
+        ContentType: contentType,
+      },
+      tags: [],
+      queueSize: 4,
+      partSize: 1024 * 1024 * 5,
+      leavePartsOnError: false,
     });
+    return parallelUploads3.done();
   }
 }

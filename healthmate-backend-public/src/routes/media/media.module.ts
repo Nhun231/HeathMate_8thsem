@@ -5,6 +5,7 @@ import multer from 'multer';
 import { generateRandomFilename } from 'src/shared/utils/helper';
 import { existsSync, mkdirSync } from 'fs';
 import { UPLOAD_DIR } from 'src/shared/constants/media.constant';
+import { MediaService } from './media.service';
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -17,6 +18,7 @@ const storage = multer.diskStorage({
 });
 
 @Module({
+  providers: [MediaService],
   imports: [
     MulterModule.register({
       storage,

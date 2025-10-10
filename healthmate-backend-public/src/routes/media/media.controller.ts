@@ -14,12 +14,14 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import path from 'path';
-import envConfig from 'src/shared/utils/config';
 import { UPLOAD_DIR } from 'src/shared/constants/media.constant';
 import { IsPublic } from 'src/shared/decorators/auth.decorator';
+import { MediaService } from './media.service';
 
 @Controller('media')
 export class MediaController {
+  constructor(private readonly mediaService: MediaService) {}
+
   @Post('images/upload')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
@@ -41,9 +43,10 @@ export class MediaController {
     files: Array<Express.Multer.File>,
   ) {
     // console.log(files);
-    return files.map((file) => ({
-      url: `${envConfig.PREFIX_STATIC_ENDPOINT}/${file.filename}`,
-    }));
+    // return files.map((file) => ({
+    //   url: `${envConfig.PREFIX_STATIC_ENDPOINT}/${file.filename}`,
+    // }));
+    return this.mediaService.uploadFile(files);
   }
 
   @Get('static/:filename')

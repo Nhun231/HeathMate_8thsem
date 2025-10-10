@@ -14,12 +14,13 @@ import {
   InvalidPasswordException,
   OTPExpiredException,
   RefreshTokenAlreadyUsedException,
+  UserOfRefreshTokenNotFoundException,
 } from './../auth.error';
 import {
   Gender,
   TypeOfVerificationCode,
 } from 'src/shared/constants/auth.constant';
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -264,7 +265,7 @@ describe('AuthService', () => {
           userAgent: 'ua',
           ip: '1.1.1.1',
         }),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      ).rejects.toBe(UserOfRefreshTokenNotFoundException);
     });
   });
 

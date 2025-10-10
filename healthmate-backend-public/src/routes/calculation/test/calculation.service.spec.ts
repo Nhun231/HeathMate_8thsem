@@ -96,7 +96,13 @@ describe('CalculationService', () => {
     });
 
     it('should update today record if it exists', async () => {
-      const existing = { _id: new Types.ObjectId(), ...sampleCalculationData };
+      const existing = {
+        _id: new Types.ObjectId(),
+        ...sampleCalculationData,
+      } as any;
+      jest
+        .spyOn(service, 'update')
+        .mockResolvedValue({ ...existing, weight: 71 });
 
       mockCalculationRepo.findTodayRecord.mockResolvedValue(existing);
       mockNutrientCalculatorService.calculateNutrients.mockReturnValue({
@@ -116,8 +122,9 @@ describe('CalculationService', () => {
         userId,
       });
 
-      expect(mockCalculationRepo.update).toHaveBeenCalledWith(
-        existing._id,
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(service.update).toHaveBeenCalledWith(
+        existing._id.toString(),
         expect.objectContaining({ weight: 70 }),
       );
       expect(result).toHaveProperty('weight', 71);
