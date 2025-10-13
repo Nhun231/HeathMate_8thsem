@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   FileTypeValidator,
   Get,
@@ -17,12 +18,19 @@ import path from 'path';
 import { UPLOAD_DIR } from 'src/shared/constants/media.constant';
 import { IsPublic } from 'src/shared/decorators/auth.decorator';
 import { MediaService } from './media.service';
+import { ZodSerializerDto } from 'nestjs-zod';
+import {
+  PresignedUploadFileBodyDTO,
+  PresignedUploadFileResponseDTO,
+  UploadFilesResponseDTO,
+} from './media.dto';
 
-@Controller('media')
+@Controller('v1/media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Post('images/upload')
+  @ZodSerializerDto(UploadFilesResponseDTO)
   @UseInterceptors(
     FilesInterceptor('files', 10, {
       limits: { fileSize: 1024 * 1024 * 5 },
@@ -58,5 +66,19 @@ export class MediaController {
         res.status(notFound.getStatus()).json(notFound.getResponse());
       }
     });
+  }
+
+  @Post('images/upload/presigned-url')
+  @ZodSerializerDto(PresignedUploadFileResponseDTO)
+  @IsPublic()
+  async getPresignedURL(@Body() body: PresignedUploadFileBodyDTO) {
+    console.log(body);
+    return this.mediaService.getPresignedPutURL(body);
+  }
+
+  @Post('images/presigned-get-url')
+  @IsPublic()
+  async getPresignedGetURL(@Body() body: { key: string }) {
+    return this.mediaService.getPresignedGetURL(body);
   }
 }
