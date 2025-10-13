@@ -28,6 +28,16 @@ export const GetCalculationUserParamsSchema = z.object({
 
 export const DeleteCalculationParamsSchema = GetCalculationParamsSchema;
 
+//update nutrient
+export const UpdateNutrientBodySchema = z
+  .object({
+    protein: z.number().optional(),
+    fat: z.number().optional(),
+    carbs: z.number().optional(),
+    fiber: z.number().optional(),
+  })
+  .strict();
+
 export type CalculationCreateType = z.infer<typeof CalculationCreateBodySchema>;
 
 export type GetCalculationParamsType = z.infer<
@@ -40,4 +50,8 @@ export type GetCalculationUserParamsType = z.infer<
 
 export type DeleteCalculationParamsType = z.infer<
   typeof DeleteCalculationParamsSchema
+>;
+
+export type UpdateManualNutrientBodyType = z.infer<
+  typeof UpdateNutrientBodySchema
 >;

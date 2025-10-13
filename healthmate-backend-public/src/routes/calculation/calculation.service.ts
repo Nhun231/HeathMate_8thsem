@@ -9,6 +9,7 @@ import { Calculation } from './schema/calculation.schema';
 import { Types } from 'mongoose';
 import { NutrientsCalculatorService } from 'src/shared/services/nutrients-calculator.service';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
+import { last } from 'rxjs';
 
 @Injectable()
 export class CalculationService {
@@ -116,6 +117,25 @@ export class CalculationService {
   // Find lastest calculation record by userId
   async findLatestByUserId(userId: Types.ObjectId) {
     return this.calculationRepo.findLatestByUserId(userId);
+  }
+
+  async updateNutrient(
+    userId: Types.ObjectId,
+    data: { protein?: number; fat?: number; carbs?: number; fiber?: number }) {
+    //Give the lastest calculation record
+    const latest = await this.findLatestByUserId(userId);
+    if (!latest) {
+      throw NotFoundCalculationException;
+    }
+
+    //Update nutrient
+    const updated = await this.calculationRepo.update(latest._id, {
+      protein: data.protein ?? latest.protein,
+      fat: data.fat ?? latest.fat,
+      carbs: data.carbs ?? latest.carbs,
+      fiber: data.fiber ?? latest.fiber,
+    });
+    return updated;
   }
 
 }
