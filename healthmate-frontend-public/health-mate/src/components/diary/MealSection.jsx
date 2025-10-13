@@ -1,10 +1,14 @@
 "use client"
+import { useState } from "react"
 import { Box, Typography, Button, IconButton } from "@mui/material"
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
 import { useDiary } from "../../context/DiaryContext.jsx"
+import UpdateMealModal from "./UpdateMealModal"
 
 function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded }) {
+  const [updateModalOpen, setUpdateModalOpen] = useState(false)
+  const [selectedMeal, setSelectedMeal] = useState(null)
   const { selectedDate, getDayEntries, removeDishFromMeal } = useDiary()
   const entries = getDayEntries(selectedDate)
   const dishes = entries[mealType] || []
@@ -15,6 +19,28 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
   const totalCalories = displayMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0)
   
   console.log(`MealSection ${mealType} - displayMeals:`, displayMeals)
+
+  const handleEditMeal = (meal) => {
+    setSelectedMeal(meal)
+    setUpdateModalOpen(true)
+  }
+
+  const handleCloseUpdateModal = () => {
+    setUpdateModalOpen(false)
+    setSelectedMeal(null)
+  }
+
+  const handleMealUpdated = () => {
+    if (onMealAdded) {
+      onMealAdded()
+    }
+  }
+
+  const handleMealDeleted = () => {
+    if (onMealAdded) {
+      onMealAdded()
+    }
+  }
 
   return (
     <Box
@@ -114,24 +140,25 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
                   <Typography variant="body2" sx={{ color: "#999" }}>
                     Fiber: {meal.fiber || 0}g
                   </Typography>
-                  {meal.quantity && (
-                    <Typography variant="body2" sx={{ color: "#999" }}>
-                      Số lượng: {meal.quantity}g
-                    </Typography>
-                  )}
+                  {/*{meal.quantity && (*/}
+                  {/*  <Typography variant="body2" sx={{ color: "#999" }}>*/}
+                  {/*    Số lượng: {meal.quantity}g*/}
+                  {/*  </Typography>*/}
+                  {/*)}*/}
                 </Box>
               </Box>
               <Box sx={{ display: "flex", gap: 0.5 }}>
-                <IconButton size="small" sx={{ color: "#4CAF50" }}>
+                <IconButton 
+                  size="small" 
+                  sx={{ color: "#4CAF50" }}
+                  onClick={() => handleEditMeal(meal)}
+                >
                   <EditIcon fontSize="small" />
                 </IconButton>
                 <IconButton
                   size="small"
                   sx={{ color: "#f44336" }}
-                  onClick={() => {
-                    // Handle delete - could call API here
-                    if (onMealAdded) onMealAdded()
-                  }}
+                  onClick={() => handleEditMeal(meal)}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -167,6 +194,15 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
           </Button>
         </Box>
       )}
+
+      {/* Update Meal Modal */}
+      <UpdateMealModal
+        open={updateModalOpen}
+        onClose={handleCloseUpdateModal}
+        meal={selectedMeal}
+        onMealUpdated={handleMealUpdated}
+        onMealDeleted={handleMealDeleted}
+      />
     </Box>
   )
 }
