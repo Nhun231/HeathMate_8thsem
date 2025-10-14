@@ -155,6 +155,8 @@ function FoodDiary() {
               quantity: meal.quantity || 0,
               isIngredient: meal.isIngredient,
               mealType: meal.mealType,
+              dishId: meal.dishId?._id, // Add dishId for dishes
+              ingredientId: meal.ingredientId?._id, // Add ingredientId for ingredients
             };
             console.log("Processed meal data:", mealData); // Debug log
             groupedMeals[mealType].push(mealData);
@@ -259,7 +261,7 @@ function FoodDiary() {
           }}
         >
           <Typography variant="h5" sx={{ fontWeight: 600, color: "#000" }}>
-            Food Diary
+            Nhật ký ăn uống
           </Typography>
           <ButtonGroup variant="contained" disableElevation>
             <Button
