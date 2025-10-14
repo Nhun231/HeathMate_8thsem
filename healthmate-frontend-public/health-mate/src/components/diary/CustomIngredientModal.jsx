@@ -20,12 +20,12 @@ import {
   Checkbox
 } from "@mui/material"
 import { Close as CloseIcon, Save as SaveIcon, AdminPanelSettings as AdminIcon } from "@mui/icons-material"
-import IngredientService from "../../services/Ingredient"
+import { updateIngredient, createIngredient } from "../../services/Ingredient"
 import { useAuth } from "../../context/AuthProvider"
 
 function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
   const { user } = useAuth()
-  const isAdmin = user?.role === 'Admin'
+  const isAdmin = user?.roleId.name === 'Admin'
   
   const [formData, setFormData] = useState({
     name: "",
@@ -170,7 +170,7 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
       let result
       if (ingredient) {
         // Update existing ingredient
-        result = await IngredientService.update(ingredient._id, ingredientData)
+        result = await updateIngredient(ingredient._id, ingredientData)
         const updateMessage = isAdmin && formData.isPublic 
           ? "Cập nhật nguyên liệu công khai thành công!" 
           : "Cập nhật nguyên liệu thành công!"
@@ -181,7 +181,7 @@ function CustomIngredientModal({ open, onClose, ingredient = null, onSave }) {
         })
       } else {
         // Create new ingredient
-        result = await IngredientService.create(ingredientData)
+        result = await createIngredient(ingredientData)
         const createMessage = isAdmin && formData.isPublic 
           ? "Tạo nguyên liệu công khai thành công!" 
           : "Tạo nguyên liệu mới thành công!"

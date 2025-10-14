@@ -1,7 +1,6 @@
 import axios from '../api/axios';
 
-const IngredientService = {
-  list: async (params = {}) => {
+export const listCustomAndPublicIngredients =  async (params = {}) => {
     try {
       // Get all ingredients first (no pagination on backend, no search on backend)
       const [publicIngredients, customIngredients] = await Promise.all([
@@ -10,7 +9,7 @@ const IngredientService = {
           params: { 
             ...params,
             publicOnly: true,
-            limit: 1000, // Get all public ingredients
+            limit: 1000,
             page: 1,
             search: undefined // Remove search from backend call
           } 
@@ -85,8 +84,8 @@ const IngredientService = {
       console.error('Error fetching combined ingredients:', error);
       throw error;
     }
-  },
-  search: async (query, params = {}) => {
+  }
+export const search = async (query, params = {}) => {
     const res = await axios.get('/ingredients', {
       params: { 
         ...params,
@@ -94,38 +93,36 @@ const IngredientService = {
       } 
     });
     return res.data;
-  },
+  }
   
   // Create custom ingredient
-  create: async (ingredientData) => {
+export const createIngredient = async (ingredientData) => {
     const res = await axios.post('/ingredients', ingredientData);
     return res.data;
-  },
+  }
   
   // Update custom ingredient
-  update: async (ingredientId, ingredientData) => {
+export const  updateIngredient = async (ingredientId, ingredientData) => {
     const res = await axios.patch(`/ingredients/${ingredientId}`, ingredientData);
     return res.data;
-  },
+  }
   
   // Delete custom ingredient
-  delete: async (ingredientId) => {
+export const deleteIngredient = async (ingredientId) => {
     await axios.delete(`/ingredients/${ingredientId}`);
-  },
+  }
   
   // Get ingredient by ID
-  getById: async (ingredientId) => {
+export const getById =  async (ingredientId) => {
     const res = await axios.get(`/ingredients/${ingredientId}`);
     return res.data;
-  },
+  }
   
   // Get user's custom ingredients
-  getMyIngredients: async (params = {}) => {
+export const  getMyIngredients = async (params = {}) => {
     const res = await axios.get('/ingredients/my-ingredients', { params });
     return res.data;
-  },
-};
+  }
 
-export default IngredientService;
 
 

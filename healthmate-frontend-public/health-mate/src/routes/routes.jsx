@@ -21,6 +21,8 @@ import CustomerPage from "../components/homepage/CustomerPage.jsx";
 import OAuth from "../pages/authentication/OAuth.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import EditProfilePage from "../pages/EditProfilePage.jsx";
+import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
+import RequireRole from "../components/common/RequireRole.jsx";
 class AuthLayout extends Component {
   render() {
     return (
@@ -98,28 +100,23 @@ const router = createBrowserRouter([
             path: "/dietplan/progress",
             element: <DietPlanProgress />,
           },
-          // {
-          //     path: "/homepage",
-          //     element: (
-          //         <HomePage />
-          //     )
-          // },
-          // {
-          //     path: "/add-dish",
-          //     element: (
-          //         <AddDishModal
-          //             isOpen={true}
-          //             onClose={() => console.log("closed")}
-          //         />
-          //     ),
-          // },
           {
             path: "/diary",
             element: (
-              <DiaryProvider>
-                <FoodDiary />
-              </DiaryProvider>
+                <RequireRole allowedRoles={["Customer"]}>
+                  <DiaryProvider><FoodDiary /></DiaryProvider>
+
+                </RequireRole>
             ),
+          },
+            //admin
+          {
+            path: "/admin/dashboard",
+            element: (
+                <RequireRole allowedRoles={["Admin"]}>
+                  <AdminDashboard />
+                </RequireRole>
+            )
           },
           {
             path: "/unauthorized",
