@@ -18,6 +18,7 @@ import { MealModule } from './routes/meal/meal.module';
 import { PermissionModule } from './routes/permission/permission.module';
 import { UserModule } from './routes/user/user.module';
 import { MediaModule } from './routes/media/media.module';
+import { ExpertCertificateModule } from './routes/expert-certificate/expert-certificate.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { MediaModule } from './routes/media/media.module';
     UserModule,
     PermissionModule,
     MediaModule,
+    ExpertCertificateModule,
   ],
   controllers: [AppController],
   providers: [
