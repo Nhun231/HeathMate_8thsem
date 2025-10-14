@@ -14,7 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { getCurrentDietPlan } from "../../services/DietPlan";
 import { getAllCalculations } from "../../services/Calculation";
-
+import MealService from "../../services/Meal";
 const COLORS = ["#4CAF50", "#E0E0E0"];
 
 const DietPlanProgress = () => {
@@ -24,6 +24,7 @@ const DietPlanProgress = () => {
   const [targetWeight, setTargetWeight] = useState(0);
   const [currentWeight, setCurrentWeight] = useState(0);
   const [error, setError] = useState("");
+  const [avgCalories, setAvgCalories] = useState(0);
   const navigate = useNavigate();
 
   const goalMap = {
@@ -60,9 +61,34 @@ const DietPlanProgress = () => {
         setCurrentWeight(latestCalc.weight);
 
         setTargetWeight(plan.targetWeightChange ?? 0);
+        const startDate = new Date(plan.startDate);
+        const today = new Date();
+
+        let totalCaloriesSum = 0;
+        let daysWithData = 0;
+
+        for (
+          let d = new Date(startDate);
+          d <= today;
+          d.setDate(d.getDate() + 1)
+        ) {
+          try {
+            const summary = await MealService.getMealSummary(new Date(d));
+            if (summary?.totalCalories && summary.totalCalories > 0) {
+              totalCaloriesSum += summary.totalCalories;
+              daysWithData++;
+            }
+          } catch (e) {
+            console.warn(`Không có dữ liệu ngày ${d.toDateString()}`);
+          }
+        }
+
+        const avg = daysWithData > 0 ? totalCaloriesSum / daysWithData : 0;
+        setAvgCalories(avg);
       } catch (err) {
         console.error(err);
         setError("Không thể tải dữ liệu kế hoạch dinh dưỡng.");
+        setAvgCalories(0);
       } finally {
         setLoading(false);
       }
@@ -213,7 +239,7 @@ const DietPlanProgress = () => {
               <Typography variant="h5" fontWeight="bold" gutterBottom>
                 Thông tin kế hoạch
               </Typography>
-              <Typography variant="body1" fontSize="1.1rem" mb={1}>
+              <Typography variant="body1" fontSize="1.1rem">
                 <strong>Mục tiêu: {goalMap[dietPlan.goal]}</strong>
               </Typography>
               <Typography variant="body1" fontSize="1.1rem">
@@ -221,7 +247,7 @@ const DietPlanProgress = () => {
               </Typography>
               <Typography variant="body1" fontSize="1.1rem">
                 <strong>
-                  Cân nặng mong muốn: {dietPlan.targetWeightChange} calo
+                  Cân nặng mong muốn: {dietPlan.targetWeightChange} kg
                 </strong>
               </Typography>
             </Box>
@@ -243,7 +269,7 @@ const DietPlanProgress = () => {
           {/* Line chart */}
           <Grid item xs={12} md={6} sx={{ display: "flex" }}>
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" mb={2}>
+              <Typography variant="h6" mb={2} textAlign="center">
                 Tiến trình cân nặng
               </Typography>
               <LineChart
@@ -272,7 +298,7 @@ const DietPlanProgress = () => {
                   }
                   label={{
                     value: "(ngày)",
-                    position: "right", 
+                    position: "right",
                     offset: -30,
                   }}
                 />
@@ -308,30 +334,113 @@ const DietPlanProgress = () => {
                 />
               </LineChart>
 
-              <Typography mt={2} textAlign="center" fontWeight="500">
+              <Typography  textAlign="center"variant="h5" fontWeight="bold" mt={1}>
                 Hiện tại: {currentWeight} kg
               </Typography>
             </Box>
           </Grid>
 
-          {/* Placeholder */}
-          <Grid item xs={12} md={6} sx={{ display: "flex" }}>
-            <Box
-              sx={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
+          <Grid
+            item
+            xs={12}
+            md={6}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+            }}
+          >
+            <Box textAlign="center" sx={{ mt: "auto", mb: "auto", ml: 14 }}>
               <Typography variant="h6" mb={2}>
-                Trung bình calories
+                Calories trung bình
               </Typography>
-              <Box></Box>
+              {(() => {
+                const diff = avgCalories - dietPlan.dailyCalories;
+                let color = "#4CAF50";
+                let message = "Tuyệt vời ! Tiếp tục duy trì bạn nhé";
+                let messageColor = "#4CAF50";
+
+                if (diff < -150) {
+                  color = "#FFC107"; 
+                  message =
+                    "Ít hơn mức khuyến khị - thử tăng khẩu phần ăn mỗi ngày bạn nhé !";
+                  messageColor = "#FFC107";
+                } else if (diff > 100) {
+                  color = "#f44336"; 
+                  message =
+                    "Vượt mức khuyến nghị - thử giảm khẩu phần ăn mỗi ngày bạn nhé !";
+                  messageColor = "#f44336";
+                }
+
+                const data = [
+                  {
+                    name: "Trung bình",
+                    value: Math.min(avgCalories, dietPlan.dailyCalories),
+                  },
+                  {
+                    name: "Thiếu",
+                    value: Math.max(dietPlan.dailyCalories - avgCalories, 0),
+                  },
+                ];
+
+                return (
+                  <>
+                    <PieChart
+                      width={250}
+                      height={250}
+                      style={{ display: "inline-block" }}
+                    >
+                      <Pie
+                        data={data}
+                        dataKey="value"
+                        innerRadius={80}
+                        outerRadius={100}
+                        startAngle={90}
+                        endAngle={-270}
+                        stroke="none"
+                      >
+                        <Cell fill={color} />
+                        <Cell fill="#E0E0E0" />
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #ddd",
+                          borderRadius: "8px",
+                          fontSize: "0.9rem",
+                        }}
+                        formatter={() => [
+                          `${avgCalories.toFixed(0)} / ${
+                            dietPlan.dailyCalories
+                          } kcal`,
+                        ]}
+                      />
+                    </PieChart>
+                    <Typography variant="h5" fontWeight="bold">
+                      Trung bình {avgCalories.toFixed(0)} kcal/ngày
+                    </Typography>
+                    <Typography
+                      sx={{
+                        mt: 1,
+                        color: messageColor,
+                        fontWeight: 500,
+                        whiteSpace: "normal",
+                        wordBreak: "break-word",
+                        maxWidth: 300,
+                        mx: "auto",
+                      }}
+                    >
+                      {message}
+                    </Typography>
+                  </>
+                );
+              })()}
             </Box>
           </Grid>
         </Grid>
       </Paper>
     </Container>
+    
   );
 };
 

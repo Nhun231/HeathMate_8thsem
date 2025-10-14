@@ -1,28 +1,73 @@
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  UnprocessableEntityException 
+} from '@nestjs/common';
+import { ZodError } from 'zod';
 
 export class NotFoundUserCalculationException extends NotFoundException {
-  constructor(message = 'Không tìm thấy dữ liệu tính toán của người dùng') {
-    super({
-      code: 'UserCalculation.NotFound',
-      message,
-    });
+  constructor() {
+    super([
+      {
+        message: 'UserCalculation.NotFound',
+        path: 'calculation',
+      },
+    ]);
   }
 }
 
 export class NotFoundDietPlanException extends NotFoundException {
-  constructor(message = 'Không tìm thấy kế hoạch ăn kiêng') {
-    super({
-      code: 'DietPlan.NotFound',
-      message,
-    });
+  constructor() {
+    super([
+      {
+        message: 'DietPlan.NotFound',
+        path: 'dietPlan',
+      },
+    ]);
   }
 }
 
 export class InvalidTargetWeightChangeException extends BadRequestException {
-  constructor(message = 'Cân nặng mục tiêu không hợp lệ') {
-    super({
-      code: 'DietPlan.InvalidTargetWeightChange',
-      message,
-    });
+  constructor(detail: string = 'Cân nặng mục tiêu không hợp lệ') {
+    super([
+      {
+        message: 'DietPlan.InvalidTargetWeightChange',
+        path: 'targetWeightChange',
+        detail,
+      },
+    ]);
+  }
+}
+
+export class TargetWeightTooLowException extends BadRequestException {
+  constructor() {
+    super([
+      {
+        message: 'DietPlan.TargetWeightTooLow',
+        path: 'targetWeightChange',
+      },
+    ]);
+  }
+}
+
+export class TargetWeightTooHighException extends BadRequestException {
+  constructor() {
+    super([
+      {
+        message: 'DietPlan.TargetWeightTooHigh',
+        path: 'targetWeightChange',
+      },
+    ]);
+  }
+}
+
+export class TargetWeightExcess extends BadRequestException {
+  constructor() {
+    super([
+      {
+        message: 'DietPlan.TargetWeightExcess',
+        path: 'targetWeightChange',
+      },
+    ]);
   }
 }
