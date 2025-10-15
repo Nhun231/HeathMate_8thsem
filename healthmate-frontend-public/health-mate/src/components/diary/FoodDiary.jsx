@@ -25,21 +25,19 @@ import HistoryView from "./HistoryView";
 import { useNavigate } from "react-router-dom";
 import CustomAlert from "../common/Alert.jsx";
 import MealService from "../../services/Meal";
-import { 
-  WbSunny as BreakfastIcon, 
-  LunchDining as LunchIcon, 
-  DinnerDining as DinnerIcon, 
-  LocalCafe as SnackIcon 
+import {
+  WbSunny as BreakfastIcon,
+  LunchDining as LunchIcon,
+  DinnerDining as DinnerIcon,
+  LocalCafe as SnackIcon,
 } from "@mui/icons-material";
 import { getLatestCalculation } from "../../services/CalculateService.js";
 function FoodDiary() {
   const navigate = useNavigate();
-  const { selectedDate, getTotalCalories } = useDiary();
   const [view, setView] = useState("today"); // 'today' or 'history'
   const [addMealModalOpen, setAddMealModalOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState(null);
   const [mealTypeDialogOpen, setMealTypeDialogOpen] = useState(false);
-  const totalCalories = getTotalCalories(selectedDate);
   const [totalNutrition, setTotalNutrition] = useState({
     calories: 0,
     protein: 0,
@@ -69,57 +67,57 @@ function FoodDiary() {
   const [totalCaloriesToday, setTotalCaloriesToday] = useState(0);
   // Meal types with icons and colors
   const mealTypes = [
-    { 
-      name: "Bữa sáng", 
-      icon: <BreakfastIcon sx={{ fontSize: 40 }} />, 
+    {
+      name: "Bữa sáng",
+      icon: <BreakfastIcon sx={{ fontSize: 40 }} />,
       color: "#FF9800",
-      description: "Bắt đầu ngày mới với năng lượng"
+      description: "Bắt đầu ngày mới với năng lượng",
     },
-    { 
-      name: "Bữa trưa", 
-      icon: <LunchIcon sx={{ fontSize: 40 }} />, 
+    {
+      name: "Bữa trưa",
+      icon: <LunchIcon sx={{ fontSize: 40 }} />,
       color: "#4CAF50",
-      description: "Bữa ăn chính giữa ngày"
+      description: "Bữa ăn chính giữa ngày",
     },
-    { 
-      name: "Bữa tối", 
-      icon: <DinnerIcon sx={{ fontSize: 40 }} />, 
+    {
+      name: "Bữa tối",
+      icon: <DinnerIcon sx={{ fontSize: 40 }} />,
       color: "#2196F3",
-      description: "Kết thúc ngày với bữa tối"
+      description: "Kết thúc ngày với bữa tối",
     },
-    { 
-      name: "Ăn vặt", 
-      icon: <SnackIcon sx={{ fontSize: 40 }} />, 
+    {
+      name: "Ăn vặt",
+      icon: <SnackIcon sx={{ fontSize: 40 }} />,
       color: "#9C27B0",
-      description: "Thưởng thức món ăn nhẹ"
-    }
-  ]
+      description: "Thưởng thức món ăn nhẹ",
+    },
+  ];
 
   const handleOpenAddMeal = (mealType) => {
-    setSelectedMealType(mealType)
-    setAddMealModalOpen(true)
-    setMealTypeDialogOpen(false)
-  }
+    setSelectedMealType(mealType);
+    setAddMealModalOpen(true);
+    setMealTypeDialogOpen(false);
+  };
 
   const handleCloseAddMeal = () => {
-    setAddMealModalOpen(false)
-    setSelectedMealType(null)
-  }
+    setAddMealModalOpen(false);
+    setSelectedMealType(null);
+  };
 
   const handleOpenMealTypeDialog = () => {
-    setMealTypeDialogOpen(true)
-  }
+    setMealTypeDialogOpen(true);
+  };
 
   const handleCloseMealTypeDialog = () => {
-    setMealTypeDialogOpen(false)
-  }
+    setMealTypeDialogOpen(false);
+  };
 
   // Load meals for today
   const loadTodaysMeals = async () => {
     try {
-      setMealsLoading(true)
-      const today = new Date()
-      const response = await MealService.getMeals(today)
+      setMealsLoading(true);
+      const today = new Date();
+      const response = await MealService.getMeals(today);
       // Group meals by meal type
       const groupedMeals = {
         breakfast: [],
@@ -138,8 +136,8 @@ function FoodDiary() {
         sugar: 0,
       };
       if (response) {
-        response.forEach(meal => {
-          const mealType = meal.mealType
+        response.forEach((meal) => {
+          const mealType = meal.mealType;
           if (groupedMeals[mealType]) {
             const mealData = {
               id: meal._id,
@@ -210,18 +208,18 @@ function FoodDiary() {
       }
     };
 
-        checkCalculateData();
-    }, []);
-    useEffect(() => {
-        if (shouldRedirect) {
-            // Add a small delay so user can see the alert message
-            const timer = setTimeout(() => {
-                navigate('/calculate');
-            }, 2000);
-            
-            return () => clearTimeout(timer);
-        }
-    }, [shouldRedirect, navigate]);
+    checkCalculateData();
+  }, []);
+  useEffect(() => {
+    if (shouldRedirect) {
+      // Add a small delay so user can see the alert message
+      const timer = setTimeout(() => {
+        navigate("/calculate");
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [shouldRedirect, navigate]);
 
   // Load meals when component mounts
   useEffect(() => {
@@ -230,24 +228,29 @@ function FoodDiary() {
     }
   }, [view]);
 
-    if (loading) {
-        return (
-            <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-                <CircularProgress />
-            </Box>
-        );
-    }
+  if (loading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", pb: 4 }}>
-        {alert.show && (
-            <CustomAlert
-                message={alert.message}
-                variant={alert.severity}
-                onClose={() => setAlert({ ...alert, show: false })}
-                sticky={true}
-                autoCloseDelay={2000}
-            />
-        )}
+      {alert.show && (
+        <CustomAlert
+          message={alert.message}
+          variant={alert.severity}
+          onClose={() => setAlert({ ...alert, show: false })}
+          sticky={true}
+          autoCloseDelay={2000}
+        />
+      )}
       <Container maxWidth="md">
         {/* Header */}
         <Box
@@ -259,7 +262,7 @@ function FoodDiary() {
           }}
         >
           <Typography variant="h5" sx={{ fontWeight: 600, color: "#000" }}>
-            Food Diary
+            Nhật ký ăn uống
           </Typography>
           <ButtonGroup variant="contained" disableElevation>
             <Button
@@ -308,7 +311,7 @@ function FoodDiary() {
             >
               {/* Tiêu đề */}
               <Typography
-                variant="h6"
+                variant="h4"
                 sx={{ color: "#4CAF50", fontWeight: 500, mb: 2 }}
               >
                 Nhật ký ăn uống hôm nay
@@ -366,62 +369,72 @@ function FoodDiary() {
                         )}`}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#999" }}>
-                    calories
+                    calo
                   </Typography>
                 </Box>
               </Box>
 
-              {/* Các chỉ số nhỏ phía dưới */}
+              {/* Các chỉ số*/}
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "space-around",
                   mt: 4,
                   px: 2,
+                  flexWrap: "wrap", // đảm bảo responsive nếu màn hình nhỏ
+                  gap: 2,
                 }}
               >
                 {[
                   {
-                    label: "Carbs",
+                    label: "Tinh bột",
                     current: totalNutrition.carbs,
                     target: calculationData.carbs,
                     color: "#FF9800",
+                    desc: "Cung cấp năng lượng chính cho cơ thể và các hoạt động hàng ngày",
                   },
                   {
-                    label: "Protein",
+                    label: "Chất đạm",
                     current: totalNutrition.protein,
                     target: calculationData.protein,
                     color: "#2196F3",
+                    desc: "Hỗ trợ xây dựng và sửa chữa cơ, mô, enzym quan trọng",
                   },
                   {
-                    label: "Fat",
+                    label: "Chất béo",
                     current: totalNutrition.fat,
                     target: calculationData.fat,
                     color: "#E91E63",
+                    desc: "Nguồn năng lượng, giúp hấp thu vitamin và duy trì chức năng tế bào",
                   },
                   {
-                    label: "Fiber",
+                    label: "Chất xơ",
                     current: totalNutrition.fiber,
                     target: calculationData.fiber,
                     color: "#9C27B0",
+                    desc: "Hỗ trợ tiêu hóa, kiểm soát đường huyết và giảm cholesterol",
                   },
                 ].map((item) => (
                   <Box
                     key={item.label}
-                    sx={{ textAlign: "center", width: "22%" }}
+                    sx={{
+                      textAlign: "center",
+                      width: { xs: "45%", sm: "22%" },
+                      mb: 2,
+                    }}
                   >
                     <Typography
-                      variant="body2"
+                      variant="h5"
                       sx={{
                         fontWeight: 500,
                         color: item.color,
-                        mb: 1,
+                        mb: 0.5,
                       }}
                     >
                       {item.label}
                     </Typography>
                     <Typography
-                      variant="subtitle2"
+                      variant="subtitle1"
                       sx={{ fontWeight: 600, color: item.color }}
                     >
                       {mealsLoading
@@ -429,6 +442,18 @@ function FoodDiary() {
                         : `${Number(item.current || 0).toFixed(1)} / ${Number(
                             item.target || 0
                           ).toFixed(1)}g`}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.75rem",
+                        color: "#999",
+                        mt: 0.5,
+                        whiteSpace: "normal",
+                        wordBreak: "break-word",
+                        minHeight: "60px",
+                      }}
+                    >
+                      {item.desc}
                     </Typography>
                     <LinearProgress
                       variant="determinate"
@@ -452,32 +477,32 @@ function FoodDiary() {
               </Box>
             </Box>
             {/* Meal Sections */}
-            <MealSection 
-              mealType="Bữa sáng" 
+            <MealSection
+              mealType="Bữa sáng"
               meals={mealsData.breakfast}
               loading={mealsLoading}
-              onAddMeal={() => handleOpenAddMeal("Bữa sáng")} 
+              onAddMeal={() => handleOpenAddMeal("Bữa sáng")}
               onMealAdded={handleMealAdded}
             />
-            <MealSection 
-              mealType="Bữa trưa" 
+            <MealSection
+              mealType="Bữa trưa"
               meals={mealsData.lunch}
               loading={mealsLoading}
-              onAddMeal={() => handleOpenAddMeal("Bữa trưa")} 
+              onAddMeal={() => handleOpenAddMeal("Bữa trưa")}
               onMealAdded={handleMealAdded}
             />
-            <MealSection 
-              mealType="Bữa tối" 
+            <MealSection
+              mealType="Bữa tối"
               meals={mealsData.dinner}
               loading={mealsLoading}
-              onAddMeal={() => handleOpenAddMeal("Bữa tối")} 
+              onAddMeal={() => handleOpenAddMeal("Bữa tối")}
               onMealAdded={handleMealAdded}
             />
-            <MealSection 
-              mealType="Ăn vặt" 
+            <MealSection
+              mealType="Ăn vặt"
               meals={mealsData.snack}
               loading={mealsLoading}
-              onAddMeal={() => handleOpenAddMeal("Ăn vặt")} 
+              onAddMeal={() => handleOpenAddMeal("Ăn vặt")}
               onMealAdded={handleMealAdded}
             />
 
@@ -521,7 +546,10 @@ function FoodDiary() {
                   borderColor: "#4CAF50",
                   color: "#4CAF50",
                   py: 1.5,
-                  "&:hover": { borderColor: "#45a049", bgcolor: "rgba(76, 175, 80, 0.04)" },
+                  "&:hover": {
+                    borderColor: "#45a049",
+                    bgcolor: "rgba(76, 175, 80, 0.04)",
+                  },
                 }}
                 onClick={() => setView("history")}
               >
@@ -535,17 +563,17 @@ function FoodDiary() {
       </Container>
 
       {/* Meal Type Selection Dialog */}
-      <Dialog 
-        open={mealTypeDialogOpen} 
+      <Dialog
+        open={mealTypeDialogOpen}
         onClose={handleCloseMealTypeDialog}
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { 
+          sx: {
             borderRadius: 2,
             width: "90vw",
             maxWidth: "500px",
-          }
+          },
         }}
       >
         <DialogTitle
@@ -567,31 +595,29 @@ function FoodDiary() {
           <Grid container spacing={2}>
             {mealTypes.map((meal) => (
               <Grid item xs={6} key={meal.name}>
-                <Card 
-                  sx={{ 
+                <Card
+                  sx={{
                     height: 140, // Fixed height for all cards
                     border: "1px solid #e0e0e0",
                     "&:hover": {
                       borderColor: meal.color,
-                      boxShadow: `0 4px 12px ${meal.color}20`
-                    }
+                      boxShadow: `0 4px 12px ${meal.color}20`,
+                    },
                   }}
                 >
-                  <CardActionArea 
+                  <CardActionArea
                     onClick={() => handleOpenAddMeal(meal.name)}
-                    sx={{ 
-                      p: 2, 
+                    sx={{
+                      p: 2,
                       height: "100%",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       textAlign: "center",
-                      justifyContent: "center" // Center content vertically
+                      justifyContent: "center", // Center content vertically
                     }}
                   >
-                    <Box sx={{ color: meal.color, mb: 1 }}>
-                      {meal.icon}
-                    </Box>
+                    <Box sx={{ color: meal.color, mb: 1 }}>{meal.icon}</Box>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                       {meal.name}
                     </Typography>
@@ -606,24 +632,21 @@ function FoodDiary() {
         </DialogContent>
 
         <DialogActions sx={{ p: 3, bgcolor: "#f5f5f5" }}>
-          <Button
-            onClick={handleCloseMealTypeDialog}
-            sx={{ color: "#666" }}
-          >
+          <Button onClick={handleCloseMealTypeDialog} sx={{ color: "#666" }}>
             Hủy
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Add Meal Modal */}
-      <AddMealModal 
-        open={addMealModalOpen} 
-        onClose={handleCloseAddMeal} 
+      <AddMealModal
+        open={addMealModalOpen}
+        onClose={handleCloseAddMeal}
         mealType={selectedMealType}
         onMealAdded={handleMealAdded}
       />
     </Box>
-  )
+  );
 }
 
-export default FoodDiary
+export default FoodDiary;

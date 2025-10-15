@@ -145,7 +145,13 @@ const EditProfilePage = () => {
       label: "Cường độ vận động",
       name: "activityLevel",
       type: "select",
-      options: ["Sedentary", "Light", "Moderate", "Active", "VeryActive"],
+      options: [
+        { value: "Sedentary", label: "Ít vận động" },
+        { value: "Light", label: "Vận động nhẹ" },
+        { value: "Moderate", label: "Vận động vừa" },
+        { value: "Active", label: "Vận động nhiều" },
+        { value: "VeryActive", label: "Vận động rất nhiều" },
+      ],
     },
   ];
 

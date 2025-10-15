@@ -1,20 +1,30 @@
-"use client"
-import { Box, Typography, Button, IconButton } from "@mui/material"
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material"
-import RestaurantIcon from "@mui/icons-material/Restaurant"
-import { useDiary } from "../../context/DiaryContext.jsx"
+"use client";
+import { Box, Typography, Button, IconButton } from "@mui/material";
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
+import RestaurantIcon from "@mui/icons-material/Restaurant";
+import { useDiary } from "../../context/DiaryContext.jsx";
 
-function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded }) {
-  const { selectedDate, getDayEntries, removeDishFromMeal } = useDiary()
-  const entries = getDayEntries(selectedDate)
-  const dishes = entries[mealType] || []
+function MealSection({
+  mealType,
+  meals,
+  loading = false,
+  onAddMeal,
+  onMealAdded,
+  readOnly = false,
+}) {
+  const { selectedDate, getDayEntries } = useDiary();
+  const entries = getDayEntries(selectedDate);
+  const dishes = entries[mealType] || [];
 
-
-  // Always use real meal data when provided (even if empty), only fallback to context data if meals prop is undefined
-  const displayMeals = meals !== undefined ? meals : dishes
-  const totalCalories = displayMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0)
-  
-  console.log(`MealSection ${mealType} - displayMeals:`, displayMeals)
+  const displayMeals = meals !== undefined ? meals : dishes;
+  const totalCalories = displayMeals.reduce(
+    (sum, meal) => sum + (meal.calories || 0),
+    0
+  );
 
   return (
     <Box
@@ -32,7 +42,7 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: dishes.length > 0 ? 2 : 0,
+          mb: displayMeals.length > 0 ? 2 : 0,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -48,31 +58,39 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
             {mealType}
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="body1" sx={{ color: "#4CAF50", fontWeight: 500 }}>
-            {totalCalories} cal
-          </Typography>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={onAddMeal}
-            sx={{
-              bgcolor: "#4CAF50",
-              color: "white",
-              textTransform: "none",
-              "&:hover": { bgcolor: "#45a049" },
-            }}
-          >
-            Thêm
-          </Button>
-        </Box>
+
+        {!readOnly && displayMeals.length > 0 && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="body1"
+              sx={{ color: "#4CAF50", fontWeight: 500 }}
+            >
+              {totalCalories} cal
+            </Typography>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={onAddMeal}
+              sx={{
+                bgcolor: "#4CAF50",
+                color: "white",
+                textTransform: "none",
+                "&:hover": { bgcolor: "#45a049" },
+              }}
+            >
+              Thêm
+            </Button>
+          </Box>
+        )}
       </Box>
 
       {/* Dishes List */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-          <Typography variant="body2" sx={{ color: "#999" }}>Đang tải...</Typography>
+          <Typography variant="body2" sx={{ color: "#999" }}>
+            Đang tải...
+          </Typography>
         </Box>
       ) : displayMeals.length > 0 ? (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -89,16 +107,13 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
               }}
             >
               <Box sx={{ flex: 1 }}>
-                <Typography variant="body1" sx={{ fontWeight: 500, color: "#4CAF50", mb: 0.5 }}>
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 500, color: "#4CAF50", mb: 0.5 }}
+                >
                   {meal.name}
                 </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 2,
-                    flexWrap: "wrap",
-                  }}
-                >
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                   <Typography variant="body2" sx={{ color: "#4CAF50" }}>
                     {meal.calories || 0} cal
                   </Typography>
@@ -121,21 +136,23 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
                   )}
                 </Box>
               </Box>
-              <Box sx={{ display: "flex", gap: 0.5 }}>
-                <IconButton size="small" sx={{ color: "#4CAF50" }}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  sx={{ color: "#f44336" }}
-                  onClick={() => {
-                    // Handle delete - could call API here
-                    if (onMealAdded) onMealAdded()
-                  }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Box>
+
+              {!readOnly && (
+                <Box sx={{ display: "flex", gap: 0.5 }}>
+                  <IconButton size="small" sx={{ color: "#4CAF50" }}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    sx={{ color: "#f44336" }}
+                    onClick={() => {
+                      if (onMealAdded) onMealAdded();
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              )}
             </Box>
           ))}
         </Box>
@@ -152,24 +169,25 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
           <Typography variant="body2" sx={{ color: "#999", mb: 2 }}>
             Chưa có món ăn nào
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={onAddMeal}
-            sx={{
-              bgcolor: "#4CAF50",
-              color: "white",
-              textTransform: "none",
-              "&:hover": { bgcolor: "#45a049" },
-            }}
-          >
-            Thêm món ăn đầu tiên
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={onAddMeal}
+              sx={{
+                bgcolor: "#4CAF50",
+                color: "white",
+                textTransform: "none",
+                "&:hover": { bgcolor: "#45a049" },
+              }}
+            >
+              Thêm món ăn đầu tiên
+            </Button>
+          )}
         </Box>
       )}
     </Box>
-  )
+  );
 }
 
-export default MealSection
-
+export default MealSection;
