@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -18,13 +16,12 @@ import {
   CardActionArea,
   LinearProgress,
 } from "@mui/material";
-import { useDiary } from "../../context/DiaryContext.jsx";
 import MealSection from "./MealSection";
 import AddMealModal from "./AddMealModal";
 import HistoryView from "./HistoryView";
 import { useNavigate } from "react-router-dom";
 import CustomAlert from "../common/Alert.jsx";
-import MealService from "../../services/Meal";
+import { getMeals } from "../../services/Meal";
 import { 
   WbSunny as BreakfastIcon, 
   LunchDining as LunchIcon, 
@@ -34,12 +31,10 @@ import {
 import { getLatestCalculation } from "../../services/CalculateService.js";
 function FoodDiary() {
   const navigate = useNavigate();
-  const { selectedDate, getTotalCalories } = useDiary();
-  const [view, setView] = useState("today"); // 'today' or 'history'
+  const [view, setView] = useState("today");
   const [addMealModalOpen, setAddMealModalOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState(null);
   const [mealTypeDialogOpen, setMealTypeDialogOpen] = useState(false);
-  const totalCalories = getTotalCalories(selectedDate);
   const [totalNutrition, setTotalNutrition] = useState({
     calories: 0,
     protein: 0,
@@ -119,7 +114,7 @@ function FoodDiary() {
     try {
       setMealsLoading(true)
       const today = new Date()
-      const response = await MealService.getMeals(today)
+      const response = await getMeals(today)
       // Group meals by meal type
       const groupedMeals = {
         breakfast: [],

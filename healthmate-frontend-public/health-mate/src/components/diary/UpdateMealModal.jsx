@@ -19,9 +19,9 @@ import {
   Chip
 } from "@mui/material"
 import { Close as CloseIcon, Save as SaveIcon, Delete as DeleteIcon, Add as AddIcon, Restaurant as RestaurantIcon } from "@mui/icons-material"
-import MealService from "../../services/Meal"
-import DishService from "../../services/Dish"
-import IngredientService from "../../services/Ingredient"
+import { updateMeal, deleteMeal } from "../../services/Meal"
+import { getDish, updateDish } from "../../services/Dish"
+import { listCustomAndPublicIngredients } from "../../services/Ingredient"
 
 function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) {
   const [formData, setFormData] = useState({
@@ -41,7 +41,7 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
   const loadDishDetails = useCallback(async (dishId) => {
     try {
       setDishLoading(true)
-      const dishData = await DishService.get(dishId)
+      const dishData = await getDish(dishId)
       setDish(dishData)
       
       // Convert dish ingredients to selectedIngredients format
@@ -69,7 +69,7 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
   const loadIngredients = useCallback(async () => {
     try {
       setIngredientsLoading(true)
-      const response = await IngredientService.list({ limit: 1000 })
+      const response = await listCustomAndPublicIngredients({ limit: 1000 })
       setAvailableIngredients(response.items || [])
     } catch (error) {
       console.error('Error loading ingredients:', error)
@@ -200,11 +200,11 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
           }))
         }
         
-        await DishService.update(dish._id, updatedDishData)
+        await updateDish(dish._id, updatedDishData)
       }
       
       // Update the meal quantity
-      await MealService.updateMeal(meal.id, Number(formData.quantity))
+      await updateMeal(meal.id, Number(formData.quantity))
       
       setAlert({
         show: true,
@@ -255,7 +255,7 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
 
     setLoading(true)
     try {
-      await MealService.deleteMeal(meal.id)
+      await deleteMeal(meal.id)
       
       setAlert({
         show: true,

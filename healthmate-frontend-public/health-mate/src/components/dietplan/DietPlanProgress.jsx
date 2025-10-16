@@ -14,7 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { getCurrentDietPlan } from "../../services/DietPlan";
 import { getAllCalculations } from "../../services/Calculation";
-import MealService from "../../services/Meal";
+import {getMealSummary} from "../../services/Meal.js";
 const COLORS = ["#4CAF50", "#E0E0E0"];
 
 const DietPlanProgress = () => {
@@ -73,7 +73,7 @@ const DietPlanProgress = () => {
           d.setDate(d.getDate() + 1)
         ) {
           try {
-            const summary = await MealService.getMealSummary(new Date(d));
+            const summary = await getMealSummary(new Date(d));
             if (summary?.totalCalories && summary.totalCalories > 0) {
               totalCaloriesSum += summary.totalCalories;
               daysWithData++;
