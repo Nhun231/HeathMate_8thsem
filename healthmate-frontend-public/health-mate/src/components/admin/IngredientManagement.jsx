@@ -308,11 +308,11 @@ const IngredientManagement = () => {
               <TableCell><strong>Tên nguyên liệu</strong></TableCell>
               <TableCell><strong>Loại</strong></TableCell>
               <TableCell><strong>Calories</strong></TableCell>
-              <TableCell><strong>Protein</strong></TableCell>
-              <TableCell><strong>Carbs</strong></TableCell>
-              <TableCell><strong>Fat</strong></TableCell>
-              <TableCell><strong>Fiber</strong></TableCell>
-              <TableCell><strong>Sugar</strong></TableCell>
+              <TableCell><strong>Đạm</strong></TableCell>
+              <TableCell><strong>Tinh bột</strong></TableCell>
+              <TableCell><strong>Chất béo</strong></TableCell>
+              <TableCell><strong>Xơ</strong></TableCell>
+              <TableCell><strong>Đường</strong></TableCell>
               <TableCell><strong>Hành động</strong></TableCell>
             </TableRow>
           </TableHead>
