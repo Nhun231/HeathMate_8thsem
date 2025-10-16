@@ -8,6 +8,7 @@ import {
 } from '../types/jwt.type';
 import envConfig from '../utils/config';
 import { v4 as uuidv4 } from 'uuid';
+import { StringValue } from 'ms';
 
 @Injectable()
 export class TokenService {
@@ -18,7 +19,7 @@ export class TokenService {
       { ...payload, uuid: uuidv4() },
       {
         secret: envConfig.ACCESS_TOKEN_SECRET,
-        expiresIn: envConfig.ACCESS_TOKEN_EXPIRES_IN,
+        expiresIn: envConfig.ACCESS_TOKEN_EXPIRES_IN as StringValue,
         algorithm: 'HS256',
       },
     );
@@ -29,7 +30,7 @@ export class TokenService {
       { ...payload, uuid: uuidv4() },
       {
         secret: envConfig.REFRESH_TOKEN_SECRET,
-        expiresIn: envConfig.REFRESH_TOKEN_EXPIRES_IN,
+        expiresIn: envConfig.REFRESH_TOKEN_EXPIRES_IN as StringValue,
         algorithm: 'HS256',
       },
     );

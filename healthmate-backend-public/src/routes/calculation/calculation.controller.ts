@@ -6,7 +6,7 @@ import {
   GetCalculationParamsDTO,
 } from './calculation.dto';
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
-import { Types } from 'mongoose';
+import { DeleteResult, Types } from 'mongoose';
 
 @Controller('v1/calculation')
 export class CalculationController {
@@ -31,7 +31,9 @@ export class CalculationController {
   }
 
   @Delete('/details/:calculationId')
-  async deleteCalculationById(@Param() params: DeleteCalculationParamsDTO) {
+  async deleteCalculationById(
+    @Param() params: DeleteCalculationParamsDTO,
+  ): Promise<DeleteResult> {
     return this.calculationService.delete(params.calculationId);
   }
 }

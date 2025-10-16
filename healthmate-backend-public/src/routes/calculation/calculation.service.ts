@@ -6,7 +6,7 @@ import {
   NotFoundUserCalculationException,
 } from './calculation.error';
 import { Calculation } from './schema/calculation.schema';
-import { Types } from 'mongoose';
+import { DeleteResult, Types } from 'mongoose';
 import { NutrientsCalculatorService } from 'src/shared/services/nutrients-calculator.service';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
 
@@ -99,7 +99,7 @@ export class CalculationService {
     return this.calculationRepo.update(new Types.ObjectId(id), data);
   }
 
-  async delete(id: string) {
+  async delete(id: string): Promise<DeleteResult> {
     await this.findById(id);
 
     return this.calculationRepo.delete(new Types.ObjectId(id));
