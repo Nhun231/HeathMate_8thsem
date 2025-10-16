@@ -6,14 +6,15 @@ import { Dish, DishDocument } from '../dish/schema/dish.schema';
 import { Ingredient, IngredientDocument } from '../ingredient/schema/ingredient.schema';
 import { AddDishToMealDto, AddIngredientToMealDto, GetMealsDto, UpdateMealDto } from './meal.dto';
 import { MealNotFoundError, MealForbiddenError } from './meal.error';
+import { MealRepo } from './meal.repo';
 
 @Injectable()
 export class MealService {
   constructor(
-    @InjectModel(Meal.name) private mealModel: Model<MealDocument>,
+    private readonly mealRepo: MealRepo,
     @InjectModel(Dish.name) private dishModel: Model<DishDocument>,
     @InjectModel(Ingredient.name) private ingredientModel: Model<IngredientDocument>,
-  ) {}
+  ) { }
 
   private validateObjectId(id: string): void {
     if (!Types.ObjectId.isValid(id)) {
@@ -29,7 +30,7 @@ export class MealService {
   ): Promise<MealDocument> {
     try {
       this.validateObjectId(addDishDto.dishId);
-      
+
       // Get dish information
       const dish = await this.dishModel.findById(addDishDto.dishId).exec();
       if (!dish) {
@@ -39,15 +40,15 @@ export class MealService {
       // Calculate nutrition values based on quantity
       const factor = addDishDto.quantity / 100; // assuming quantity is in grams
       const nutrition = {
-        calories: (dish.totalCalories || 0) * factor,
-        protein: (dish.totalProtein || 0) * factor,
-        fat: (dish.totalFat || 0) * factor,
-        carbs: (dish.totalCarbs || 0) * factor,
-        fiber: (dish.totalFiber || 0) * factor,
-        sugar: (dish.totalSugar || 0) * factor,
+        calories: Math.round(((dish.totalCalories || 0) * factor) * 10) / 10,
+        protein: Math.round(((dish.totalProtein || 0) * factor) * 10) / 10,
+        fat: Math.round(((dish.totalFat || 0) * factor) * 10) / 10,
+        carbs: Math.round(((dish.totalCarbs || 0) * factor) * 10) / 10,
+        fiber: Math.round(((dish.totalFiber || 0) * factor) * 10) / 10,
+        sugar: Math.round(((dish.totalSugar || 0) * factor) * 10) / 10,
       };
 
-      const meal = new this.mealModel({
+      const mealData = {
         userId: new Types.ObjectId(userId),
         date,
         mealType,
@@ -55,9 +56,9 @@ export class MealService {
         quantity: addDishDto.quantity,
         isIngredient: false,
         ...nutrition,
-      });
+      };
 
-      return await meal.save();
+      return await this.mealRepo.create(mealData);
     } catch (error) {
       if (error instanceof MealNotFoundError) {
         throw error;
@@ -75,7 +76,7 @@ export class MealService {
   ): Promise<MealDocument> {
     try {
       this.validateObjectId(addIngredientDto.ingredientId);
-      
+
       // Get ingredient information
       const ingredient = await this.ingredientModel.findById(addIngredientDto.ingredientId).exec();
       if (!ingredient) {
@@ -85,26 +86,25 @@ export class MealService {
       // Calculate nutrition values based on quantity
       const factor = addIngredientDto.quantity / 100; // assuming quantity is in grams
       const nutrition = {
-        calories: (ingredient.caloPer100g || 0) * factor,
-        protein: (ingredient.proteinPer100g || 0) * factor,
-        fat: (ingredient.fatPer100g || 0) * factor,
-        carbs: (ingredient.carbsPer100g || 0) * factor,
-        fiber: (ingredient.fiberPer100g || 0) * factor,
-        sugar: (ingredient.sugarPer100g || 0) * factor,
+        calories: Math.round(((ingredient.caloPer100g || 0) * factor) * 10) / 10,
+        protein: Math.round(((ingredient.proteinPer100g || 0) * factor) * 10) / 10,
+        fat: Math.round(((ingredient.fatPer100g || 0) * factor) * 10) / 10,
+        carbs: Math.round(((ingredient.carbsPer100g || 0) * factor) * 10) / 10,
+        fiber: Math.round(((ingredient.fiberPer100g || 0) * factor) * 10) / 10,
+        sugar: Math.round(((ingredient.sugarPer100g || 0) * factor) * 10) / 10,
       };
 
-      const meal = new this.mealModel({
+      const mealData = {
         userId: new Types.ObjectId(userId),
         date,
         mealType,
-        dishId: null, // No dish for ingredients
         ingredientId: new Types.ObjectId(addIngredientDto.ingredientId),
         quantity: addIngredientDto.quantity,
         isIngredient: true,
         ...nutrition,
-      });
+      };
 
-      return await meal.save();
+      return await this.mealRepo.create(mealData);
     } catch (error) {
       if (error instanceof MealNotFoundError) {
         throw error;
@@ -116,24 +116,16 @@ export class MealService {
 
   async getMeals(userId: string, getMealsDto: GetMealsDto): Promise<MealDocument[]> {
     try {
-      const filter: any = {
-        userId: new Types.ObjectId(userId),
-        date: {
-          $gte: new Date(getMealsDto.date),
-          $lt: new Date(new Date(getMealsDto.date).getTime() + 24 * 60 * 60 * 1000), // next day
-        },
-      };
-
-      if (getMealsDto.mealType) {
-        filter.mealType = getMealsDto.mealType;
-      }
-
-      return await this.mealModel
-        .find(filter)
-        .populate('dishId', 'name')
-        .populate('ingredientId', 'name')
-        .sort({ mealType: 1, createdAt: 1 })
-        .exec();
+      const startDate = new Date(getMealsDto.date);
+      startDate.setHours(0, 0, 0, 0)
+      const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // next day
+      console.log(startDate, "-", endDate)
+      return await this.mealRepo.findByUserIdAndDate(
+        new Types.ObjectId(userId),
+        startDate,
+        endDate,
+        getMealsDto.mealType,
+      );
     } catch (error) {
       console.error('[MealService.getMeals] Unexpected error:', error);
       throw new Error('Failed to fetch meals');
@@ -143,8 +135,8 @@ export class MealService {
   async updateMeal(userId: string, mealId: string, updateMealDto: UpdateMealDto): Promise<MealDocument> {
     try {
       this.validateObjectId(mealId);
-      
-      const meal = await this.mealModel.findById(mealId).exec();
+
+      const meal = await this.mealRepo.findById(new Types.ObjectId(mealId));
       if (!meal) {
         throw new MealNotFoundError('Meal not found');
       }
@@ -157,33 +149,37 @@ export class MealService {
       if (updateMealDto.quantity !== undefined) {
         // Recalculate nutrition based on new quantity
         const factor = updateMealDto.quantity / 100;
-        
+
         if (meal.isIngredient && meal.ingredientId) {
           const ingredient = await this.ingredientModel.findById(meal.ingredientId).exec();
           if (ingredient) {
-            meal.calories = (ingredient.caloPer100g || 0) * factor;
-            meal.protein = (ingredient.proteinPer100g || 0) * factor;
-            meal.fat = (ingredient.fatPer100g || 0) * factor;
-            meal.carbs = (ingredient.carbsPer100g || 0) * factor;
-            meal.fiber = (ingredient.fiberPer100g || 0) * factor;
-            meal.sugar = (ingredient.sugarPer100g || 0) * factor;
+            meal.calories = Math.round(((ingredient.caloPer100g || 0) * factor) * 10) / 10;
+            meal.protein = Math.round(((ingredient.proteinPer100g || 0) * factor) * 10) / 10;
+            meal.fat = Math.round(((ingredient.fatPer100g || 0) * factor) * 10) / 10;
+            meal.carbs = Math.round(((ingredient.carbsPer100g || 0) * factor) * 10) / 10;
+            meal.fiber = Math.round(((ingredient.fiberPer100g || 0) * factor) * 10) / 10;
+            meal.sugar = Math.round(((ingredient.sugarPer100g || 0) * factor) * 10) / 10;
           }
         } else if (meal.dishId) {
           const dish = await this.dishModel.findById(meal.dishId).exec();
           if (dish) {
-            meal.calories = (dish.totalCalories || 0) * factor;
-            meal.protein = (dish.totalProtein || 0) * factor;
-            meal.fat = (dish.totalFat || 0) * factor;
-            meal.carbs = (dish.totalCarbs || 0) * factor;
-            meal.fiber = (dish.totalFiber || 0) * factor;
-            meal.sugar = (dish.totalSugar || 0) * factor;
+            meal.calories = Math.round(((dish.totalCalories || 0) * factor) * 10) / 10;
+            meal.protein = Math.round(((dish.totalProtein || 0) * factor) * 10) / 10;
+            meal.fat = Math.round(((dish.totalFat || 0) * factor) * 10) / 10;
+            meal.carbs = Math.round(((dish.totalCarbs || 0) * factor) * 10) / 10;
+            meal.fiber = Math.round(((dish.totalFiber || 0) * factor) * 10) / 10;
+            meal.sugar = Math.round(((dish.totalSugar || 0) * factor) * 10) / 10;
           }
         }
-        
+
         meal.quantity = updateMealDto.quantity;
       }
 
-      return await meal.save();
+      const updatedMeal = await this.mealRepo.update(new Types.ObjectId(mealId), meal);
+      if (!updatedMeal) {
+        throw new MealNotFoundError('Failed to update meal');
+      }
+      return updatedMeal;
     } catch (error) {
       if (error instanceof MealNotFoundError || error instanceof MealForbiddenError) {
         throw error;
@@ -196,8 +192,8 @@ export class MealService {
   async deleteMeal(userId: string, mealId: string): Promise<void> {
     try {
       this.validateObjectId(mealId);
-      
-      const meal = await this.mealModel.findById(mealId).exec();
+
+      const meal = await this.mealRepo.findById(new Types.ObjectId(mealId));
       if (!meal) {
         throw new MealNotFoundError('Meal not found');
       }
@@ -207,7 +203,7 @@ export class MealService {
         throw new MealForbiddenError('Cannot delete meal you do not own');
       }
 
-      await this.mealModel.deleteOne({ _id: mealId }).exec();
+      await this.mealRepo.delete(new Types.ObjectId(mealId));
     } catch (error) {
       if (error instanceof MealNotFoundError || error instanceof MealForbiddenError) {
         throw error;
@@ -228,14 +224,15 @@ export class MealService {
   }> {
     try {
       const startDate = new Date(date);
-      const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
 
-      const meals = await this.mealModel
-        .find({
-          userId: new Types.ObjectId(userId),
-          date: { $gte: startDate, $lt: endDate },
-        })
-        .exec();
+      const meals = await this.mealRepo.findByUserIdAndDateRange(
+        new Types.ObjectId(userId),
+        startDate,
+        endDate,
+      );
 
       const summary = {
         totalCalories: 0,
@@ -261,6 +258,14 @@ export class MealService {
         summary.totalSugar += meal.sugar;
         summary.mealsByType[meal.mealType].push(meal);
       });
+
+      // Round summary totals to 1 decimal place
+      summary.totalCalories = Math.round(summary.totalCalories * 10) / 10;
+      summary.totalProtein = Math.round(summary.totalProtein * 10) / 10;
+      summary.totalFat = Math.round(summary.totalFat * 10) / 10;
+      summary.totalCarbs = Math.round(summary.totalCarbs * 10) / 10;
+      summary.totalFiber = Math.round(summary.totalFiber * 10) / 10;
+      summary.totalSugar = Math.round(summary.totalSugar * 10) / 10;
 
       return summary;
     } catch (error) {

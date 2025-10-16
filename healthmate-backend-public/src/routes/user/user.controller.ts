@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { QuerySchema } from 'src/shared/schemas/request/request.schema';
+import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
+
 import {
   CreateUserDTO,
   DeleteUserDTO,
@@ -28,6 +30,11 @@ export class UserController {
     return this.usersService.getUsers(parsed);
   }
 
+  @Get('me')
+  async getCurrentUser(@ActiveUser('userId') userId: string) {
+    return this.usersService.getUserById(userId);
+  }
+
   @Get(':id')
   async getUser(@Param() params: GetUserDetailParamsDTO) {
     return this.usersService.getUserById(params.id);
@@ -36,6 +43,14 @@ export class UserController {
   @Post()
   async createUser(@Body() body: CreateUserDTO) {
     return this.usersService.createUser(body);
+  }
+
+  @Put('me')
+  async updateCurrentUser(
+    @ActiveUser('userId') userId: string,
+    @Body() body: UpdateUserDTO,
+  ) {
+    return this.usersService.updateUser(userId, body);
   }
 
   @Put(':id')

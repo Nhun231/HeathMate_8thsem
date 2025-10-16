@@ -104,4 +104,9 @@ export class CalculationService {
 
     return this.calculationRepo.delete(new Types.ObjectId(id));
   }
+
+  // Find lastest calculation record by userId
+  async findLatestByUserId(userId: Types.ObjectId) {
+    return this.calculationRepo.findLatestByUserId(userId);
+  }
 }

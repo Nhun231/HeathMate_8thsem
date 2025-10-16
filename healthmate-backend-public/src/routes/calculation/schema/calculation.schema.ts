@@ -59,4 +59,6 @@ export class Calculation {
 
 export const CalculationSchema = SchemaFactory.createForClass(Calculation);
 
+CalculationSchema.index({ userId: 1, createdAt: -1 });
+
 export type CalculationDocument = HydratedDocument<Calculation>;

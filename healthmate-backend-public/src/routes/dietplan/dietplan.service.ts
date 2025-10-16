@@ -6,6 +6,9 @@ import {
   NotFoundUserCalculationException,
   NotFoundDietPlanException,
   InvalidTargetWeightChangeException,
+  TargetWeightTooHighException,
+  TargetWeightTooLowException,
+  TargetWeightExcess
 } from './dietplan.error';
 import {
   DietPlanCreateBodyType,
@@ -29,7 +32,7 @@ export class DietPlanService {
     const allCalculations =
       await this.calculationRepo.findByUserId(userObjectId);
     if (!allCalculations || allCalculations.length === 0) {
-      throw NotFoundUserCalculationException;
+      throw new NotFoundUserCalculationException;
     }
 
     // Get the latest calculation
@@ -38,43 +41,38 @@ export class DietPlanService {
     )[0];
 
     const TDEE = latestCalc.tdee;
+    const currentWeight = latestCalc.weight;
 
     // Calculate diet plan details
-    const { dailyCalories, durationDays, endDate } =
+    const { dailyCalories, durationDays, endDate, targetWeight } =
       this.calculateDietPlanDetails({
         TDEE,
         goal,
         targetWeightChange,
+        currentWeight,
       });
 
     // Check if there's an existing current plan
     const existingPlan =
       await this.dietPlanRepo.findCurrentByUserId(userObjectId);
+    const payload = {
+      goal,
+      targetWeightChange: targetWeight,
+      dailyCalories,
+      durationDays,
+      startDate: new Date(),
+      endDate,
+      referenceTDEE: TDEE,
+    };
 
     if (existingPlan) {
       // If exists, update
-      return this.dietPlanRepo.update(existingPlan._id, {
-        goal,
-        targetWeightChange:
-          goal === 'MaintainWeight' ? undefined : targetWeightChange,
-        dailyCalories,
-        durationDays,
-        startDate: new Date(),
-        endDate: goal === 'MaintainWeight' ? undefined : (endDate ?? undefined),
-        referenceTDEE: TDEE,
-      });
+      return this.dietPlanRepo.update(existingPlan._id, payload);
     } else {
       //If not, create new
       return this.dietPlanRepo.create({
         userId: userObjectId,
-        goal,
-        targetWeightChange:
-          goal === 'MaintainWeight' ? undefined : targetWeightChange,
-        dailyCalories,
-        durationDays,
-        startDate: new Date(),
-        endDate: goal === 'MaintainWeight' ? undefined : (endDate ?? undefined),
-        referenceTDEE: TDEE,
+        ...payload,
       });
     }
   }
@@ -88,35 +86,37 @@ export class DietPlanService {
     const existingPlan =
       await this.dietPlanRepo.findCurrentByUserId(userObjectId);
     if (!existingPlan) throw new NotFoundDietPlanException();
+
     // Get all calculations of the user
     const allCalculations =
       await this.calculationRepo.findByUserId(userObjectId);
     if (!allCalculations || allCalculations.length === 0) {
       throw new NotFoundUserCalculationException();
     }
+
     // Get the latest calculation
     const latestCalc = allCalculations.sort(
       (a, b) => b._id.getTimestamp().getTime() - a._id.getTimestamp().getTime(),
     )[0];
 
     const TDEE = latestCalc.tdee;
+    const currentWeight = latestCalc.weight;
     const newGoal = goal || existingPlan.goal;
 
-    const { dailyCalories, durationDays, endDate } =
+    const { dailyCalories, durationDays, endDate, targetWeight } =
       this.calculateDietPlanDetails({
         TDEE,
         goal: newGoal,
         targetWeightChange,
+        currentWeight,
       });
 
     return this.dietPlanRepo.update(existingPlan._id, {
       goal: newGoal,
-      targetWeightChange:
-        newGoal === 'MaintainWeight' ? undefined : targetWeightChange,
+      targetWeightChange: targetWeight,
       dailyCalories,
-      durationDays: newGoal === 'MaintainWeight' ? 0 : durationDays,
-      endDate:
-        newGoal === 'MaintainWeight' ? undefined : (endDate ?? undefined),
+      durationDays,
+      endDate,
       referenceTDEE: TDEE,
     });
   }
@@ -144,37 +144,54 @@ export class DietPlanService {
     TDEE,
     goal,
     targetWeightChange,
+    currentWeight,
   }: {
     TDEE: number;
     goal: string;
     targetWeightChange?: number;
+    currentWeight: number;
   }) {
     let dailyCalories = TDEE;
     let durationDays = 0;
-    let endDate: Date | null = null;
+    let endDate: Date | undefined;
+    let targetWeight = currentWeight;
 
     if (goal === 'MaintainWeight') {
-      dailyCalories = TDEE;
+      durationDays = 30;
+      endDate = new Date();
+      endDate.setDate(endDate.getDate() + 30);
+      dailyCalories = Math.round(TDEE);
     } else if (goal === 'LoseWeight' || goal === 'GainWeight') {
       if (!targetWeightChange || targetWeightChange <= 0) {
         throw new InvalidTargetWeightChangeException();
       }
-      // 0.5kg = 3500 kcal
-      const totalKcal = targetWeightChange * 7000; // 1kg = 7000 kcal
+      if (goal === 'LoseWeight' && targetWeightChange >= currentWeight) {
+        throw new TargetWeightTooHighException;
+      }
+      if (goal === 'GainWeight' && targetWeightChange <= currentWeight) {
+        throw new TargetWeightTooLowException;
+      }
+      if (Math.abs(targetWeightChange - currentWeight) > currentWeight * 0.3) {
+        throw new TargetWeightExcess();
+      }
+
+      const actualWeightChange = targetWeightChange - currentWeight;
+
+      const totalKcal = Math.abs(actualWeightChange) * 7000;      // 1kg = 7000 kcal
       const maxCalGap = 500;
       const kcalGap = Math.min(maxCalGap, Math.round(totalKcal / 30)); // try to spread over at least 30 days if possible
 
       dailyCalories = goal === 'LoseWeight' ? TDEE - kcalGap : TDEE + kcalGap;
       durationDays = Math.ceil(totalKcal / kcalGap); // if maxCalGap > totalKcal / 30 then duration is 30, else kcalGap=maxCalGap then the duration is > 30
-
       endDate = new Date();
       endDate.setDate(endDate.getDate() + durationDays);
     }
 
     return {
       dailyCalories: Math.round(dailyCalories),
-      durationDays: goal === 'MaintainWeight' ? 0 : durationDays,
-      endDate: goal === 'MaintainWeight' ? undefined : endDate,
+      durationDays,
+      endDate,
+      targetWeight,
     };
   }
 }

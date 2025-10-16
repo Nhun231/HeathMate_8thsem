@@ -12,7 +12,7 @@ const OAuth = () => {
     if (accessToken && refreshToken) {
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-      window.location.href = '/customer';
+      window.location.href = '/customer-homepage';
     } else {
       const errorMessage = searchParams.get('errorMessage');
       setError(

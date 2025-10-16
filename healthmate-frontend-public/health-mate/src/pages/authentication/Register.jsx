@@ -94,7 +94,7 @@ const RegisterForm = () => {
             setTimeout(()=>{
                 console.log("đợi thông báo")
                 navigate("/login")
-            }, 3000)
+            }, 2000)
 
         }catch(error){
             const code = extractBackendErrorCode(error) || error?.message;
@@ -184,23 +184,13 @@ const RegisterForm = () => {
             }}
         >
             {alert.show && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 16,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: '90%',
-                        maxWidth: 500,
-                        zIndex: 9999,
-                    }}
-                >
-                    <CustomAlert
-                        message={alert.message}
-                        variant={alert.severity}
-                        onClose={() => setAlert({ ...alert, show: false })}
-                    />
-                </Box>
+                <CustomAlert
+                    message={alert.message}
+                    variant={alert.severity}
+                    onClose={() => setAlert({ ...alert, show: false })}
+                    sticky={true}
+                    autoCloseDelay={2000}
+                />
             )}
         <Card
             sx={{

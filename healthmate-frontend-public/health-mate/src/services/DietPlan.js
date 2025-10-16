@@ -11,5 +11,17 @@ export const createDietPlan = async (payload, token) => {
     }
 };
 
+export const getCurrentDietPlan = async (token) => {
+  try {
+    const res = await baseAxios.get("/diet-plan/current", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return res.data;
+  } catch (e) {
+    console.error("API getCurrentDietPlan error:", e);
+    throw e.response || e;
+  }
 
-
+};

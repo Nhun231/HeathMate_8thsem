@@ -7,11 +7,9 @@ import Header from "../common/Header";
 const HomePage = () => {
     return (
         <Box >
-            <Header />
             <main>
                 <CustomerPage />
             </main>
-            <Footer />
         </Box>
     );
 };

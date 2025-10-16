@@ -20,6 +20,13 @@ import { UserModule } from './routes/user/user.module';
 import { MediaModule } from './routes/media/media.module';
 import { ExpertCertificateModule } from './routes/expert-certificate/expert-certificate.module';
 
+import { UserModule } from './routes/user/user.module';
+import envConfig from './shared/utils/config';
+import { IngredientModule } from './routes/ingredient/ingredient.module';
+import { DietPlanModule } from './routes/dietplan/dietplan.module';
+import { DishModule } from './routes/dish/dish.module';
+import { MealModule } from './routes/meal/meal.module';
+import { AiModule } from './routes/ai/ai.module';
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -31,14 +38,12 @@ import { ExpertCertificateModule } from './routes/expert-certificate/expert-cert
     SharedModule,
     AuthModule,
     CalculationModule,
+    UserModule,
     IngredientModule,
     DietPlanModule,
     DishModule,
     MealModule,
-    UserModule,
-    PermissionModule,
-    MediaModule,
-    ExpertCertificateModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [

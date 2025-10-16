@@ -3,10 +3,10 @@ import { useState, useEffect } from "react"
 import { Box, Typography, Button, Avatar, CircularProgress, Alert, Pagination, TextField, FormControl, InputLabel, Select, MenuItem, Chip } from "@mui/material"
 import { Add as AddIcon, FilterList as FilterIcon } from "@mui/icons-material"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
-import IngredientService from "../../services/Ingredient"
-import MealService from "../../services/Meal"
+import { listCustomAndPublicIngredients } from "../../services/Ingredient"
+import { addIngredientToMeal } from "../../services/Meal"
 
-function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient, selectedDate }) {
+function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient }) {
   const [ingredients, setIngredients] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -14,6 +14,7 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient, selec
   const [totalPages, setTotalPages] = useState(1)
   const [selectedTypes, setSelectedTypes] = useState([])
   const [quantities, setQuantities] = useState({}) // Individual quantities for each ingredient
+  const [summary, setSummary] = useState({ total: 0, public: 0, custom: 0 }) // Summary counts
 
   // 14 ingredient types from the images
   const ingredientTypes = [
@@ -52,9 +53,10 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient, selec
           params.type = selectedTypes[0] // Backend supports single type filter for now
         }
         
-        const response = await IngredientService.list(params)
+        const response = await listCustomAndPublicIngredients(params)
         setIngredients(response.items || [])
         setTotalPages(response.totalPages || 1)
+        setSummary(response.summary || { total: 0, public: 0, custom: 0 })
         
         // Initialize quantities for new ingredients
         const newQuantities = { ...quantities }
@@ -93,11 +95,12 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient, selec
       
       const ingredientQuantity = quantities[ingredient._id] || 100
       
-      // Add ingredient to meal via backend API
-      const mealData = await MealService.addIngredientToMeal(
+      // Add ingredient to meal via backend API (use current date)
+      const currentDate = new Date() // Use current date object
+      const mealData = await addIngredientToMeal(
         ingredient._id,
         ingredientQuantity,
-        selectedDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        currentDate, // Pass Date object, MealService will convert to ISO
         mealTypeMap[mealType] || 'snack'
       )
       
@@ -165,6 +168,24 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient, selec
 
   return (
     <Box>
+      {/* Ingredient Summary */}
+      <Box sx={{ mb: 2, p: 2, bgcolor: "#E8F5E9", borderRadius: 2 }}>
+        <Typography variant="subtitle2" sx={{ color: "#4CAF50", fontWeight: 600, mb: 1 }}>
+          Tổng quan nguyên liệu
+        </Typography>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+          <Typography variant="body2" sx={{ color: "#666" }}>
+            Tổng: {summary.total} nguyên liệu
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#4CAF50" }}>
+            Công khai: {summary.public}
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#F57C00" }}>
+            Tùy chỉnh: {summary.custom}
+          </Typography>
+        </Box>
+      </Box>
+
       {/* Filter Controls */}
       <Box sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 2 }}>
         <Typography variant="subtitle2" sx={{ mb: 1, color: "#4CAF50", fontWeight: 600 }}>
@@ -229,9 +250,27 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient, selec
 
           {/* Content */}
           <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#4CAF50", mb: 0.5 }}>
-              {ingredient.name}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#4CAF50" }}>
+                {ingredient.name}
+              </Typography>
+              {/* Custom ingredient flag */}
+              {ingredient.belongsTo && (
+                <Chip
+                  label="Tùy chỉnh"
+                  size="small"
+                  sx={{
+                    bgcolor: "#FFF3E0",
+                    color: "#F57C00",
+                    fontSize: "0.7rem",
+                    height: 20,
+                    "& .MuiChip-label": {
+                      px: 1
+                    }
+                  }}
+                />
+              )}
+            </Box>
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 1 }}>
               <Typography variant="caption" sx={{ color: "#666" }}>
                 Đạm: {ingredient.proteinPer100g?.toFixed(1) || 0}g

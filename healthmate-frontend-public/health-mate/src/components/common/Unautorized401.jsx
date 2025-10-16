@@ -11,6 +11,7 @@ import {
     Stack,
 } from "@mui/material"
 import { Lock, Login, ArrowBack, Home } from "@mui/icons-material"
+import {useAuth} from "../../context/AuthProvider.jsx";
 
 // Create a custom green theme (same as 404 page)
 const greenTheme = createTheme({
@@ -73,12 +74,18 @@ const greenTheme = createTheme({
 })
 
 export default function UnauthorizedPage() {
+    const {user} = useAuth()
     const handleLogin = () => {
         window.location.href = "/login"
     }
 
     const handleGoHome = () => {
-        window.location.href = "/homepage"
+        if(user?.roleId.name==="Customer"){
+            window.location.href = "/customer-homepage"
+        }else if(user?.roleId.name==="Admin"){
+            window.location.href = "/admin/dashboard"
+        }
+
     }
 
     const handleGoBack = () => {
@@ -139,12 +146,12 @@ export default function UnauthorizedPage() {
 
                             {/* Main heading */}
                             <Typography variant="h2" color="text.primary" gutterBottom sx={{ mb: 2 }}>
-                                Access Denied
+                                Truy Cập Bị Từ Chối
                             </Typography>
 
                             {/* Description */}
                             <Typography variant="h4" color="text.secondary" sx={{ mb: 4, fontWeight: 400 }}>
-                                You don't have permission to access this page.
+                                Bạn không có quyền truy cập trang này.
                             </Typography>
 
                             <Typography
@@ -152,8 +159,8 @@ export default function UnauthorizedPage() {
                                 color="text.secondary"
                                 sx={{ mb: 4, maxWidth: 500, mx: "auto", lineHeight: 1.6 }}
                             >
-                                This page requires authentication or you may not have the necessary permissions. Please log in with the
-                                appropriate credentials or contact your administrator.
+                                Trang này yêu cầu xác thực hoặc bạn có thể không có quyền cần thiết. Vui lòng đăng nhập với
+                                thông tin đăng nhập phù hợp hoặc liên hệ với quản trị viên của bạn.
                             </Typography>
                         </Box>
 
@@ -172,7 +179,7 @@ export default function UnauthorizedPage() {
                                     },
                                 }}
                             >
-                                Sign In
+                                Đăng Nhập
                             </Button>
 
                             <Button
@@ -190,7 +197,7 @@ export default function UnauthorizedPage() {
                                     },
                                 }}
                             >
-                                Go Home
+                                Về Trang Chủ
                             </Button>
 
                             <Button
@@ -206,19 +213,19 @@ export default function UnauthorizedPage() {
                                     },
                                 }}
                             >
-                                Go Back
+                                Quay Lại
                             </Button>
                         </Stack>
 
                         {/* Additional help text */}
                         <Box sx={{ mt: 4, pt: 3, borderTop: "1px solid", borderColor: "divider" }}>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                If you believe this is an error, please contact your administrator or support team
+                                Nếu bạn cho rằng đây là lỗi, vui lòng liên hệ với quản trị viên hoặc đội ngũ hỗ trợ của bạn
 
                             </Typography>
 
                             <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.875rem" }}>
-                                Error Code: 401 - Unauthorized Access
+                                Mã Lỗi: 401 - Truy Cập Không Được Phép
                             </Typography>
                         </Box>
                     </Paper>

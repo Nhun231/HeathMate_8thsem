@@ -32,7 +32,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly googleService: GoogleService,
-  ) {}
+  ) { }
 
   @Post('register')
   @IsPublic()

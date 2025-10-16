@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MealController } from './meal.controller';
 import { MealService } from './meal.service';
+import { MealRepo } from './meal.repo';
 import { Meal, MealSchema } from './schema/meal.schema';
 import { Dish, DishSchema } from '../dish/schema/dish.schema';
 import { Ingredient, IngredientSchema } from '../ingredient/schema/ingredient.schema';
@@ -15,7 +16,7 @@ import { Ingredient, IngredientSchema } from '../ingredient/schema/ingredient.sc
     ]),
   ],
   controllers: [MealController],
-  providers: [MealService],
-  exports: [MealService],
+  providers: [MealService, MealRepo],
+  exports: [MealService, MealRepo],
 })
 export class MealModule {}

@@ -44,4 +44,14 @@ export class CalculationRepo {
   async delete(id: Types.ObjectId): Promise<DeleteResult> {
     return this.calculationModel.deleteOne({ _id: id });
   }
+
+  // Find lastest calculation record by userId
+  async findLatestByUserId(
+    userId: Types.ObjectId,
+  ): Promise<CalculationDocument | null> {
+    return this.calculationModel
+      .findOne({ userId })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
 }

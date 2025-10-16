@@ -10,6 +10,7 @@ export const IngredientCreateBodySchema = z
     fatPer100g: z.number().nonnegative(),
     fiberPer100g: z.number().nonnegative(),
     sugarPer100g: z.number().nonnegative(),
+    isPublic: z.boolean().optional(),
   })
   .strict();
 
@@ -23,6 +24,7 @@ export const IngredientUpdateBodySchema = z
     fatPer100g: z.number().nonnegative().optional(),
     fiberPer100g: z.number().nonnegative().optional(),
     sugarPer100g: z.number().nonnegative().optional(),
+    isPublic: z.boolean().optional(),
   })
   .strict();
 

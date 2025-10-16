@@ -1,16 +1,59 @@
 import React, { useEffect, useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, Menu, MenuItem } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-
+import baseAxios from "../../api/axios.js";
+import { getCurrentDietPlan } from '../../services/DietPlan.js';
 const Header = () => {
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+    const [isLoggedIn, setIsLoggedIn] = useState(() => {
+        const token = localStorage.getItem('accessToken');
+        return !!token;
+    });
+
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [hasDietPlan, setHasDietPlan] = useState(false);
   useEffect(() => {
+        const handleStorageChange = () => {
     const token = localStorage.getItem('accessToken');
     setIsLoggedIn(!!token);
+      if (token) {
+          getCurrentDietPlan(token)
+              .then((data) => {
+                  if (data) setHasDietPlan(true);
+              })
+              .catch((err) => {
+                  if (err?.status === 404 || err?.statusCode === 404) {
+                      setHasDietPlan(false);
+                  } else {
+                      console.error(err);
+                  }
+              });
+      }};
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+      };
+
+     const handleClose = () => {
+        setAnchorEl(null);
+      };
+
+    const handleLogout = async () => {
+        try{
+            await baseAxios.post('/auth/logout', {refreshToken: localStorage.getItem("refreshToken")});
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            setIsLoggedIn(false);
+            navigate('/guest-homepage');
+        }catch(err){
+            console.log("logout error:", err);
+            alert("Đăng xuất thất bại");
+        }
+    };
   return (
     <AppBar
       position='sticky'
@@ -34,87 +77,115 @@ const Header = () => {
             '&:hover': { transform: 'scale(1.05)', opacity: 0.9 },
           }}
         >
+            {isLoggedIn ?
           <Link
-            to='/customer'
+               to='/customer-homepage'
             style={{ color: 'inherit', textDecoration: 'none' }}
           >
             HealthMate
           </Link>
+         :
+            <Link
+                to='/guest-homepage'
+                style={{ color: 'inherit', textDecoration: 'none' }}
+            >
+                HealthMate
+            </Link>
+            }
         </Typography>
 
-        {/* Nút đăng nhập/đăng ký */}
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {isLoggedIn ? (
-            <>
-              <Button
-                color='inherit'
-                onClick={() => navigate('/calculate')}
-                sx={{ fontWeight: 'bold' }}
-              >
-                Công cụ tính toán
-              </Button>
-              <Button
-                color='inherit'
-                onClick={() => navigate('/meal')}
-                sx={{ fontWeight: 'bold' }}
-              >
-                Thực đơn hôm nay
-              </Button>
-              <Button
-                color='inherit'
-                onClick={() => navigate('/set-goal')}
-                sx={{ fontWeight: 'bold' }}
-              >
-                Lập kế hoạch ăn uống
-              </Button>
-              <Button
-                color='inherit'
-                onClick={() => navigate('/my-profile')}
-                sx={{ fontWeight: 'bold' }}
-              >
-                Hồ sơ
-              </Button>
-              <Button
-                color='inherit'
-                onClick={() => {
-                  localStorage.clear();
-                  navigate('/login');
-                }}
-                sx={{ fontWeight: 'bold' }}
-              >
-                Đăng xuất
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                color='inherit'
-                onClick={() => navigate('/login')}
-                sx={{ fontWeight: 'bold' }}
-              >
-                Đăng nhập
-              </Button>
-              <Button
-                variant='contained'
-                onClick={() => navigate('/register')}
-                sx={{
-                  fontWeight: 'bold',
-                  background: 'linear-gradient(45deg, #FF8A65, #FF7043)',
-                  color: '#fff',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #FF7043, #FF8A65)',
-                  },
-                  boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
-                }}
-              >
-                Đăng ký
-              </Button>
-            </>
-          )}
-        </Box>
-      </Toolbar>
-    </AppBar>
-  );
+                {/* Nút đăng nhập/đăng ký */}
+                <Box sx={{ display: "flex", gap: 2 }}>
+                    {isLoggedIn ? (
+                        <>
+                            <Button
+                                color="inherit"
+                                onClick={() => navigate("/calculate")}
+                                sx={{ fontWeight: "bold" }}
+                            >
+                                Công cụ tính toán
+                            </Button>
+                            <Button
+                                color="inherit"
+                                onClick={() => navigate("/diary")}
+                                sx={{ fontWeight: "bold" }}
+                            >
+                                Thực đơn hôm nay
+                            </Button>
+                            <Button
+                                color="inherit"
+                                onClick={handleClick}
+                                sx={{ fontWeight: 'bold' }}
+                            >
+                                Kế hoạch ăn uống
+                            </Button>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={Boolean(anchorEl)}
+                                onClose={handleClose}
+                            >
+                                <MenuItem
+                                onClick={() => {
+                                    navigate('/set-goal');
+                                    handleClose();
+                                }}
+                                >
+                                {hasDietPlan ? "Chỉnh sửa kế hoạch ăn uống" : "Lập kế hoạch ăn uống"}
+                                </MenuItem>
+                                <MenuItem
+                                onClick={() => {
+                                    navigate('/dietplan/progress');
+                                    handleClose();
+                                }}
+                                >
+                                Theo dõi kế hoạch ăn uống
+                                </MenuItem>
+                            </Menu>
+                            <Button
+                                color="inherit"
+                                onClick={() => navigate("/my-profile")}
+                                sx={{ fontWeight: "bold" }}
+                            >
+                                Hồ sơ
+                            </Button>
+                            <Button
+                                color="inherit"
+                                onClick={ handleLogout}
+                                sx={{ fontWeight: "bold" }}
+                            >
+                                Đăng xuất
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Button
+                                color="inherit"
+                                onClick={() => navigate("/login")}
+                                sx={{ fontWeight: "bold" }}
+                            >
+                                Đăng nhập
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={() => navigate("/register")}
+                                sx={{
+                                    fontWeight: "bold",
+                                    background: "linear-gradient(45deg, #FF8A65, #FF7043)",
+                                    color: "#fff",
+                                    "&:hover": {
+                                        background: "linear-gradient(45deg, #FF7043, #FF8A65)",
+                                    },
+                                    boxShadow: "0 3px 8px rgba(0,0,0,0.2)",
+                                }}
+                            >
+                                Đăng ký
+                            </Button>
+                        </>
+                    )}
+                </Box>
+            </Toolbar>
+        </AppBar>
+    );
 };
 
 export default Header;
