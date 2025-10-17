@@ -133,7 +133,7 @@ const HomePage = () => {
                             iconUrl: "https://img.icons8.com/officel/80/water.png",
                             title: "Theo dõi lịch uống nước",
                             desc: "Kiểm tra và theo dõi lượng nước uống dễ dàng",
-                            path: "/",
+                            path: "/water-infor",
                         },
                         {
                             iconUrl: "https://img.icons8.com/fluency/48/scale.png",
