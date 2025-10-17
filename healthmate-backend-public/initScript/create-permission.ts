@@ -11,7 +11,7 @@ import {
 } from 'src/shared/schemas/permission.schema';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule); // ✅ we don’t need to listen()
+  const app = await NestFactory.create(AppModule);
   await app.listen(3010);
   const server = app.getHttpAdapter().getInstance();
   const router = server?.router;
@@ -38,7 +38,7 @@ async function bootstrap() {
           layer.route?.stack[0].method,
         ).toUpperCase() as keyof typeof HTTPMethod;
         const moduleName = String(path.split('/')[2]).toUpperCase();
-        console.log(path, method, moduleName);
+        // console.log(path, method, moduleName);
         return {
           path,
           method,

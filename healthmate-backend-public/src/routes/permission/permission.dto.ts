@@ -1,5 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import {
+  BulkUpdatePermissionBodySchema,
   CreatePermissionBodySchema,
   GetPermissionParamsSchema,
   UpdatePermissionBodySchema,
@@ -15,4 +16,8 @@ export class CreatePermissionBodyDTO extends createZodDto(
 
 export class UpdatePermissionBodyDTO extends createZodDto(
   UpdatePermissionBodySchema,
+) {}
+
+export class BulkUpdatePermissionBodyDTO extends createZodDto(
+  BulkUpdatePermissionBodySchema,
 ) {}

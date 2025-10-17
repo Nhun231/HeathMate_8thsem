@@ -11,6 +11,7 @@ import {
 import { PermissionService } from './permission.service';
 import { QuerySchema } from 'src/shared/schemas/request/request.schema';
 import {
+  BulkUpdatePermissionBodyDTO,
   CreatePermissionBodyDTO,
   GetPermissionParamsDTO,
   UpdatePermissionBodyDTO,
@@ -35,6 +36,11 @@ export class PermissionController {
   @Post()
   async create(@Body() body: CreatePermissionBodyDTO) {
     return this.permissionService.create(body);
+  }
+
+  @Put('bulk-update-roles')
+  async bulkUpdateRoles(@Body() body: BulkUpdatePermissionBodyDTO) {
+    return this.permissionService.bulkUpdateRoles(body.updates);
   }
 
   @Put(':permissionId')
