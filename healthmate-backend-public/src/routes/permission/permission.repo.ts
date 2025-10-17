@@ -30,7 +30,7 @@ export class PermissionRepo {
   async findAll(query: QueryType) {
     const queryPermissions = await this.queryBuilder.query({
       query,
-      allowedFilters: ['name', 'method'],
+      allowedFilters: ['name', 'module'],
       populateFields: [
         {
           path: 'role',
@@ -88,5 +88,10 @@ export class PermissionRepo {
     await this.permissionModel.updateOne({ _id: permissionId }, updateOps);
 
     return this.findOne(permissionId);
+  }
+
+  async getModules() {
+    const modules = await this.permissionModel.distinct('module');
+    return modules;
   }
 }

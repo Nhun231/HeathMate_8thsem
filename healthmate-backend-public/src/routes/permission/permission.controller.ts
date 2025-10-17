@@ -28,6 +28,11 @@ export class PermissionController {
     return this.permissionService.list(parsed);
   }
 
+  @Get('modules')
+  async getModules() {
+    return this.permissionService.getModules();
+  }
+
   @Get(':permissionId')
   async findOne(@Param() params: GetPermissionParamsDTO) {
     return this.permissionService.findOne(params.permissionId);

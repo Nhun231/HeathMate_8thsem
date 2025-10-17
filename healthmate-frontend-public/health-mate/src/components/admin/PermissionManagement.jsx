@@ -41,6 +41,7 @@ const PermissionManagement = () => {
 
   useEffect(() => {
     fetchData();
+    fetchModules();
   }, [currentPage, itemsPerPage, searchQuery, selectedModule]);
 
   const fetchData = async () => {
@@ -61,16 +62,19 @@ const PermissionManagement = () => {
       setPermissions(permissionsResponse.data);
       setRoles(rolesResponse.data);
       setTotalPages(permissionsResponse.totalPages || 1);
-
-      // Extract unique modules from permissions
-      const uniqueModules = [
-        ...new Set(permissionsResponse.data.map((p) => p.module)),
-      ];
-      setModules(uniqueModules);
     } catch (error) {
       setError("Lỗi khi tải dữ liệu: " + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchModules = async () => {
+    try {
+      const modulesResponse = await permissionApi.listModules();
+      setModules(modulesResponse);
+    } catch (error) {
+      setError("Lỗi khi tải danh sách module: " + error.message);
     }
   };
 
