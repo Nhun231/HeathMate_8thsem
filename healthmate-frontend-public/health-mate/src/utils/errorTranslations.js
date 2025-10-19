@@ -14,6 +14,9 @@ const ERROR_CODE_TO_VI = {
   'UserCalculation.NotFound': 'Không tìm thấy dữ liệu tính toán của người dùng.',
   'DietPlan.NotFound': 'Không tìm thấy kế hoạch ăn kiêng.',
   'DietPlan.InvalidTargetWeightChange': 'Cân nặng mục tiêu không hợp lệ.',
+  'DietPlan.TargetWeightTooLow': 'Cân nặng mục tiêu phải lớn hơn cân nặng hiện tại.',
+  'DietPlan.TargetWeightTooHigh': 'Cân nặng mục tiêu phải nhỏ hơn cân nặng hiện tại.',
+  'DietPlan.TargetWeightExcess': 'Mục tiêu thay đổi cân nặng vượt quá giới hạn an toàn (30%).',
 };
 
 export function translateErrorCode(code) {
