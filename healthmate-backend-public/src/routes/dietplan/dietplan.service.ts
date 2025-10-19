@@ -18,8 +18,8 @@ import {
 @Injectable()
 export class DietPlanService {
   constructor(
-      private readonly dietPlanRepo: DietPlanRepo,
-      private readonly calculationRepo: CalculationRepo,
+    private readonly dietPlanRepo: DietPlanRepo,
+    private readonly calculationRepo: CalculationRepo,
   ) {}
 
   async generateDietPlan(data: DietPlanCreateBodyType, userId: string) {
@@ -30,14 +30,14 @@ export class DietPlanService {
 
     // Get all calculations of the user
     const allCalculations =
-        await this.calculationRepo.findByUserId(userObjectId);
+      await this.calculationRepo.findByUserId(userObjectId);
     if (!allCalculations || allCalculations.length === 0) {
       throw new NotFoundUserCalculationException;
     }
 
     // Get the latest calculation
     const latestCalc = allCalculations.sort(
-        (a, b) => b._id.getTimestamp().getTime() - a._id.getTimestamp().getTime(),
+      (a, b) => b._id.getTimestamp().getTime() - a._id.getTimestamp().getTime(),
     )[0];
 
     const TDEE = latestCalc.tdee;
@@ -45,16 +45,16 @@ export class DietPlanService {
 
     // Calculate diet plan details
     const { dailyCalories, durationDays, endDate, targetWeight } =
-        this.calculateDietPlanDetails({
-          TDEE,
-          goal,
-          targetWeightChange,
-          currentWeight,
-        });
+      this.calculateDietPlanDetails({
+        TDEE,
+        goal,
+        targetWeightChange,
+        currentWeight,
+      });
 
     // Check if there's an existing current plan
     const existingPlan =
-        await this.dietPlanRepo.findCurrentByUserId(userObjectId);
+      await this.dietPlanRepo.findCurrentByUserId(userObjectId);
     const payload = {
       goal,
       targetWeightChange: targetWeight,
@@ -84,19 +84,19 @@ export class DietPlanService {
     const { goal, targetWeightChange } = data;
 
     const existingPlan =
-        await this.dietPlanRepo.findCurrentByUserId(userObjectId);
+      await this.dietPlanRepo.findCurrentByUserId(userObjectId);
     if (!existingPlan) throw new NotFoundDietPlanException();
 
     // Get all calculations of the user
     const allCalculations =
-        await this.calculationRepo.findByUserId(userObjectId);
+      await this.calculationRepo.findByUserId(userObjectId);
     if (!allCalculations || allCalculations.length === 0) {
       throw new NotFoundUserCalculationException();
     }
 
     // Get the latest calculation
     const latestCalc = allCalculations.sort(
-        (a, b) => b._id.getTimestamp().getTime() - a._id.getTimestamp().getTime(),
+      (a, b) => b._id.getTimestamp().getTime() - a._id.getTimestamp().getTime(),
     )[0];
 
     const TDEE = latestCalc.tdee;
@@ -104,12 +104,12 @@ export class DietPlanService {
     const newGoal = goal || existingPlan.goal;
 
     const { dailyCalories, durationDays, endDate, targetWeight } =
-        this.calculateDietPlanDetails({
-          TDEE,
-          goal: newGoal,
-          targetWeightChange,
-          currentWeight,
-        });
+      this.calculateDietPlanDetails({
+        TDEE,
+        goal: newGoal,
+        targetWeightChange,
+        currentWeight,
+      });
 
     return this.dietPlanRepo.update(existingPlan._id, {
       goal: newGoal,
@@ -141,11 +141,11 @@ export class DietPlanService {
   }
 
   private calculateDietPlanDetails({
-                                     TDEE,
-                                     goal,
-                                     targetWeightChange,
-                                     currentWeight,
-                                   }: {
+    TDEE,
+    goal,
+    targetWeightChange,
+    currentWeight,
+  }: {
     TDEE: number;
     goal: string;
     targetWeightChange?: number;
