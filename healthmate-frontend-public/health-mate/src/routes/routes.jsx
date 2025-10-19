@@ -23,6 +23,7 @@ import ProfilePage from "../pages/ProfilePage.jsx";
 import EditProfilePage from "../pages/EditProfilePage.jsx";
 import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
 import RequireRole from "../components/common/RequireRole.jsx";
+import ExpertUpload from "../components/expert/UploadImage.jsx";
 class AuthLayout extends Component {
   render() {
     return (
@@ -103,19 +104,19 @@ const router = createBrowserRouter([
           {
             path: "/diary",
             element: (
-                <RequireRole allowedRoles={["Customer"]}>
-                  <DiaryProvider><FoodDiary /></DiaryProvider>
+              <RequireRole allowedRoles={["Customer"]}>
+                <DiaryProvider><FoodDiary /></DiaryProvider>
 
-                </RequireRole>
+              </RequireRole>
             ),
           },
-            //admin
+          //admin
           {
             path: "/admin/dashboard",
             element: (
-                <RequireRole allowedRoles={["Admin"]}>
-                  <AdminDashboard />
-                </RequireRole>
+              <RequireRole allowedRoles={["Admin"]}>
+                <AdminDashboard />
+              </RequireRole>
             )
           },
           {
@@ -133,6 +134,10 @@ const router = createBrowserRouter([
           {
             path: "/edit-profile",
             element: <EditProfilePage />,
+          },
+          {
+            path: "/expert-register",
+            element: <ExpertUpload />,
           },
         ],
       },

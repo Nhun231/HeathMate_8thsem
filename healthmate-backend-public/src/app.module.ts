@@ -44,6 +44,8 @@ import { AiModule } from './routes/ai/ai.module';
     DishModule,
     MealModule,
     AiModule,
+    MediaModule,
+    ExpertCertificateModule,
   ],
   controllers: [AppController],
   providers: [
