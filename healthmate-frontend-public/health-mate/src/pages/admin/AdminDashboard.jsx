@@ -26,6 +26,7 @@ import IngredientManagement from "../../components/admin/IngredientManagement.js
 import PermissionManagement from "../../components/admin/PermissionManagement.jsx";
 import UserManagement from "../../components/admin/UserManagement.jsx";
 import { getUserStats } from "../../services/AdminService.js";
+import ExpertCertificateManagement from "../../components/admin/ExpertCertificateManagement.jsx";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -99,7 +100,12 @@ const AdminDashboard = () => {
       label: "Quản lý người dùng",
       icon: <People />,
       component: <UserManagement />,
-    }
+    },
+    {
+      label: "Quản lý chứng chỉ chuyên gia",
+      icon: <Assessment />,
+      component: <ExpertCertificateManagement />,
+    },
   ];
 
   return (

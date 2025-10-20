@@ -36,3 +36,36 @@ export const getUserExpertCertificate = async () => {
         return null;
     }
 };
+
+// Lấy danh sách chứng chỉ chuyên gia
+export const listExpertCertificates = async (params = {}) => {
+    try {
+        const res = await baseAxios.get("/expert-certificate", { params });
+        return res.data;
+    } catch (err) {
+        console.error("Lỗi khi lấy danh sách chứng chỉ:", err);
+        throw err;
+    }
+};
+
+// Cập nhật trạng thái chứng chỉ (duyệt / từ chối)
+export const updateExpertCertificateStatus = async (certificateId, data) => {
+    try {
+        const res = await baseAxios.put(`/expert-certificate/${certificateId}`, data);
+        return res.data;
+    } catch (err) {
+        console.error("Lỗi khi cập nhật chứng chỉ:", err);
+        throw err;
+    }
+};
+
+// Xóa chứng chỉ expert
+export const deleteExpertCertificate = async (certificateId) => {
+    try {
+        const res = await baseAxios.delete(`/expert-certificate/${certificateId}`);
+        return res.data;
+    } catch (err) {
+        console.error("Lỗi khi xóa chứng chỉ:", err);
+        throw err;
+    }
+};
