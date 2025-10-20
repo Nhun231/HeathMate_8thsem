@@ -21,6 +21,7 @@ import CustomerPage from "../components/homepage/CustomerPage.jsx";
 import OAuth from "../pages/authentication/OAuth.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import EditProfilePage from "../pages/EditProfilePage.jsx";
+import UpdateNutrient from "../components/nutrients/UpdateNutrients.jsx"
 import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
 import RequireRole from "../components/common/RequireRole.jsx";
 class AuthLayout extends Component {
@@ -133,6 +134,10 @@ const router = createBrowserRouter([
           {
             path: "/edit-profile",
             element: <EditProfilePage />,
+          },
+          {
+            path: "/update-nutrient",
+            element: <UpdateNutrient />,
           },
         ],
       },
