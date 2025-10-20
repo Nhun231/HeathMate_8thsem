@@ -2,7 +2,7 @@ import { Gender, UserStatus } from 'src/shared/constants/auth.constant';
 import z from 'zod';
 
 export const GetUserDetailParamsSchema = z.object({
-  id: z.string(),
+  userId: z.string(),
 });
 
 export const CreateUserSchema = z.object({
