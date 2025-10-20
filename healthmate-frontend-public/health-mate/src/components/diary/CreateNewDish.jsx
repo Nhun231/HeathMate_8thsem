@@ -3,8 +3,8 @@
 import { Box, Typography, TextField, Select, MenuItem, FormControl, Button, Autocomplete, Chip, CircularProgress, Alert } from "@mui/material"
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
-import DishService from "../../services/Dish"
-import MealService from "../../services/Meal"
+import { createDish } from "../../services/Dish"
+import { addDishToMeal } from "../../services/Meal"
 
 function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, resetState }) {
   // Use state from props instead of local state
@@ -58,7 +58,7 @@ function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, reset
         }))
       }
 
-      const createdDish = await DishService.create(dishData)
+      const createdDish = await createDish(dishData)
 
       // Map meal type to backend enum
       const mealTypeMap = {
@@ -70,7 +70,7 @@ function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, reset
 
       // Add the created dish to the meal
       const currentDate = new Date() // Use current date object
-      const mealData = await MealService.addDishToMeal(
+      const mealData = await addDishToMeal(
         createdDish._id,
         100, // Default serving size
         currentDate, // Pass Date object, MealService will convert to ISO

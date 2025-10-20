@@ -2,15 +2,38 @@ import React, { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Menu, MenuItem } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import baseAxios from "../../api/axios.js";
-
+import { getCurrentDietPlan } from '../../services/DietPlan.js';
 const Header = () => {
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    const [isLoggedIn, setIsLoggedIn] = useState(() => {
+        const token = localStorage.getItem('accessToken');
+        return !!token;
+    });
+
     const [anchorEl, setAnchorEl] = useState(null);
+    const [hasDietPlan, setHasDietPlan] = useState(false);
   useEffect(() => {
+        const handleStorageChange = () => {
     const token = localStorage.getItem('accessToken');
     setIsLoggedIn(!!token);
+      if (token) {
+          getCurrentDietPlan(token)
+              .then((data) => {
+                  if (data) setHasDietPlan(true);
+              })
+              .catch((err) => {
+                  if (err?.status === 404 || err?.statusCode === 404) {
+                      setHasDietPlan(false);
+                  } else {
+                      console.error(err);
+                  }
+              });
+      }};
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
       };
@@ -18,17 +41,19 @@ const Header = () => {
      const handleClose = () => {
         setAnchorEl(null);
       };
+
     const handleLogout = async () => {
         try{
             await baseAxios.post('/auth/logout', {refreshToken: localStorage.getItem("refreshToken")});
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
+            setIsLoggedIn(false);
             navigate('/guest-homepage');
         }catch(err){
             console.log("logout error:", err);
-            alert("Đăng xuất thất bại")
+            alert("Đăng xuất thất bại");
         }
-    }
+    };
   return (
     <AppBar
       position='sticky'
@@ -52,12 +77,21 @@ const Header = () => {
             '&:hover': { transform: 'scale(1.05)', opacity: 0.9 },
           }}
         >
+            {isLoggedIn ?
           <Link
-            to='/customer-homepage'
+               to='/customer-homepage'
             style={{ color: 'inherit', textDecoration: 'none' }}
           >
             HealthMate
           </Link>
+         :
+            <Link
+                to='/guest-homepage'
+                style={{ color: 'inherit', textDecoration: 'none' }}
+            >
+                HealthMate
+            </Link>
+            }
         </Typography>
 
                 {/* Nút đăng nhập/đăng ký */}
@@ -96,7 +130,7 @@ const Header = () => {
                                     handleClose();
                                 }}
                                 >
-                                Lập kế hoạch ăn uống
+                                {hasDietPlan ? "Chỉnh sửa kế hoạch ăn uống" : "Lập kế hoạch ăn uống"}
                                 </MenuItem>
                                 <MenuItem
                                 onClick={() => {

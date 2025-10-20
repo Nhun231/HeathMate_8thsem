@@ -55,6 +55,9 @@ export const RefreshTokenAlreadyUsedException = new UnauthorizedException(
 export const UnauthorizedAccessException = new UnauthorizedException(
   'Error.UnauthorizedAccess',
 );
+export const UserOfRefreshTokenNotFoundException = new UnauthorizedException(
+  'Error.UserNotFound',
+);
 
 // Google auth related errors
 export const GoogleUserInfoError = new Error('Error.FailedToGetGoogleUserInfo');

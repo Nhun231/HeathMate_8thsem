@@ -6,9 +6,10 @@ import {
   NotFoundUserCalculationException,
 } from './calculation.error';
 import { Calculation } from './schema/calculation.schema';
-import { Types } from 'mongoose';
+import { DeleteResult, Types } from 'mongoose';
 import { NutrientsCalculatorService } from 'src/shared/services/nutrients-calculator.service';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
+import { last } from 'rxjs';
 
 @Injectable()
 export class CalculationService {
@@ -16,7 +17,7 @@ export class CalculationService {
     private readonly calculationRepo: CalculationRepo,
     private readonly nutrientCalculatorService: NutrientsCalculatorService,
     private readonly sharedUserRepository: SharedUserRepository,
-  ) { }
+  ) {}
 
   async createCalculation({
     data,
@@ -25,7 +26,7 @@ export class CalculationService {
     data: CalculationCreateType;
     userId: Types.ObjectId;
   }) {
-    const calculation = await this.calculate({ data, userId });
+    const calculation = this.calculate({ data, userId });
 
     // if there is a record for today, update the existing record
     const existingCalculation =
@@ -38,29 +39,21 @@ export class CalculationService {
     return this.calculationRepo.create(calculation);
   }
 
-  async calculate({
+  calculate({
     data,
     userId,
   }: {
     data: CalculationCreateType;
     userId: Types.ObjectId;
   }) {
-    const { height, weight, activityLevel } = data;
-
-    const userAge = await this.sharedUserRepository.getUserAge(userId);
-    const user = await this.sharedUserRepository.findUnique({ _id: userId });
-
-    if (!user) {
-      throw NotFoundUserCalculationException;
-    }
-    const gender = user.gender;
+    const { age, gender, height, weight, activityLevel } = data;
 
     const { bmr, tdee, bmi, waterNeeded, protein, fat, carbs, fiber } =
       this.nutrientCalculatorService.calculateNutrients({
+        age,
         gender,
         height,
         weight,
-        age: userAge,
         activityLevel,
       });
 
@@ -107,7 +100,7 @@ export class CalculationService {
     return this.calculationRepo.update(new Types.ObjectId(id), data);
   }
 
-  async delete(id: string) {
+  async delete(id: string): Promise<DeleteResult> {
     await this.findById(id);
 
     return this.calculationRepo.delete(new Types.ObjectId(id));
@@ -116,6 +109,25 @@ export class CalculationService {
   // Find lastest calculation record by userId
   async findLatestByUserId(userId: Types.ObjectId) {
     return this.calculationRepo.findLatestByUserId(userId);
+  }
+
+  async updateNutrient(
+    userId: Types.ObjectId,
+    data: { protein?: number; fat?: number; carbs?: number; fiber?: number }) {
+    //Give the lastest calculation record
+    const latest = await this.findLatestByUserId(userId);
+    if (!latest) {
+      throw NotFoundCalculationException;
+    }
+
+    //Update nutrient
+    const updated = await this.calculationRepo.update(latest._id, {
+      protein: data.protein ?? latest.protein,
+      fat: data.fat ?? latest.fat,
+      carbs: data.carbs ?? latest.carbs,
+      fiber: data.fiber ?? latest.fiber,
+    });
+    return updated;
   }
 
 }

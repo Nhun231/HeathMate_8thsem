@@ -20,7 +20,7 @@ import {
   Delete as DeleteIcon,
   Restaurant as RestaurantIcon
 } from "@mui/icons-material"
-import IngredientService from "../../services/Ingredient"
+import {deleteIngredient, getMyIngredients} from "../../services/Ingredient"
 import CustomIngredientModal from "./CustomIngredientModal"
 
 function CustomIngredientsTab({ searchQuery, onAddIngredient, mealType, onClose }) {
@@ -50,7 +50,7 @@ function CustomIngredientsTab({ searchQuery, onAddIngredient, mealType, onClose 
           params.search = searchQuery
         }
         
-        const response = await IngredientService.getMyIngredients(params)
+        const response = await getMyIngredients(params)
         
         setIngredients(response.items || [])
         setTotalPages(response.totalPages || 1)
@@ -101,7 +101,7 @@ function CustomIngredientsTab({ searchQuery, onAddIngredient, mealType, onClose 
     
     setLoading(true)
     try {
-      await IngredientService.delete(ingredientToDelete._id)
+      await deleteIngredient(ingredientToDelete._id)
       
       // Remove from local state
       setIngredients(prev => prev.filter(ing => ing._id !== ingredientToDelete._id))
@@ -161,10 +161,10 @@ function CustomIngredientsTab({ searchQuery, onAddIngredient, mealType, onClose 
         'Ăn vặt': 'snack'
       }
       
-      const MealService = await import('../../services/Meal')
+      const { addIngredientToMeal } = await import('../../services/Meal')
       
       const currentDate = new Date() 
-      const mealData = await MealService.default.addIngredientToMeal(
+      const mealData = await addIngredientToMeal(
         ingredient._id,
         100, 
         currentDate, 

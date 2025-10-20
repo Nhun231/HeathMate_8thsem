@@ -1,9 +1,9 @@
 import z from 'zod';
-import { ObjectId } from 'mongodb';
 import { Gender, UserStatus } from 'src/shared/constants/auth.constant';
+import { Types } from 'mongoose';
 
 export const UserSchema = z.object({
-  _id: z.instanceof(ObjectId),
+  _id: z.instanceof(Types.ObjectId),
   email: z.email(),
   password: z.string().min(6),
   fullname: z.string().min(2),
@@ -11,7 +11,7 @@ export const UserSchema = z.object({
   dob: z.date().optional(),
   phoneNumber: z.string().optional(),
   avatar: z.string().optional(),
-  role: z.instanceof(ObjectId),
+  role: z.instanceof(Types.ObjectId),
   status: z
     .enum([UserStatus.Active, UserStatus.Inactive, UserStatus.Banned])
     .default(UserStatus.Active),

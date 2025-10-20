@@ -1,0 +1,92 @@
+import { Injectable } from '@nestjs/common';
+import { QueryBuilder } from 'src/shared/utils/query-builder';
+import {
+  Permission,
+  PermissionDocument,
+} from '../../shared/schemas/permission.schema';
+import { InjectModel } from '@nestjs/mongoose';
+import { Role, RoleDocument } from 'src/shared/schemas/role.schema';
+import { DeleteResult, Model, Types } from 'mongoose';
+import { QueryType } from 'src/shared/schemas/request/request.schema';
+import {
+  CreatePermissionBodyType,
+  UpdatePermissionBodyType,
+} from './schema/request/permission.request.schema';
+
+@Injectable()
+export class PermissionRepo {
+  private queryBuilder: QueryBuilder<PermissionDocument>;
+
+  constructor(
+    @InjectModel(Permission.name)
+    private permissionModel: Model<PermissionDocument>,
+    @InjectModel(Role.name) private roleModel: Model<RoleDocument>,
+  ) {
+    this.queryBuilder = new QueryBuilder<PermissionDocument>(
+      this.permissionModel,
+    );
+  }
+
+  async findAll(query: QueryType) {
+    const queryPermissions = await this.queryBuilder.query({
+      query,
+      allowedFilters: ['name', 'method'],
+      populateFields: [
+        {
+          path: 'role',
+          select: '_id name',
+        },
+      ],
+    });
+
+    return queryPermissions;
+  }
+
+  findOne(id: Types.ObjectId) {
+    return this.permissionModel.findById(id).populate({
+      path: 'role',
+      select: '_id name',
+    });
+  }
+
+  create(data: CreatePermissionBodyType) {
+    return this.permissionModel.create(data);
+  }
+
+  update(id: Types.ObjectId, data: UpdatePermissionBodyType) {
+    return this.permissionModel
+      .findByIdAndUpdate(id, data, { new: true })
+      .populate({
+        path: 'role',
+        select: '_id name',
+      });
+  }
+
+  delete(id: Types.ObjectId): Promise<DeleteResult> {
+    return this.permissionModel.deleteOne({ _id: id });
+  }
+
+  async updateRolesDiff(
+    permissionId: Types.ObjectId,
+    added: Types.ObjectId[],
+    removed: Types.ObjectId[],
+  ) {
+    const updateOps: Record<string, any> = {};
+
+    if (added.length > 0) {
+      updateOps.$addToSet = { role: { $each: added } };
+    }
+
+    if (removed.length > 0) {
+      updateOps.$pull = { role: { $in: removed } };
+    }
+
+    if (Object.keys(updateOps).length === 0) {
+      return this.findOne(permissionId);
+    }
+
+    await this.permissionModel.updateOne({ _id: permissionId }, updateOps);
+
+    return this.findOne(permissionId);
+  }
+}

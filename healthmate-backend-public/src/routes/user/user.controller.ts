@@ -22,7 +22,7 @@ import { DeleteResult } from 'mongoose';
 
 @Controller('v1/users')
 export class UserController {
-  constructor(private readonly usersService: UserService) { }
+  constructor(private readonly usersService: UserService) {}
 
   @Get()
   async getUsers(@Query() query: Record<string, string>) {

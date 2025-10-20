@@ -15,7 +15,7 @@ export class UserService {
     private readonly userRepo: UserRepository,
     private readonly hashingService: HashingService,
     private readonly sharedRoleRepository: SharedRoleRepository,
-  ) { }
+  ) {}
 
   async getUsers(query: QueryType) {
     return this.userRepo.findAll(query);
