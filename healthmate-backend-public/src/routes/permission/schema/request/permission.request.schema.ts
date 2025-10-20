@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { HTTPMethod } from 'src/shared/constants/role.constant';
 import z from 'zod';
 
@@ -22,10 +23,20 @@ export const CreatePermissionBodySchema = z
       HTTPMethod.OPTIONS,
       HTTPMethod.HEAD,
     ]),
+    role: z.array(z.instanceof(Types.ObjectId)).optional(),
   })
   .strict();
 
 export const UpdatePermissionBodySchema = CreatePermissionBodySchema.partial();
+
+export const BulkUpdatePermissionBodySchema = z.object({
+  updates: z.array(
+    z.object({
+      permissionId: z.string(),
+      roleIds: z.array(z.string()),
+    }),
+  ),
+});
 
 export type GetPermissionParamsType = z.infer<typeof GetPermissionParamsSchema>;
 
@@ -35,4 +46,8 @@ export type CreatePermissionBodyType = z.infer<
 
 export type UpdatePermissionBodyType = z.infer<
   typeof UpdatePermissionBodySchema
+>;
+
+export type BulkUpdatePermissionBodyType = z.infer<
+  typeof BulkUpdatePermissionBodySchema
 >;

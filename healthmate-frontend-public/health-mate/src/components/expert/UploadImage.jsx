@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -15,11 +15,36 @@ import {
     uploadFileToS3,
     getPresignedViewUrl,
 } from "../../services/MediaService";
+import {
+    createExpertCertificate,
+    updateExpertCertificate,
+    getUserExpertCertificate,
+} from "../../services/ExpertCertificateService";
 
 const PresignedUpload = () => {
     const [file, setFile] = useState(null);
     const [viewUrl, setViewUrl] = useState("");
     const [loading, setLoading] = useState(false);
+    const [certificateId, setCertificateId] = useState("");
+    const [existingKey, setExistingKey] = useState("");
+
+    // Lấy certificate hiện tại khi load trang
+    useEffect(() => {
+        const fetchCertificate = async () => {
+            try {
+                const certificate = await getUserExpertCertificate();
+                if (certificate?._id) setCertificateId(certificate._id);
+                if (certificate?.certificateURLKey) {
+                    setExistingKey(certificate.certificateURLKey);
+                    const url = await getPresignedViewUrl(certificate.certificateURLKey);
+                    setViewUrl(url);
+                }
+            } catch (err) {
+                console.error("Không thể load chứng chỉ:", err);
+            }
+        };
+        fetchCertificate();
+    }, []);
 
     const handleFileChange = (e) => setFile(e.target.files[0]);
 
@@ -28,15 +53,19 @@ const PresignedUpload = () => {
 
         setLoading(true);
         try {
-            // 1️⃣ Lấy URL upload tạm thời
             const { presignedUrl, key } = await getPresignedUploadUrl(file);
-
-            // 2️⃣ Upload trực tiếp lên S3
             await uploadFileToS3(presignedUrl, file);
 
-            // 3️⃣ Lấy URL xem ảnh
-            const viewUrl = await getPresignedViewUrl(key);
-            setViewUrl(viewUrl);
+            const url = await getPresignedViewUrl(key);
+            setViewUrl(url);
+            setExistingKey(key);
+
+            if (certificateId) {
+                await updateExpertCertificate(certificateId, { certificateURLKey: key });
+            } else {
+                const newCert = await createExpertCertificate({ certificateURLKey: key });
+                setCertificateId(newCert._id);
+            }
 
             alert("Tải chứng chỉ thành công!");
         } catch (err) {
@@ -57,8 +86,6 @@ const PresignedUpload = () => {
                 borderRadius: 4,
                 boxShadow: 4,
                 bgcolor: "#fefefe",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
                 mt: 3,
                 mb: 3,
             }}
@@ -104,7 +131,6 @@ const PresignedUpload = () => {
                     style={{ display: "none" }}
                     id="file-upload"
                 />
-
                 <label htmlFor="file-upload">
                     <Button
                         variant="contained"
@@ -134,9 +160,7 @@ const PresignedUpload = () => {
                     size="large"
                     disabled={!file || loading}
                     onClick={handleUpload}
-                    startIcon={
-                        loading ? <CircularProgress size={22} color="inherit" /> : null
-                    }
+                    startIcon={loading ? <CircularProgress size={22} color="inherit" /> : null}
                     sx={{
                         textTransform: "none",
                         fontWeight: "bold",

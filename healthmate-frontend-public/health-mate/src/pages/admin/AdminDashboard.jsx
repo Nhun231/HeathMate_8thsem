@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   Grid,
-  Button,
   Paper,
   Tabs,
   Tab,
@@ -19,17 +18,13 @@ import {
   AccountBalance,
   Dashboard as DashboardIcon,
   People,
-  Assessment
+  Assessment,
+  Lock
 } from '@mui/icons-material';
 import { listCustomAndPublicIngredients } from "../../services/Ingredient.js";
 import IngredientManagement from "../../components/admin/IngredientManagement.jsx";
-// import IngredientManagement from '../components/admin/IngredientManagement';
-// import TransactionManagement from '../components/admin/TransactionManagement';
+import PermissionManagement from "../../components/admin/PermissionManagement.jsx";
 import UserManagement from "../../components/admin/UserManagement.jsx";
-// import AdminStats from '../components/admin/AdminStats';
-// import { ingredientService } from '../services/ingredientService';
-// import { userService } from '../services/userService';
-// import { coinTransactionService } from '../services/coinTransactionService';
 import { getUserStats } from "../../services/AdminService.js";
 
 const AdminDashboard = () => {
@@ -53,22 +48,19 @@ const AdminDashboard = () => {
   const fetchQuickStats = async () => {
     try {
       setLoading(true);
-
-      const [ingredientsResponse, totalUsers, transactionStatsResponse] = await Promise.all([
+      const [ingredientsResponse, totalUsers] = await Promise.all([
         listCustomAndPublicIngredients(),
-        getUserStats(),
-        // coinTransactionService.getTransactionStats()
+        getUserStats()
       ]);
 
       setQuickStats({
         totalIngredients: ingredientsResponse.data?.length || 0,
         totalUsers: totalUsers || 0,
-        pendingTransactions: transactionStatsResponse?.data?.stats?.find(s => s._id === 'pending')?.count || 0,
-        totalCoinsDistributed: transactionStatsResponse?.data?.totalCoinsDistributed || 0
+        pendingTransactions: 0, // Placeholder nếu chưa có API giao dịch
+        totalCoinsDistributed: 0 // Placeholder
       });
     } catch (error) {
-      console.error('Error fetching quick stats:', error);
-      // Keep default values (0) on error
+      console.error("Error fetching quick stats:", error);
     } finally {
       setLoading(false);
     }
@@ -76,24 +68,37 @@ const AdminDashboard = () => {
 
   const tabContent = [
     {
-      label: 'Tổng quan',
+      label: "Tổng quan",
       icon: <DashboardIcon />,
-      // component: <AdminStats />
+      component: (
+        <Typography sx={{ textAlign: 'center', mt: 2 }}>
+          Chào mừng bạn đến trang quản trị HealthMate!
+        </Typography>
+      )
     },
     {
-      label: 'Quản lý nguyên liệu',
+      label: "Quản lý nguyên liệu",
       icon: <Restaurant />,
-      component: <IngredientManagement />
+      component: <IngredientManagement />,
     },
     {
-      label: 'Giao dịch xu',
+      label: "Quản lý quyền",
+      icon: <Lock />,
+      component: <PermissionManagement />,
+    },
+    {
+      label: "Giao dịch xu",
       icon: <AccountBalance />,
-      // component: <TransactionManagement />
+      component: (
+        <Typography sx={{ textAlign: 'center', mt: 2 }}>
+          Chức năng đang được phát triển...
+        </Typography>
+      )
     },
     {
-      label: 'Quản lý người dùng',
+      label: "Quản lý người dùng",
       icon: <People />,
-      component: <UserManagement />
+      component: <UserManagement />,
     }
   ];
 
@@ -112,30 +117,15 @@ const AdminDashboard = () => {
             Bảng điều khiển Admin
           </Typography>
           <Typography variant="body1" sx={{ color: '#666' }}>
-            Quản lý hệ thống HealthMate - Nguyên liệu, giao dịch và người dùng
+            Quản lý hệ thống HealthMate - Nguyên liệu, quyền, giao dịch và người dùng
           </Typography>
           <Divider sx={{ my: 3, borderColor: '#C8E6C9' }} />
         </Box>
 
         {/* Quick Stats Cards */}
-        {/* Quick Stats Cards */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            mb: 5,
-          }}
-        >
-          <Grid
-            container
-            spacing={3}
-            justifyContent="center"
-            alignItems="stretch"
-            sx={{
-              maxWidth: '1200px',
-            }}
-          >
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 5 }}>
+          <Grid container spacing={3} justifyContent="center" sx={{ maxWidth: '1200px' }}>
+            {/* Nguyên liệu */}
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
@@ -148,31 +138,14 @@ const AdminDashboard = () => {
                 }}
               >
                 <CardContent>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      mb: 1,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: 'bold', color: '#2E7D32' }}
-                    >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
                       Nguyên liệu
                     </Typography>
                     <Restaurant sx={{ fontSize: 36, color: '#2E7D32' }} />
                   </Box>
-                  <Typography
-                    variant="h4"
-                    sx={{ color: '#2E7D32', fontWeight: 'bold' }}
-                  >
-                    {loading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      quickStats.totalIngredients
-                    )}
+                  <Typography variant="h4" sx={{ color: '#2E7D32', fontWeight: 'bold' }}>
+                    {loading ? <CircularProgress size={24} /> : quickStats.totalIngredients}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#666' }}>
                     Tổng số nguyên liệu
@@ -181,6 +154,7 @@ const AdminDashboard = () => {
               </Card>
             </Grid>
 
+            {/* Giao dịch */}
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
@@ -193,31 +167,14 @@ const AdminDashboard = () => {
                 }}
               >
                 <CardContent>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      mb: 1,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: 'bold', color: '#1976D2' }}
-                    >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976D2' }}>
                       Giao dịch
                     </Typography>
                     <AccountBalance sx={{ fontSize: 36, color: '#1976D2' }} />
                   </Box>
-                  <Typography
-                    variant="h4"
-                    sx={{ color: '#1976D2', fontWeight: 'bold' }}
-                  >
-                    {loading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      quickStats.pendingTransactions
-                    )}
+                  <Typography variant="h4" sx={{ color: '#1976D2', fontWeight: 'bold' }}>
+                    {loading ? <CircularProgress size={24} /> : quickStats.pendingTransactions}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#666' }}>
                     Giao dịch chờ xử lý
@@ -226,6 +183,7 @@ const AdminDashboard = () => {
               </Card>
             </Grid>
 
+            {/* Người dùng */}
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
@@ -238,26 +196,13 @@ const AdminDashboard = () => {
                 }}
               >
                 <CardContent>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      mb: 1,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: 'bold', color: '#F57C00' }}
-                    >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#F57C00' }}>
                       Người dùng
                     </Typography>
                     <People sx={{ fontSize: 36, color: '#F57C00' }} />
                   </Box>
-                  <Typography
-                    variant="h4"
-                    sx={{ color: '#F57C00', fontWeight: 'bold' }}
-                  >
+                  <Typography variant="h4" sx={{ color: '#F57C00', fontWeight: 'bold' }}>
                     {loading ? <CircularProgress size={24} /> : quickStats.totalUsers}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#666' }}>
@@ -267,6 +212,7 @@ const AdminDashboard = () => {
               </Card>
             </Grid>
 
+            {/* Doanh thu */}
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
@@ -279,26 +225,13 @@ const AdminDashboard = () => {
                 }}
               >
                 <CardContent>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      mb: 1,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: 'bold', color: '#7B1FA2' }}
-                    >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#7B1FA2' }}>
                       Doanh thu
                     </Typography>
                     <Assessment sx={{ fontSize: 36, color: '#7B1FA2' }} />
                   </Box>
-                  <Typography
-                    variant="h4"
-                    sx={{ color: '#7B1FA2', fontWeight: 'bold' }}
-                  >
+                  <Typography variant="h4" sx={{ color: '#7B1FA2', fontWeight: 'bold' }}>
                     {loading ? (
                       <CircularProgress size={24} />
                     ) : (
@@ -314,15 +247,8 @@ const AdminDashboard = () => {
           </Grid>
         </Box>
 
-        {/* Main Content with Tabs */}
-        <Paper
-          sx={{
-            width: '100%',
-            borderRadius: 3,
-            overflow: 'hidden',
-            boxShadow: 3
-          }}
-        >
+        {/* Tabs */}
+        <Paper sx={{ width: '100%', borderRadius: 3, boxShadow: 3 }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
@@ -357,9 +283,7 @@ const AdminDashboard = () => {
             ))}
           </Tabs>
 
-          <Box sx={{ p: 4 }}>
-            {tabContent[activeTab].component}
-          </Box>
+          <Box sx={{ p: 4 }}>{tabContent[activeTab].component}</Box>
         </Paper>
       </Container>
     </Box>

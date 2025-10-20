@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import baseAxios from "../../api/axios.js";
 import { getCurrentDietPlan } from '../../services/DietPlan.js';
 const Header = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         const token = localStorage.getItem('accessToken');
@@ -13,86 +13,87 @@ const Header = () => {
 
     const [anchorEl, setAnchorEl] = useState(null);
     const [hasDietPlan, setHasDietPlan] = useState(false);
-  useEffect(() => {
+    useEffect(() => {
         const handleStorageChange = () => {
-    const token = localStorage.getItem('accessToken');
-    setIsLoggedIn(!!token);
-      if (token) {
-          getCurrentDietPlan(token)
-              .then((data) => {
-                  if (data) setHasDietPlan(true);
-              })
-              .catch((err) => {
-                  if (err?.status === 404 || err?.statusCode === 404) {
-                      setHasDietPlan(false);
-                  } else {
-                      console.error(err);
-                  }
-              });
-      }};
+            const token = localStorage.getItem('accessToken');
+            setIsLoggedIn(!!token);
+            if (token) {
+                getCurrentDietPlan(token)
+                    .then((data) => {
+                        if (data) setHasDietPlan(true);
+                    })
+                    .catch((err) => {
+                        if (err?.status === 404 || err?.statusCode === 404) {
+                            setHasDietPlan(false);
+                        } else {
+                            console.error(err);
+                        }
+                    });
+            }
+        };
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    }, []);
 
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
-      };
+    };
 
-     const handleClose = () => {
+    const handleClose = () => {
         setAnchorEl(null);
-      };
+    };
 
     const handleLogout = async () => {
-        try{
-            await baseAxios.post('/auth/logout', {refreshToken: localStorage.getItem("refreshToken")});
+        try {
+            await baseAxios.post('/auth/logout', { refreshToken: localStorage.getItem("refreshToken") });
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
             setIsLoggedIn(false);
             navigate('/guest-homepage');
-        }catch(err){
+        } catch (err) {
             console.log("logout error:", err);
             alert("Đăng xuất thất bại");
         }
     };
-  return (
-    <AppBar
-      position='sticky'
-      sx={{
-        background: 'linear-gradient(90deg, #4CAF50, #66BB6A)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      }}
-    >
-      <Toolbar sx={{ maxWidth: '1600px', mx: 'auto', width: '100%' }}>
-        {/* Logo */}
-
-        <Typography
-          variant='h5'
-          component='div'
-          sx={{
-            flexGrow: 1,
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            color: '#ffffff',
-            transition: 'transform 0.2s',
-            '&:hover': { transform: 'scale(1.05)', opacity: 0.9 },
-          }}
+    return (
+        <AppBar
+            position='sticky'
+            sx={{
+                background: 'linear-gradient(90deg, #4CAF50, #66BB6A)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            }}
         >
-            {isLoggedIn ?
-          <Link
-               to='/customer-homepage'
-            style={{ color: 'inherit', textDecoration: 'none' }}
-          >
-            HealthMate
-          </Link>
-         :
-            <Link
-                to='/guest-homepage'
-                style={{ color: 'inherit', textDecoration: 'none' }}
-            >
-                HealthMate
-            </Link>
-            }
-        </Typography>
+            <Toolbar sx={{ maxWidth: '1600px', mx: 'auto', width: '100%' }}>
+                {/* Logo */}
+
+                <Typography
+                    variant='h5'
+                    component='div'
+                    sx={{
+                        flexGrow: 1,
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        color: '#ffffff',
+                        transition: 'transform 0.2s',
+                        '&:hover': { transform: 'scale(1.05)', opacity: 0.9 },
+                    }}
+                >
+                    {isLoggedIn ?
+                        <Link
+                            to='/customer-homepage'
+                            style={{ color: 'inherit', textDecoration: 'none' }}
+                        >
+                            HealthMate
+                        </Link>
+                        :
+                        <Link
+                            to='/guest-homepage'
+                            style={{ color: 'inherit', textDecoration: 'none' }}
+                        >
+                            HealthMate
+                        </Link>
+                    }
+                </Typography>
 
                 {/* Nút đăng nhập/đăng ký */}
                 <Box sx={{ display: "flex", gap: 2 }}>
@@ -125,20 +126,20 @@ const Header = () => {
                                 onClose={handleClose}
                             >
                                 <MenuItem
-                                onClick={() => {
-                                    navigate('/set-goal');
-                                    handleClose();
-                                }}
+                                    onClick={() => {
+                                        navigate('/set-goal');
+                                        handleClose();
+                                    }}
                                 >
-                                {hasDietPlan ? "Chỉnh sửa kế hoạch ăn uống" : "Lập kế hoạch ăn uống"}
+                                    {hasDietPlan ? "Chỉnh sửa kế hoạch ăn uống" : "Lập kế hoạch ăn uống"}
                                 </MenuItem>
                                 <MenuItem
-                                onClick={() => {
-                                    navigate('/dietplan/progress');
-                                    handleClose();
-                                }}
+                                    onClick={() => {
+                                        navigate('/dietplan/progress');
+                                        handleClose();
+                                    }}
                                 >
-                                Theo dõi kế hoạch ăn uống
+                                    Theo dõi kế hoạch ăn uống
                                 </MenuItem>
                             </Menu>
                             <Button
@@ -150,7 +151,7 @@ const Header = () => {
                             </Button>
                             <Button
                                 color="inherit"
-                                onClick={ handleLogout}
+                                onClick={handleLogout}
                                 sx={{ fontWeight: "bold" }}
                             >
                                 Đăng xuất
