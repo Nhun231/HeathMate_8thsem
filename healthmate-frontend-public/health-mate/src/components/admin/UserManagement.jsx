@@ -1,359 +1,775 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
+import "../../style/themeStyle.css";
+import { getAllUsers, createUser, updateUser } from "../../services/AdminService";
+import {
+  Person as PersonIcon,
+  EditOutlined as EditOutlinedIcon,
+  Email as EmailIcon,
+  Cake as CakeIcon,
+  Wc as WcIcon,
+  Visibility,
+  VisibilityOff,
+  Lock,
+  LockOpen,
+  Search as SearchIcon,
+  Add as AddIcon,
+  FilterAltOffOutlined as FilterAltOffOutlinedIcon,
+} from "@mui/icons-material";
 import {
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  Alert,
-  CircularProgress,
-  TextField,
+  Dialog,
+  DialogContent,
+  DialogActions,
   Button,
+  TextField,
+  MenuItem,
   IconButton,
-  Menu,
-  MenuItem
-} from '@mui/material';
-import {
-  Search,
-  FilterList,
-  MoreVert,
-  People,
-  Star,
-  AccountBalance
-} from '@mui/icons-material';
-import { userService } from '../../services/userService';
+  Tooltip,
+  CircularProgress,
+  InputAdornment,
+  Chip,
+  Pagination,
+  FormControl,
+  Select,
+} from "@mui/material";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [levelFilter, setLevelFilter] = useState('all');
-  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [error, setError] = useState(null);
+
+  // --- Pagination ---
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(5);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+
+  // --- Search ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searching, setSearching] = useState(false);
+
+  // --- Edit user ---
+  const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [showPasswordEdit, setShowPasswordEdit] = useState(false);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // --- Add user ---
+  const [addOpen, setAddOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    fullname: "",
+    email: "",
+    gender: "",
+    dob: "",
+    role: "",
+    password: "",
+    phoneNumber: "",
+  });
+  const [adding, setAdding] = useState(false);
+  const [showPasswordAdd, setShowPasswordAdd] = useState(false);
 
-  useEffect(() => {
-    filterUsers();
-  }, [searchTerm, levelFilter, users]);
+  // --- Validate ---
+  const calculateAge = (dob) => {
+    if (!dob) return "--";
+    const birth = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
 
-  const fetchUsers = async () => {
+  const isValidDate = (dateStr) => {
+    if (!dateStr) return true;
+    const date = new Date(dateStr);
+    const today = new Date();
+    return !(isNaN(date.getTime()) || date > today);
+  };
+
+  const isValidPhone = (phone) => /^\d{9,12}$/.test(phone);
+
+  // --- Fetch users ---
+  const fetchUsers = async (pageNum = 1, search = "", newLimit = limit) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError('');
-      console.log('Fetching users...');
-      const response = await userService.getAllUsers();
-      console.log('API Response:', response.data); // Debug log
-      
-      if (response.data?.success && response.data?.data?.users) {
-        setUsers(response.data.data.users);
-        console.log('Users loaded:', response.data.data.users.length);
-      } else {
-        console.log('Unexpected response format:', response.data);
-        setError('Định dạng phản hồi không đúng');
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      console.error('Error details:', error.response?.data);
-      setError('Lỗi khi tải danh sách người dùng: ' + (error.response?.data?.message || error.message));
-      
-      // Fallback to mock data for demo
-      const mockUsers = [
-        {
-          _id: '1',
-          username: 'Nguyễn Văn A',
-          email: 'user1@example.com',
-          level: 1,
-          coins: 100,
-          role: 'customer',
-          createdAt: '2024-01-15T10:30:00Z'
-        },
-        {
-          _id: '2',
-          username: 'Trần Thị B',
-          email: 'user2@example.com',
-          level: 2,
-          coins: 500,
-          role: 'customer',
-          createdAt: '2024-01-14T15:45:00Z'
-        },
-        {
-          _id: '3',
-          username: 'Lê Văn C',
-          email: 'user3@example.com',
-          level: 3,
-          coins: 1000,
-          role: 'customer',
-          createdAt: '2024-01-13T09:15:00Z'
-        }
-      ];
-      setUsers(mockUsers);
+      const res = await getAllUsers(pageNum, newLimit, search ? { fullname: search } : {});
+      const usersData = Array.isArray(res?.data)
+        ? res.data.map((u) => ({
+          ...u,
+          role: u.roleId?.name || u.role || "Customer",
+        }))
+        : [];
+      setUsers(usersData);
+      setTotalUsers(res?.total || usersData.length);
+      setTotalPages(res?.totalPages || 1);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const filterUsers = () => {
-    let filtered = users;
+  useEffect(() => {
+    fetchUsers(page);
+  }, [page]);
 
-    if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // --- Toggle status ---
+  const handleToggleStatus = async (user) => {
+    const newStatus = user.status === "Active" ? "Inactive" : "Active";
+    if (!window.confirm(`Chuyển người dùng này sang trạng thái "${newStatus === "Active" ? "Hoạt động" : "Ngừng hoạt động"}"?`)) return;
+    try {
+      await updateUser(user._id, { status: newStatus });
+      setUsers((prev) =>
+        prev.map((u) => (u._id === user._id ? { ...u, status: newStatus } : u))
       );
-    }
-
-    if (levelFilter !== 'all') {
-      filtered = filtered.filter(user => user.level === parseInt(levelFilter));
-    }
-
-    setFilteredUsers(filtered);
-  };
-
-  const getLevelName = (level) => {
-    switch (level) {
-      case 1: return 'Cơ bản';
-      case 2: return 'Chuyên sâu';
-      case 3: return 'Nâng cao';
-      default: return 'Cơ bản';
+      alert("Đã cập nhật trạng thái thành công!");
+    } catch (err) {
+      console.error(err);
+      alert("Cập nhật trạng thái thất bại!");
     }
   };
 
-  const getLevelColor = (level) => {
-    switch (level) {
-      case 1: return '#6c757d';
-      case 2: return '#4CAF50';
-      case 3: return '#2E7D32';
-      default: return '#6c757d';
-    }
+  // --- Edit user ---
+  const handleOpenEdit = (user) => {
+    setSelectedUser({ ...user, password: "" });
+    setEditOpen(true);
   };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
-  };
-
-  const handleMenuClick = (event, user) => {
-    setMenuAnchor(event.currentTarget);
-    setSelectedUser(user);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchor(null);
+  const handleCloseEdit = () => {
+    setEditOpen(false);
     setSelectedUser(null);
+    setShowPasswordEdit(false);
   };
+  const handleSaveEdit = async () => {
+    if (!selectedUser) return;
+    const { fullname, email, role, password, phoneNumber, dob } = selectedUser;
+    if (!fullname || !email || !role || !phoneNumber) {
+      alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
+      return;
+    }
+    if (password && password.length < 6) {
+      alert("Mật khẩu phải có ít nhất 6 ký tự!");
+      return;
+    }
+    if (!isValidPhone(phoneNumber)) {
+      alert("Số điện thoại không hợp lệ!");
+      return;
+    }
+    if (!isValidDate(dob)) {
+      alert("Ngày sinh không hợp lệ!");
+      return;
+    }
 
-  const handleUpdateUserLevel = async (userId, newLevel) => {
+    setSaving(true);
     try {
-      await userService.updateUserLevel(userId, newLevel);
-      setSuccess(`Cập nhật cấp độ người dùng thành công!`);
-      fetchUsers(); // Refresh the list
-    } catch (error) {
-      setError('Lỗi khi cập nhật cấp độ: ' + (error.response?.data?.message || error.message));
+      const payload = {
+        fullname,
+        email,
+        role,
+        gender: selectedUser.gender || undefined,
+        dob: dob ? new Date(dob).toISOString().split("T")[0] : undefined,
+        phoneNumber,
+      };
+      if (password) payload.password = password;
+
+      await updateUser(selectedUser._id, payload);
+      setUsers((prev) =>
+        prev.map((u) => (u._id === selectedUser._id ? { ...u, ...payload } : u))
+      );
+      alert("Cập nhật thông tin người dùng thành công!");
+      handleCloseEdit();
+    } catch (err) {
+      console.error(err);
+      alert("Cập nhật thất bại. Vui lòng thử lại!");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleUpdateUserCoins = async (userId, newCoins) => {
+  // --- Add user ---
+  const handleOpenAdd = () => setAddOpen(true);
+  const handleCloseAdd = () => {
+    setAddOpen(false);
+    setNewUser({
+      fullname: "",
+      email: "",
+      gender: "",
+      dob: "",
+      role: "",
+      password: "",
+      phoneNumber: "",
+    });
+    setShowPasswordAdd(false);
+  };
+  const handleSaveAdd = async () => {
+    const { fullname, email, role, password, gender, dob, phoneNumber } = newUser;
+    if (!fullname || !email || !role || !password || !phoneNumber) {
+      alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
+      return;
+    }
+    if (password.length < 6) {
+      alert("Mật khẩu phải có ít nhất 6 ký tự!");
+      return;
+    }
+    if (!isValidPhone(phoneNumber)) {
+      alert("Số điện thoại không hợp lệ!");
+      return;
+    }
+    if (!isValidDate(dob)) {
+      alert("Ngày sinh không hợp lệ!");
+      return;
+    }
+
+    setAdding(true);
     try {
-      await userService.updateUserCoins(userId, newCoins);
-      setSuccess(`Cập nhật số xu người dùng thành công!`);
-      fetchUsers(); // Refresh the list
-    } catch (error) {
-      setError('Lỗi khi cập nhật số xu: ' + (error.response?.data?.message || error.message));
+      const payload = {
+        fullname,
+        email,
+        password,
+        role,
+        phoneNumber,
+        status: "Active",
+        ...(gender && { gender }),
+        ...(dob && { dob: new Date(dob).toISOString().split("T")[0] }),
+      };
+      await createUser(payload);
+      alert("Thêm người dùng thành công!");
+      handleCloseAdd();
+      fetchUsers(page);
+    } catch (err) {
+      console.error(err);
+      alert("Thêm người dùng thất bại!");
+    } finally {
+      setAdding(false);
     }
   };
 
-  if (loading) {
+  if (loading)
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress />
+      <Box display="flex" justifyContent="center" alignItems="center" py={10}>
+        <CircularProgress color="success" />
       </Box>
     );
-  }
 
-  return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
-          Quản lý người dùng
+  if (error)
+    return (
+      <Box p={4}>
+        <Typography color="error" fontWeight={600}>
+          Lỗi: {error}
         </Typography>
       </Box>
+    );
 
-      {/* Search and Filter */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <TextField
-          label="Tìm kiếm người dùng"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ minWidth: 300 }}
-          InputProps={{
-            startAdornment: <Search sx={{ mr: 1, color: '#666' }} />
-          }}
-        />
-        <TextField
-          select
-          label="Cấp độ"
-          value={levelFilter}
-          onChange={(e) => setLevelFilter(e.target.value)}
-          sx={{ minWidth: 150 }}
-          SelectProps={{ native: true }}
-        >
-          <option value="all">Tất cả</option>
-          <option value="1">Level 1 - Cơ bản</option>
-          <option value="2">Level 2 - Chuyên sâu</option>
-          <option value="3">Level 3 - Nâng cao</option>
-        </TextField>
+  return (
+    <Box sx={{ p: 4 }}>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={4}>
+        {/* Left section: Title + Search */}
+        <Box>
+          <Typography
+            variant="h4"
+            fontWeight={700}
+            color="#2E7D32"
+            mb={2}
+          >
+            Quản lý người dùng
+          </Typography>
+
+          {/* Search bar + buttons */}
+          <Box display="flex" alignItems="center" gap={2}>
+            <TextField
+              placeholder="Tìm kiếm người dùng"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="small"
+              sx={{
+                width: 300,
+                backgroundColor: "#fff",
+                borderRadius: "8px",
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: "#43A047",
+                color: "#fff",
+                px: 4,
+                borderRadius: "8px",
+                "&:hover": { backgroundColor: "#2E7D32" },
+              }}
+              onClick={() => {
+                setSearching(true);
+                fetchUsers(1, searchTerm).finally(() => setSearching(false));
+              }}
+            >
+              {searching ? "Đang tìm..." : "Tìm kiếm"}
+            </Button>
+
+            <Button
+              variant="outlined"
+              sx={{
+                color: "#43A047",
+                borderColor: "#A5D6A7",
+                px: 4,
+                borderRadius: "8px",
+                "&:hover": {
+                  borderColor: "#43A047",
+                  backgroundColor: "#E8F5E9",
+                },
+              }}
+              onClick={() => {
+                setSearchTerm("");
+                fetchUsers(1, "");
+              }}
+              startIcon={<FilterAltOffOutlinedIcon />}
+            >
+              Xóa bộ lọc
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Right section: Add user button */}
         <Button
-          variant="outlined"
-          startIcon={<FilterList />}
-          onClick={() => {
-            setSearchTerm('');
-            setLevelFilter('all');
+          variant="contained"
+          sx={{
+            backgroundColor: "#43A047",
+            color: "#fff",
+            borderRadius: "8px",
+            px: 4,
+            py: 1.5,
+            boxShadow: "0 3px 5px rgba(0,0,0,0.2)",
+            "&:hover": { backgroundColor: "#2E7D32" },
           }}
+          startIcon={<AddIcon />}
+          onClick={handleOpenAdd}
         >
-          Xóa bộ lọc
+          Thêm người dùng
         </Button>
       </Box>
 
-      {/* Alerts */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
 
-      {/* Users Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: '#E8F5E9' }}>
-              <TableCell><strong>Tên người dùng</strong></TableCell>
-              <TableCell><strong>Email</strong></TableCell>
-              <TableCell><strong>Cấp độ</strong></TableCell>
-              <TableCell><strong>Số xu</strong></TableCell>
-              <TableCell><strong>Vai trò</strong></TableCell>
-              <TableCell><strong>Ngày tạo</strong></TableCell>
-              <TableCell><strong>Hành động</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredUsers.map((user) => (
-              <TableRow key={user._id} hover>
-                <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    {user.username}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {user.email}
-                  </Typography>
-                </TableCell>
-                <TableCell>
+      {/* User list */}
+      <Box display="flex" flexDirection="column" gap={2}>
+        {users.map((user) => (
+          <Box
+            key={user._id}
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            p={3}
+            sx={{
+              borderRadius: 3,
+              background: "#F1F8E9",
+              border: "1px solid #C8E6C9",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: "0 6px 16px rgba(0,0,0,0.1)",
+                background: "#E8F5E9",
+              },
+            }}
+          >
+            {/* Left section - User info */}
+            <Box display="flex" justifyContent="flex-start" alignItems="center" gap={6} >
+              <PersonIcon
+                sx={{
+                  fontSize: 70,
+                  color: "#388E3C",
+                  backgroundColor: "#fff",
+                  borderRadius: "50%",
+                  p: 1.5,
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                }}
+              />
+              <Box>
+                <Typography fontWeight={700} fontSize="1.2rem" color="#1B5E20">
+                  {user.fullname}
+                </Typography>
+                <Typography variant="body1" color="#424242" sx={{ mt: 0.3 }}>
+                  <EmailIcon sx={{ fontSize: 18, mr: 0.5, color: "#616161" }} />
+                  {user.email}
+                </Typography>
+                <Typography variant="body1" color="#424242" sx={{ mt: 0.3 }}>
+                  <WcIcon sx={{ fontSize: 18, mr: 0.5, color: "#616161" }} />
+                  {user.gender === "Male"
+                    ? "Nam"
+                    : user.gender === "Female"
+                      ? "Nữ"
+                      : "--"}
+                </Typography>
+                <Typography variant="body1" color="#424242" sx={{ mt: 0.3 }}>
+                  <CakeIcon sx={{ fontSize: 18, mr: 0.5, color: "#616161" }} />
+                  {user.dob ? `${calculateAge(user.dob)} tuổi` : "--"}
+                </Typography>
+                <Box mt={1.5} display="flex" gap={1.2} flexWrap="wrap">
                   <Chip
-                    label={`Level ${user.level} - ${getLevelName(user.level)}`}
-                    size="small"
-                    sx={{
-                      backgroundColor: getLevelColor(user.level),
-                      color: 'white',
-                      fontWeight: 'bold'
-                    }}
+                    label={user.status === "Active" ? "Hoạt động" : "Ngừng hoạt động"}
+                    color={user.status === "Active" ? "success" : "error"}
+                    size="medium"
+                    sx={{ fontWeight: 600 }}
                   />
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <AccountBalance sx={{ fontSize: 16, color: '#FFD700', mr: 0.5 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      {user.coins.toLocaleString('vi-VN')} xu
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell>
                   <Chip
-                    label={user.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'}
-                    size="small"
-                    color={user.role === 'admin' ? 'error' : 'primary'}
-                    variant="outlined"
+                    label={
+                      user.role === "Admin"
+                        ? "Quản trị viên"
+                        : user.role === "NutritionExpert"
+                          ? "Chuyên gia dinh dưỡng"
+                          : "Khách hàng"
+                    }
+                    color={
+                      user.role === "Admin"
+                        ? "success"
+                        : user.role === "NutritionExpert"
+                          ? "warning"
+                          : "primary"
+                    }
+                    size="medium"
+                    sx={{ fontWeight: 600 }}
                   />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {formatDate(user.createdAt)}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    onClick={(e) => handleMenuClick(e, user)}
-                    size="small"
-                  >
-                    <MoreVert />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                </Box>
+              </Box>
+            </Box>
 
-      {filteredUsers.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <People sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
-          <Typography variant="h6" sx={{ color: '#666' }}>
-            {searchTerm || levelFilter !== 'all' ? 'Không tìm thấy người dùng nào' : 'Chưa có người dùng nào'}
+            {/* Right section - Actions */}
+            <Box display="flex" gap={1.5}>
+              <Tooltip title="Chỉnh sửa" arrow>
+                <IconButton
+                  sx={{
+                    color: "#1E88E5",
+                    backgroundColor: "#E3F2FD",
+                    "&:hover": { backgroundColor: "#BBDEFB" },
+                  }}
+                  onClick={() => handleOpenEdit(user)}
+                >
+                  <EditOutlinedIcon />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip
+                title={user.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt lại"}
+                arrow
+              >
+                <IconButton
+                  sx={{
+                    color: user.status === "Active" ? "#E53935" : "#43A047",
+                    backgroundColor: "#fff",
+                    border: "1px solid #C8E6C9",
+                    "&:hover": {
+                      backgroundColor:
+                        user.status === "Active" ? "#FFEBEE" : "#E8F5E9",
+                    },
+                  }}
+                  onClick={() => handleToggleStatus(user)}
+                >
+                  {user.status === "Active" ? <Lock /> : <LockOpen />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+
+
+      {/* Pagination Section */}
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mt={3}
+        flexWrap="wrap"
+      >
+        {/* Hiển thị thông tin tổng */}
+        <Typography color="text.secondary" sx={{ fontSize: 14 }}>
+          Hiển thị {(page - 1) * limit + 1} -{" "}
+          {Math.min(page * limit, totalUsers)} trong tổng số {totalUsers} người dùng
+        </Typography>
+
+        {/* Select số lượng hiển thị */}
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography color="#2E7D32" fontWeight={500} fontSize={14}>
+            Hiển thị:
+          </Typography>
+          <FormControl size="small">
+            <Select
+              value={limit}
+              onChange={(e) => {
+                const newLimit = e.target.value;
+                setLimit(newLimit);
+                fetchUsers(1, searchTerm, newLimit);
+              }}
+              sx={{
+                height: 35,
+                color: "#2E7D32",
+                borderRadius: "8px",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#A5D6A7",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#2E7D32",
+                },
+              }}
+            >
+              {[5, 10, 20, 50].map((num) => (
+                <MenuItem key={num} value={num}>
+                  {num}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Pagination control */}
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={(event, value) => setPage(value)}
+          color="success"
+          sx={{
+            "& .MuiPaginationItem-root": {
+              color: "#2E7D32",
+            },
+            "& .Mui-selected": {
+              backgroundColor: "#43A047 !important",
+              color: "#fff !important",
+            },
+          }}
+        />
+      </Box>
+
+      {/* Dialog Add */}
+      <Dialog open={addOpen} onClose={handleCloseAdd} maxWidth="sm" fullWidth>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            px: 3,
+            py: 2,
+            background: "linear-gradient(90deg, #43A047, #66BB6A)",
+            color: "#fff",
+          }}
+        >
+          <PersonIcon />
+          <Typography variant="h6" fontWeight={700}>
+            Thêm người dùng mới
           </Typography>
         </Box>
-      )}
+        <DialogContent dividers sx={{ p: 3 }}>
+          <Box display="flex" flexDirection="column" gap={2}>
+            <TextField
+              label="Họ và tên"
+              value={newUser.fullname}
+              onChange={(e) => setNewUser({ ...newUser, fullname: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Email"
+              value={newUser.email}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Mật khẩu"
+              type={showPasswordAdd ? "text" : "password"}
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              fullWidth
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPasswordAdd(!showPasswordAdd)} edge="end">
+                      {showPasswordAdd ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              label="Số điện thoại"
+              value={newUser.phoneNumber}
+              onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Giới tính"
+              select
+              value={newUser.gender}
+              onChange={(e) => setNewUser({ ...newUser, gender: e.target.value })}
+              fullWidth
+            >
+              <MenuItem value="Male">Nam</MenuItem>
+              <MenuItem value="Female">Nữ</MenuItem>
+            </TextField>
+            <TextField
+              label="Ngày sinh"
+              type="date"
+              value={newUser.dob}
+              onChange={(e) => setNewUser({ ...newUser, dob: e.target.value })}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Vai trò"
+              select
+              value={newUser.role}
+              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              fullWidth
+            >
+              <MenuItem value="Admin">Quản trị viên</MenuItem>
+              <MenuItem value="Customer">Người dùng</MenuItem>
+              <MenuItem value="NutritionExpert">Chuyên gia dinh dưỡng</MenuItem>
+            </TextField>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleCloseAdd} sx={{ color: "#9e9e9e" }}>
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSaveAdd}
+            variant="contained"
+            disabled={adding}
+            sx={{ backgroundColor: "#43A047" }}
+          >
+            {adding ? "Đang thêm..." : "Thêm người dùng"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* Action Menu */}
-      <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={() => {
-          // View user details - could open a dialog
-          alert(`Thông tin người dùng:\nTên: ${selectedUser?.username}\nEmail: ${selectedUser?.email}\nCấp độ: ${selectedUser?.level}\nSố xu: ${selectedUser?.coins}`);
-          handleMenuClose();
-        }}>
-          <People sx={{ mr: 1 }} />
-          Xem chi tiết
-        </MenuItem>
-        <MenuItem onClick={() => {
-          const newLevel = prompt(`Nhập cấp độ mới cho ${selectedUser?.username} (1-3):`, selectedUser?.level);
-          if (newLevel && !isNaN(newLevel) && newLevel >= 1 && newLevel <= 3) {
-            handleUpdateUserLevel(selectedUser?._id, parseInt(newLevel));
-          }
-          handleMenuClose();
-        }}>
-          <Star sx={{ mr: 1 }} />
-          Chỉnh sửa cấp độ
-        </MenuItem>
-        <MenuItem onClick={() => {
-          const newCoins = prompt(`Nhập số xu mới cho ${selectedUser?.username}:`, selectedUser?.coins);
-          if (newCoins && !isNaN(newCoins) && newCoins >= 0) {
-            handleUpdateUserCoins(selectedUser?._id, parseInt(newCoins));
-          }
-          handleMenuClose();
-        }}>
-          <AccountBalance sx={{ mr: 1 }} />
-          Chỉnh sửa số xu
-        </MenuItem>
-      </Menu>
+      {/* Dialog Edit */}
+      <Dialog open={editOpen} onClose={handleCloseEdit} maxWidth="sm" fullWidth>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            px: 3,
+            py: 2,
+            background: "linear-gradient(90deg, #43A047, #66BB6A)",
+            color: "#fff",
+          }}
+        >
+          <PersonIcon />
+          <Typography variant="h6" fontWeight={700}>
+            Chỉnh sửa người dùng
+          </Typography>
+        </Box>
+        <DialogContent dividers sx={{ p: 3 }}>
+          {selectedUser && (
+            <Box display="flex" flexDirection="column" gap={2}>
+              <TextField
+                label="Họ và tên"
+                value={selectedUser.fullname}
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser, fullname: e.target.value })
+                }
+                fullWidth
+              />
+              <TextField
+                label="Email"
+                value={selectedUser.email}
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser, email: e.target.value })
+                }
+                fullWidth
+              />
+              <TextField
+                label="Mật khẩu"
+                type={showPasswordEdit ? "text" : "password"}
+                value={selectedUser.password || ""}
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser, password: e.target.value })
+                }
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPasswordEdit(!showPasswordEdit)}
+                        edge="end"
+                      >
+                        {showPasswordEdit ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <TextField
+                label="Số điện thoại"
+                value={selectedUser.phoneNumber || ""}
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser, phoneNumber: e.target.value })
+                }
+                fullWidth
+              />
+              <TextField
+                label="Giới tính"
+                select
+                value={selectedUser.gender || ""}
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser, gender: e.target.value })
+                }
+                fullWidth
+              >
+                <MenuItem value="Male">Nam</MenuItem>
+                <MenuItem value="Female">Nữ</MenuItem>
+              </TextField>
+              <TextField
+                label="Ngày sinh"
+                type="date"
+                value={
+                  selectedUser.dob
+                    ? new Date(selectedUser.dob).toISOString().split("T")[0]
+                    : ""
+                }
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser, dob: e.target.value })
+                }
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Vai trò"
+                select
+                value={selectedUser.role || ""}
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser, role: e.target.value })
+                }
+                fullWidth
+              >
+                <MenuItem value="Admin">Quản trị viên</MenuItem>
+                <MenuItem value="Customer">Người dùng</MenuItem>
+                <MenuItem value="NutritionExpert">Chuyên gia dinh dưỡng</MenuItem>
+              </TextField>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleCloseEdit} sx={{ color: "#9e9e9e" }}>
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSaveEdit}
+            variant="contained"
+            disabled={saving}
+            sx={{ backgroundColor: "#43A047" }}
+          >
+            {saving ? "Đang lưu..." : "Lưu thay đổi"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
