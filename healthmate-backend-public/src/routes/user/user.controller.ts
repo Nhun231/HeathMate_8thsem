@@ -30,11 +30,6 @@ export class UserController {
     return this.usersService.getUsers(parsed);
   }
 
-  @Get('me')
-  async getCurrentUser(@ActiveUser('userId') activeUserId: string) {
-    return this.usersService.getUserById(activeUserId);
-  }
-
   @Get(':userId')
   async getUser(@Param() params: GetUserDetailParamsDTO) {
     return this.usersService.getUserById(params.userId);
@@ -47,14 +42,6 @@ export class UserController {
   ) {
     return this.usersService.createUser(body, activeUserId);
   }
-
-  // @Put('me')
-  // async updateCurrentUser(
-  //   @ActiveUser('userId') activeUserId: string,
-  //   @Body() body: UpdateUserDTO,
-  // ) {
-  //   return this.usersService.updateUser(activeUserId, body);
-  // }
 
   @Put(':userId')
   async updateUser(

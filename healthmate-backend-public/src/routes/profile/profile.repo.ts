@@ -15,16 +15,9 @@ export class ProfileRepository {
     return this.userModel.findById(id).select('-password -roleId');
   }
 
-  async update(id: string, data: Partial<UserDocument>) {
+  async update(id: Types.ObjectId, data: Partial<UserDocument>) {
     return this.userModel
       .findByIdAndUpdate(id, data, { new: true })
-      .select('-password')
-      .populate('roleId');
-  }
-
-  async changePassword(id: string, password: string) {
-    return this.userModel
-      .findByIdAndUpdate(id, { password }, { new: true })
       .select('-password')
       .populate('roleId');
   }
