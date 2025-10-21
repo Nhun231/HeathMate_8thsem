@@ -21,6 +21,7 @@ import { MediaModule } from './routes/media/media.module';
 import { ExpertCertificateModule } from './routes/expert-certificate/expert-certificate.module';
 import { AiModule } from './routes/ai/ai.module';
 import { RoleModule } from './routes/role/role.module';
+import { ProfileModule } from './routes/profile/profile.module';
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -42,6 +43,7 @@ import { RoleModule } from './routes/role/role.module';
     MediaModule,
     ExpertCertificateModule,
     RoleModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [

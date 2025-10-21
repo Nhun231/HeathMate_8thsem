@@ -13,6 +13,9 @@ export const CreateUserSchema = z.object({
   dob: z.coerce.date(),
   phoneNumber: z.string(),
   role: z.string(),
+  status: z
+    .enum([UserStatus.Active, UserStatus.Inactive, UserStatus.Banned])
+    .optional(),
 });
 
 export const UpdateUserSchema = z.object({
