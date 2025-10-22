@@ -10,287 +10,214 @@ import {
     Paper,
     Button,
     CircularProgress,
+    Chip,
     Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
     CardMedia,
-    Chip,
-    Divider,
-    Grid,
-    ButtonGroup,
-    Tooltip,
-    Pagination,
+    Stack,
 } from "@mui/material";
 import {
     listExpertCertificates,
-    getUserExpertCertificate,
     updateExpertCertificateStatus,
-} from "../../services/ExpertCertificateService";
-import { getPresignedViewUrl } from "../../services/MediaService";
+} from "../../services/ExpertCertificateService"; // <-- chỉnh lại path cho đúng
 
-const ExpertCertificateManagement = () => {
+const ExpertCertificateList = () => {
     const [certificates, setCertificates] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selected, setSelected] = useState(null);
-    const [open, setOpen] = useState(false);
-    const [imageUrls, setImageUrls] = useState({});
-
-    // Pagination states
-    const [page, setPage] = useState(1);
-    const rowsPerPage = 5;
-
-    useEffect(() => {
-        fetchCertificates();
-    }, []);
+    const [selectedCert, setSelectedCert] = useState(null);
+    const [openDialog, setOpenDialog] = useState(false);
 
     const fetchCertificates = async () => {
         try {
             setLoading(true);
             const res = await listExpertCertificates();
-            const data = res?.data || [];
-
-            const urls = {};
-            await Promise.all(
-                data.map(async (cert) => {
-                    if (cert.certificateURLKey) {
-                        try {
-                            const presignedUrl = await getPresignedViewUrl(cert.certificateURLKey);
-                            urls[cert._id] = presignedUrl;
-                        } catch (err) {
-                            console.error("Không tạo được presigned URL cho", cert._id, err);
-                        }
-                    }
-                })
-            );
-
-            setImageUrls(urls);
-            setCertificates(data);
+            setCertificates(res);
         } catch (err) {
             console.error("Lỗi khi lấy danh sách chứng chỉ:", err);
-            setCertificates([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleView = async (id) => {
+    useEffect(() => {
+        fetchCertificates();
+    }, []);
+
+    const handleApprove = async (id) => {
         try {
-            const detail = await getUserExpertCertificate(id);
-            const cert = detail?.data || detail;
-            if (cert?.certificateURLKey) {
-                const presignedUrl = await getPresignedViewUrl(cert.certificateURLKey);
-                cert.viewUrl = presignedUrl;
-            }
-            setSelected(cert);
-            setOpen(true);
+            await updateExpertCertificateStatus(id, { status: "Approved" });
+            await fetchCertificates(); // reload danh sách sau khi cập nhật
         } catch (err) {
-            console.error("Lỗi khi lấy chi tiết chứng chỉ:", err);
+            console.error("Lỗi khi duyệt chứng chỉ:", err);
         }
     };
 
-    const handleAction = async (id, status) => {
+    const handleReject = async (id) => {
         try {
-            // Gửi đúng giá trị server mong đợi
-            await updateExpertCertificateStatus(id, { status });
+            await updateExpertCertificateStatus(id, { status: "Rejected" });
             await fetchCertificates();
-            alert(`Chứng chỉ đã được ${status === "Approved" ? "duyệt" : "từ chối"}.`);
-            setOpen(false);
         } catch (err) {
-            console.error("Lỗi khi cập nhật trạng thái chứng chỉ:", err);
+            console.error("Lỗi khi từ chối chứng chỉ:", err);
         }
+    };
+
+    const handleView = (cert) => {
+        setSelectedCert(cert);
+        setOpenDialog(true);
+    };
+
+    const handleClose = () => {
+        setSelectedCert(null);
+        setOpenDialog(false);
     };
 
     const renderStatusChip = (status) => {
         switch (status) {
             case "Approved":
-                return <Chip label="Đã duyệt" color="success" variant="filled" />;
+                return <Chip label="Đã duyệt" color="success" />;
             case "Rejected":
-                return <Chip label="Từ chối" color="error" variant="filled" />;
+                return <Chip label="Từ chối" color="error" />;
             default:
-                return <Chip label="Đang chờ duyệt" color="warning" variant="filled" />;
+                return <Chip label="Đang chờ duyệt" color="warning" />;
         }
     };
 
-    const paginatedCertificates = certificates.slice(
-        (page - 1) * rowsPerPage,
-        page * rowsPerPage
-    );
-
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
+    if (loading)
+        return (
+            <Box sx={{ textAlign: "center", mt: 5 }}>
+                <CircularProgress />
+            </Box>
+        );
 
     return (
-        <Box sx={{ p: 4, backgroundColor: "#fafafa", minHeight: "100vh" }}>
-            <Paper
-                elevation={3}
-                sx={{
-                    p: 3,
-                    borderRadius: 4,
-                    maxWidth: 1200,
-                    mx: "auto",
-                    background: "#fff",
-                }}
-            >
-                <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    color="primary"
-                    textAlign="center"
-                    mb={1}
-                >
-                    Quản lý chứng chỉ chuyên gia
-                </Typography>
-                <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    textAlign="center"
-                    mb={4}
-                >
-                    Xem hoặc duyệt chứng chỉ được gửi bởi các chuyên gia.
-                </Typography>
+        <Box sx={{ p: 4 }}>
+            <Typography variant="h5" fontWeight="bold" color="primary" gutterBottom>
+                Danh sách chứng chỉ chuyên gia
+            </Typography>
 
-                {loading ? (
-                    <Box sx={{ textAlign: "center", mt: 5 }}>
-                        <CircularProgress size={45} color="primary" />
-                        <Typography mt={2} fontWeight={500}>
-                            Đang tải dữ liệu...
-                        </Typography>
-                    </Box>
-                ) : (
-                    <>
-                        <Paper
-                            sx={{
-                                borderRadius: 3,
-                                overflow: "hidden",
-                                boxShadow: 2,
-                                border: "1px solid #e0e0e0",
-                            }}
-                        >
-                            <Table>
-                                <TableHead sx={{ bgcolor: "#f0f2f5" }}>
-                                    <TableRow>
-                                        <TableCell align="center"><strong>STT</strong></TableCell>
-                                        <TableCell><strong>Người nộp</strong></TableCell>
-                                        <TableCell align="center"><strong>Ảnh chứng chỉ</strong></TableCell>
-                                        <TableCell align="center"><strong>Trạng thái</strong></TableCell>
-                                        <TableCell align="center"><strong>Thao tác</strong></TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {paginatedCertificates.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                                                <Typography color="text.secondary">
-                                                    Không có chứng chỉ nào được gửi.
-                                                </Typography>
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        paginatedCertificates.map((c, index) => (
-                                            <TableRow key={c._id} hover sx={{ "&:hover": { backgroundColor: "#fafafa" }, transition: "0.2s" }}>
-                                                <TableCell align="center">{(page - 1) * rowsPerPage + index + 1}</TableCell>
-                                                <TableCell>{c.user?.fullname || "Ẩn danh"}</TableCell>
-                                                <TableCell align="center">
-                                                    {imageUrls[c._id] ? (
-                                                        <img
-                                                            src={imageUrls[c._id]}
-                                                            alt="certificate"
-                                                            style={{
-                                                                width: 80,
-                                                                height: 80,
-                                                                objectFit: "cover",
-                                                                borderRadius: 10,
-                                                                border: "1px solid #ccc",
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <Typography color="text.secondary">Không có ảnh</Typography>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell align="center">{renderStatusChip(c.status)}</TableCell>
-                                                <TableCell align="center">
-                                                    <ButtonGroup variant="outlined" size="small">
-                                                        <Tooltip title="Xem chi tiết">
-                                                            <Button color="primary" onClick={() => handleView(c._id)}>Xem chi tiết</Button>
-                                                        </Tooltip>
-                                                    </ButtonGroup>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </Paper>
+            <Paper sx={{ overflowX: "auto", borderRadius: 3, boxShadow: 3 }}>
+                <Table>
+                    <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
+                        <TableRow>
+                            <TableCell align="center">
+                                <b>STT</b>
+                            </TableCell>
+                            <TableCell align="center">
+                                <b>Người nộp</b>
+                            </TableCell>
+                            <TableCell align="center">
+                                <b>Ảnh chứng chỉ</b>
+                            </TableCell>
+                            <TableCell align="center">
+                                <b>Trạng thái</b>
+                            </TableCell>
+                            <TableCell align="center">
+                                <b>Thao tác</b>
+                            </TableCell>
+                        </TableRow>
+                    </TableHead>
 
-                        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-                            <Pagination
-                                count={Math.ceil(certificates.length / rowsPerPage)}
-                                page={page}
-                                onChange={handleChangePage}
-                                color="primary"
-                                shape="rounded"
-                                size="medium"
-                                showFirstButton
-                                showLastButton
-                            />
-                        </Box>
-                    </>
-                )}
+                    <TableBody>
+                        {certificates.map((cert, index) => (
+                            <TableRow key={cert._id} hover>
+                                <TableCell align="center">{index + 1}</TableCell>
+                                <TableCell align="center">{cert.user?.fullname}</TableCell>
+                                <TableCell align="center">
+                                    <CardMedia
+                                        component="img"
+                                        image={`${import.meta.env.VITE_MEDIA_URL}/${cert.certificateURLKey}`}
+                                        alt="certificate"
+                                        sx={{
+                                            width: 100,
+                                            height: 100,
+                                            borderRadius: 2,
+                                            objectFit: "cover",
+                                            mx: "auto",
+                                        }}
+                                    />
+                                </TableCell>
+                                <TableCell align="center">
+                                    {renderStatusChip(cert.status)}
+                                </TableCell>
+                                <TableCell align="center">
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        justifyContent="center"
+                                        alignItems="center"
+                                    >
+                                        <Button
+                                            variant="outlined"
+                                            color="success"
+                                            size="small"
+                                            onClick={() => handleApprove(cert._id)}
+                                        >
+                                            Duyệt
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            size="small"
+                                            onClick={() => handleReject(cert._id)}
+                                        >
+                                            Từ chối
+                                        </Button>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            size="small"
+                                            onClick={() => handleView(cert)}
+                                        >
+                                            Xem chi tiết
+                                        </Button>
+                                    </Stack>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </Paper>
 
-            <Dialog
-                open={open}
-                onClose={() => setOpen(false)}
-                maxWidth="md"
-                fullWidth
-                PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
-            >
-                <DialogTitle sx={{ fontWeight: "bold", fontSize: 20, color: "primary.main", textAlign: "center", bgcolor: "#f8f9fb" }}>
-                    Chi tiết chứng chỉ chuyên gia
-                </DialogTitle>
-                <DialogContent dividers sx={{ px: 4, py: 3 }}>
-                    {selected ? (
+            {/* Dialog xem chi tiết */}
+            <Dialog open={openDialog} onClose={handleClose} maxWidth="sm" fullWidth>
+                <DialogTitle>Chi tiết chứng chỉ</DialogTitle>
+                <DialogContent dividers>
+                    {selectedCert && (
                         <Box>
-                            <Grid container spacing={3}>
-                                <Grid item xs={12} md={6}>
-                                    <Typography variant="body1" mb={1.5}><strong>👤 Họ tên:</strong> {selected.user?.fullname || "Không có"}</Typography>
-                                    <Typography variant="body1" mb={1.5}><strong>📧 Email:</strong> {selected.user?.email || "Không có"}</Typography>
-                                    <Typography variant="body1" mb={1.5}><strong>📅 Ngày nộp:</strong> {new Date(selected.createdAt).toLocaleDateString("vi-VN")}</Typography>
-                                    <Typography variant="body1" mb={1.5}><strong>📌 Trạng thái:</strong> {renderStatusChip(selected.status)}</Typography>
-                                </Grid>
-                                <Grid item xs={12} md={6}>
-                                    {selected.viewUrl ? (
-                                        <CardMedia component="img" image={selected.viewUrl} alt="Certificate" sx={{ borderRadius: 3, height: 280, objectFit: "contain", border: "1px solid #ddd" }} />
-                                    ) : (
-                                        <Typography color="text.secondary">Không có hình ảnh</Typography>
-                                    )}
-                                </Grid>
-                            </Grid>
-
-                            <Divider sx={{ my: 3 }} />
-                            <Typography variant="body2" color="text.secondary" textAlign="center" fontStyle="italic">
-                                Hãy xem xét kỹ thông tin trước khi phê duyệt hoặc từ chối.
+                            <Typography>
+                                <b>Người nộp:</b> {selectedCert.user?.fullname}
                             </Typography>
-                        </Box>
-                    ) : (
-                        <Box sx={{ textAlign: "center", py: 5 }}>
-                            <CircularProgress />
+                            <Typography>
+                                <b>Email:</b> {selectedCert.user?.email}
+                            </Typography>
+                            <Typography>
+                                <b>Trạng thái:</b>{" "}
+                                {renderStatusChip(selectedCert.status || "Pending")}
+                            </Typography>
+                            <Box mt={2} textAlign="center">
+                                <CardMedia
+                                    component="img"
+                                    image={`${import.meta.env.VITE_MEDIA_URL}/${selectedCert.certificateURLKey}`}
+                                    alt="certificate"
+                                    sx={{
+                                        width: 250,
+                                        borderRadius: 3,
+                                        mx: "auto",
+                                        boxShadow: 3,
+                                    }}
+                                />
+                            </Box>
                         </Box>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ justifyContent: "center", py: 2, bgcolor: "#f8f9fb" }}>
-                    <Button variant="contained" color="error" onClick={() => handleAction(selected._id, "Rejected")} sx={{ borderRadius: 2, px: 5, fontWeight: "bold" }}>
-                        Từ chối
-                    </Button>
-                    <Button variant="contained" color="success" onClick={() => handleAction(selected._id, "Approved")} sx={{ borderRadius: 2, px: 5, fontWeight: "bold" }}>
-                        Duyệt
-                    </Button>
+                <DialogActions>
+                    <Button onClick={handleClose}>Đóng</Button>
                 </DialogActions>
             </Dialog>
         </Box>
     );
 };
 
-export default ExpertCertificateManagement;
+export default ExpertCertificateList;

@@ -52,6 +52,7 @@ export const listExpertCertificates = async (params = {}) => {
 export const updateExpertCertificateStatus = async (certificateId, data) => {
     try {
         const res = await baseAxios.put(`/expert-certificate/${certificateId}`, data);
+        console.log("API response:", res.data); // 👉 log để kiểm tra
         return res.data;
     } catch (err) {
         console.error("Lỗi khi cập nhật chứng chỉ:", err);

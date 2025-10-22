@@ -57,6 +57,10 @@ const router = createBrowserRouter([
     path: "/guest-homepage",
     element: <GuestHomePage />,
   },
+  {
+    path: "/expert-register",
+    element: <ExpertUpload />,
+  },
 
   // {
   //     path: "/login",
@@ -145,10 +149,10 @@ const router = createBrowserRouter([
             path: "/update-nutrient",
             element: <UpdateNutrient />,
           },
-          {
-            path: "/expert-register",
-            element: <ExpertUpload />,
-          },
+          // {
+          //   path: "/expert-register",
+          //   element: <ExpertUpload />,
+          // },
         ],
       },
     ],

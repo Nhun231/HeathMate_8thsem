@@ -1,217 +1,493 @@
 import React, { useState, useEffect } from "react";
 import {
     Box,
-    Button,
-    Typography,
     Card,
-    CardMedia,
+    CardContent,
+    TextField,
+    Typography,
+    Button,
+    InputAdornment,
+    IconButton,
+    FormControlLabel,
+    RadioGroup,
+    Radio,
     CircularProgress,
-    Paper,
 } from "@mui/material";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import {
+    Person,
+    Email,
+    Lock,
+    CheckCircle,
+    Visibility,
+    VisibilityOff,
+    CloudUpload,
+} from "@mui/icons-material";
+import { PhoneIcon } from "lucide-react";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { useNavigate } from "react-router-dom";
+import CustomAlert from "../../components/common/Alert.jsx";
+import {
+    register,
+    sendOTP,
+} from "../../services/authService/RegisterService.js";
 import {
     getPresignedUploadUrl,
     uploadFileToS3,
-    getPresignedViewUrl,
-} from "../../services/MediaService";
+} from "../../services/MediaService.js";
 import {
     createExpertCertificate,
     updateExpertCertificate,
-    getUserExpertCertificate,
-} from "../../services/ExpertCertificateService";
+} from "../../services/ExpertCertificateService.js";
+import {
+    emailValidator,
+    checkPasswordsMatch,
+    validatePasswordStrength,
+    isValidPhoneNumber,
+} from "../../utils/registerValidation.js";
 
-const PresignedUpload = () => {
+const RegisterExpert = () => {
+    const navigate = useNavigate();
+    const [alert, setAlert] = useState({ show: false, message: "", severity: "" });
+    const [formData, setFormData] = useState({
+        fullname: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        dob: "",
+        gender: "",
+        phoneNumber: "",
+        code: "",
+    });
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [otpSent, setOtpSent] = useState(false);
+    const [secondsLeft, setSecondsLeft] = useState(0);
     const [file, setFile] = useState(null);
     const [viewUrl, setViewUrl] = useState("");
+    const [certificateId, setCertificateId] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [certificateId, setCertificateId] = useState("");
-    const [existingKey, setExistingKey] = useState("");
 
-    // Lấy certificate hiện tại khi load trang
-    useEffect(() => {
-        const fetchCertificate = async () => {
-            try {
-                const certificate = await getUserExpertCertificate();
-                if (certificate?._id) setCertificateId(certificate._id);
-                if (certificate?.certificateURLKey) {
-                    setExistingKey(certificate.certificateURLKey);
-                    const url = await getPresignedViewUrl(certificate.certificateURLKey);
-                    setViewUrl(url);
-                }
-            } catch (err) {
-                console.error("Không thể load chứng chỉ:", err);
-            }
-        };
-        fetchCertificate();
-    }, []);
+    const handleChange = (e) => {
+        setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    };
 
-    const handleFileChange = (e) => setFile(e.target.files[0]);
-
-    const handleUpload = async () => {
-        if (!file) return alert("Vui lòng chọn file!");
-
-        setLoading(true);
+    // Upload chứng chỉ
+    const handleFileUpload = async (file) => {
         try {
             const { presignedUrl, key } = await getPresignedUploadUrl(file);
             await uploadFileToS3(presignedUrl, file);
+            const cert = await createExpertCertificate({
+                certificateURLKey: key,
+                email: formData.email,
+            });
+            setCertificateId(cert.data.id);
+            setViewUrl(cert.data.url);
+            setAlert({
+                show: true,
+                message: "📄 Tải chứng chỉ thành công!",
+                severity: "success",
+            });
+        } catch (err) {
+            setAlert({
+                show: true,
+                message: "❌ Lỗi khi tải chứng chỉ. Vui lòng thử lại.",
+                severity: "error",
+            });
+        }
+    };
 
-            const url = await getPresignedViewUrl(key);
-            setViewUrl(url);
-            setExistingKey(key);
+    // Gửi OTP
+    const handleSendOtp = async () => {
+        if (!formData.email) {
+            return setAlert({
+                show: true,
+                message: "Vui lòng nhập email để nhận mã OTP!",
+                severity: "warning",
+            });
+        }
 
-            if (certificateId) {
-                await updateExpertCertificate(certificateId, { certificateURLKey: key });
-            } else {
-                const newCert = await createExpertCertificate({ certificateURLKey: key });
-                setCertificateId(newCert._id);
+        const emailValid = emailValidator(formData.email);
+        if (!emailValid.isValid) {
+            return setAlert({
+                show: true,
+                message: emailValid.message,
+                severity: "warning",
+            });
+        }
+
+        try {
+            await sendOTP({ email: formData.email, type: "REGISTER" });
+            setOtpSent(true);
+            setSecondsLeft(300);
+            setAlert({
+                show: true,
+                message: "✅ Mã OTP đã được gửi đến email!",
+                severity: "success",
+            });
+        } catch {
+            setAlert({
+                show: true,
+                message: "❌ Không thể gửi OTP. Vui lòng thử lại.",
+                severity: "error",
+            });
+        }
+    };
+
+    // Resend OTP
+    const handleResendOtp = async () => {
+        await sendOTP({ email: formData.email, type: "REGISTER" });
+        setSecondsLeft(300);
+    };
+
+    // Đăng ký
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const passwordStrength = validatePasswordStrength(formData.password);
+        const passwordsMatch = checkPasswordsMatch(
+            formData.password,
+            formData.confirmPassword
+        );
+
+        if (!passwordStrength.isValid || !passwordsMatch.isValid) {
+            return setAlert({
+                show: true,
+                message: "❌ Mật khẩu không hợp lệ hoặc không trùng khớp!",
+                severity: "warning",
+            });
+        }
+        if (!isValidPhoneNumber(formData.phoneNumber)) {
+            return setAlert({
+                show: true,
+                message: "❌ Số điện thoại không hợp lệ!",
+                severity: "warning",
+            });
+        }
+        if (!formData.code) {
+            return setAlert({
+                show: true,
+                message: "Vui lòng nhập mã OTP!",
+                severity: "warning",
+            });
+        }
+
+        setLoading(true);
+        try {
+            const registerData = {
+                ...formData,
+                role: "expert",
+                otp: formData.code,
+            };
+            await register(registerData);
+
+            if (certificateId && viewUrl) {
+                await updateExpertCertificate(certificateId, {
+                    certificateURLKey: viewUrl,
+                    email: formData.email,
+                });
             }
 
-            alert("Tải chứng chỉ thành công!");
+            setAlert({
+                show: true,
+                message: "🎉 Đăng ký chuyên gia thành công!",
+                severity: "success",
+            });
+            setTimeout(() => navigate("/login"), 2500);
         } catch (err) {
-            alert("Lỗi khi tải chứng chỉ!");
-            console.error(err);
+            console.error("Register error:", err);
+            setAlert({
+                show: true,
+                message: "❌ Đăng ký thất bại. Kiểm tra lại thông tin.",
+                severity: "error",
+            });
         } finally {
             setLoading(false);
         }
     };
 
+    useEffect(() => {
+        if (!otpSent || secondsLeft <= 0) return;
+        const id = setInterval(() => {
+            setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(id);
+    }, [otpSent, secondsLeft]);
+
     return (
         <Box
             sx={{
-                width: "100%",
-                maxWidth: 700,
-                mx: "auto",
-                p: 4,
-                borderRadius: 4,
-                boxShadow: 4,
-                bgcolor: "#fefefe",
-                mt: 3,
-                mb: 3,
+                minHeight: "100vh",
+                width: "100vw",
+                backgroundImage:
+                    "url('https://img.herohealth.com/blog/veggies.webp')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                p: 2,
             }}
         >
-            <Typography
-                variant="h4"
-                fontWeight="bold"
-                color="success.main"
-                textAlign="center"
-                gutterBottom
-            >
-                Trở thành chuyên gia của chúng tôi
-            </Typography>
+            {alert.show && (
+                <CustomAlert
+                    message={alert.message}
+                    variant={alert.severity}
+                    onClose={() => setAlert({ ...alert, show: false })}
+                    sticky
+                    autoCloseDelay={2000}
+                />
+            )}
 
-            <Typography
-                variant="body1"
-                textAlign="center"
-                color="text.secondary"
-                sx={{ mb: 3 }}
-            >
-                Hãy tải lên chứng chỉ để hoàn tất xác minh và trở thành chuyên gia uy tín.
-            </Typography>
-
-            <Paper
-                elevation={0}
+            <Card
                 sx={{
-                    border: "2px dashed #81c784",
+                    maxWidth: 520,
+                    width: "100%",
                     borderRadius: 3,
-                    p: 4,
-                    textAlign: "center",
-                    bgcolor: "#f1f8e9",
-                    "&:hover": {
-                        borderColor: "#66bb6a",
-                        bgcolor: "#e8f5e9",
-                    },
-                    transition: "0.3s",
+                    backgroundColor: "rgba(255,255,255,0.95)",
+                    boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+                    backdropFilter: "blur(10px)",
                 }}
             >
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    style={{ display: "none" }}
-                    id="file-upload"
-                />
-                <label htmlFor="file-upload">
-                    <Button
-                        variant="contained"
-                        component="span"
-                        startIcon={<CloudUploadIcon />}
-                        sx={{
-                            bgcolor: "success.main",
-                            "&:hover": { bgcolor: "success.dark" },
-                            textTransform: "none",
-                        }}
-                    >
-                        {file ? "Đã chọn: " + file.name : "Chọn file chứng chỉ"}
-                    </Button>
-                </label>
-
-                {file && (
-                    <Typography mt={2} color="text.secondary">
-                        Kích thước: {(file.size / 1024).toFixed(1)} KB
-                    </Typography>
-                )}
-            </Paper>
-
-            <Box mt={3} textAlign="center">
-                <Button
-                    variant="contained"
-                    color="success"
-                    size="large"
-                    disabled={!file || loading}
-                    onClick={handleUpload}
-                    startIcon={loading ? <CircularProgress size={22} color="inherit" /> : null}
-                    sx={{
-                        textTransform: "none",
-                        fontWeight: "bold",
-                        px: 4,
-                        py: 1.5,
-                    }}
-                >
-                    {loading ? "Đang tải lên..." : "Xác nhận và tải chứng chỉ"}
-                </Button>
-            </Box>
-
-            {viewUrl && (
-                <Box mt={5} textAlign="center">
+                <CardContent sx={{ p: 4 }}>
                     <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                        color="success.main"
-                        mb={2}
+                        variant="h5"
+                        textAlign="center"
+                        fontWeight={600}
+                        color="primary"
+                        gutterBottom
                     >
-                        <CheckCircleIcon sx={{ mr: 1, color: "success.main" }} />
-                        Chứng chỉ đã xác minh
+                        🌿 Đăng ký Chuyên Gia
                     </Typography>
 
-                    <Card
-                        sx={{
-                            borderRadius: 3,
-                            boxShadow: 3,
-                            overflow: "hidden",
-                            border: "1px solid #c8e6c9",
-                        }}
-                    >
-                        <CardMedia
-                            component="img"
-                            src={viewUrl}
-                            alt="uploaded-certificate"
-                            sx={{
-                                width: "100%",
-                                height: 350,
-                                objectFit: "contain",
-                                bgcolor: "#f5f5f5",
-                            }}
-                        />
-                    </Card>
+                    <form onSubmit={handleSubmit}>
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            {/* Fullname */}
+                            <TextField
+                                name="fullname"
+                                placeholder="Họ và tên"
+                                fullWidth
+                                size="small"
+                                value={formData.fullname}
+                                onChange={handleChange}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Person sx={{ color: "#6b7280" }} />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                            {/* Email */}
+                            <TextField
+                                name="email"
+                                type="email"
+                                placeholder="Địa chỉ email"
+                                fullWidth
+                                size="small"
+                                value={formData.email}
+                                onChange={handleChange}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Email sx={{ color: "#6b7280" }} />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
 
-                    <Typography variant="body2" color="text.secondary" mt={2}>
-                        Ảnh này sẽ được hiển thị trong hồ sơ chuyên gia của bạn.
-                    </Typography>
-                </Box>
-            )}
+                            {/* Password */}
+                            <TextField
+                                name="password"
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Mật khẩu"
+                                fullWidth
+                                size="small"
+                                value={formData.password}
+                                onChange={handleChange}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Lock sx={{ color: "#6b7280" }} />
+                                        </InputAdornment>
+                                    ),
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                onClick={() => setShowPassword(!showPassword)}
+                                            >
+                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+
+                            {/* Confirm Password */}
+                            <TextField
+                                name="confirmPassword"
+                                type={showConfirmPassword ? "text" : "password"}
+                                placeholder="Xác nhận mật khẩu"
+                                fullWidth
+                                size="small"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <CheckCircle sx={{ color: "#6b7280" }} />
+                                        </InputAdornment>
+                                    ),
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                onClick={() =>
+                                                    setShowConfirmPassword(!showConfirmPassword)
+                                                }
+                                            >
+                                                {showConfirmPassword ? (
+                                                    <VisibilityOff />
+                                                ) : (
+                                                    <Visibility />
+                                                )}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+
+                            {/* Gender */}
+                            <RadioGroup
+                                row
+                                name="gender"
+                                value={formData.gender}
+                                onChange={handleChange}
+                            >
+                                <FormControlLabel
+                                    value="male"
+                                    control={<Radio color="success" />}
+                                    label="Nam"
+                                />
+                                <FormControlLabel
+                                    value="female"
+                                    control={<Radio color="success" />}
+                                    label="Nữ"
+                                />
+                            </RadioGroup>
+
+                            {/* DOB */}
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    label="Ngày sinh"
+                                    format="DD/MM/YYYY"
+                                    value={formData.dob ? dayjs(formData.dob) : null}
+                                    onChange={(val) =>
+                                        setFormData({
+                                            ...formData,
+                                            dob: val ? val.format("YYYY-MM-DD") : "",
+                                        })
+                                    }
+                                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                                />
+                            </LocalizationProvider>
+
+                            {/* Phone */}
+                            <TextField
+                                name="phoneNumber"
+                                placeholder="Số điện thoại"
+                                fullWidth
+                                size="small"
+                                value={formData.phoneNumber}
+                                onChange={handleChange}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <PhoneIcon size={18} color="#6b7280" />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+
+                            {/* Upload Certificate */}
+                            <Button
+                                variant="outlined"
+                                component="label"
+                                color="success"
+                                startIcon={<CloudUpload />}
+                            >
+                                {file ? file.name : "Tải chứng chỉ chuyên môn"}
+                                <input
+                                    type="file"
+                                    hidden
+                                    onChange={(e) => {
+                                        const f = e.target.files[0];
+                                        setFile(f);
+                                        handleFileUpload(f);
+                                    }}
+                                />
+                            </Button>
+                            {viewUrl && (
+                                <Typography
+                                    variant="body2"
+                                    color="success.main"
+                                    sx={{ ml: 1 }}
+                                >
+                                    ✅ Đã tải lên chứng chỉ thành công!
+                                </Typography>
+                            )}
+
+                            {/* OTP */}
+                            {otpSent && (
+                                <TextField
+                                    name="code"
+                                    placeholder="Nhập mã OTP"
+                                    fullWidth
+                                    size="small"
+                                    value={formData.code}
+                                    onChange={handleChange}
+                                    helperText={
+                                        secondsLeft > 0
+                                            ? `OTP hết hạn sau ${Math.floor(secondsLeft / 60)}:${(
+                                                secondsLeft % 60
+                                            )
+                                                .toString()
+                                                .padStart(2, "0")}`
+                                            : "OTP đã hết hạn"
+                                    }
+                                    error={secondsLeft === 0}
+                                />
+                            )}
+
+                            {/* Button */}
+                            {!otpSent ? (
+                                <Button
+                                    onClick={handleSendOtp}
+                                    fullWidth
+                                    variant="contained"
+                                    color="success"
+                                    sx={{ textTransform: "none", py: 1.2 }}
+                                >
+                                    Gửi mã OTP
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="submit"
+                                    fullWidth
+                                    variant="contained"
+                                    color="success"
+                                    sx={{ textTransform: "none", py: 1.2 }}
+                                    disabled={loading}
+                                >
+                                    {loading ? <CircularProgress size={24} /> : "Đăng ký chuyên gia"}
+                                </Button>
+                            )}
+                        </Box>
+                    </form>
+                </CardContent>
+            </Card>
         </Box>
     );
 };
 
-export default PresignedUpload;
+export default RegisterExpert;
