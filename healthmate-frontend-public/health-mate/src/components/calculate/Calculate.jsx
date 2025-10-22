@@ -1,403 +1,446 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Box,
+  Container,
   Typography,
+  TextField,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Paper,
   Button,
-  Card,
-  CardContent,
   Grid,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  MenuItem,
-  IconButton,
-  CircularProgress,
-  Pagination,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import "../../styles/themeCalculate.css";
 import {
-  EditOutlined,
-  DeleteOutline,
-  Visibility,
-  VisibilityOff,
-} from "@mui/icons-material";
-import CustomAlert from "../common/Alert"; // giống file Calculate
+  createCalculation,
+  getLatestCalculation,
+} from "../../services/CalculateService";
 import {
-  getAllUsers,
-  createUser,
-  updateUser,
-  deleteUser,
-} from "../../services/AdminService";
+  getCurrentUser,
+  updateCurrentUser,
+} from "../../services/UserService.js";
+import CustomAlert from "../common/Alert";
 
-export default function UserManagement() {
-  const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [openAdd, setOpenAdd] = useState(false);
-  const [openEdit, setOpenEdit] = useState(false);
-  const [openDelete, setOpenDelete] = useState(null);
-  const [newUser, setNewUser] = useState({
-    fullname: "",
-    email: "",
-    password: "",
-    role: "User",
-    gender: "Male",
+const activityLevels = [
+  { value: "Sedentary", label: "Vận động ít", desc: "Vận động cơ bản" },
+  { value: "Light", label: "Vận động nhẹ", desc: "Tập 1–3 buổi/tuần" },
+  { value: "Moderate", label: "Vận động vừa", desc: "Tập 4–5 buổi/tuần" },
+  { value: "Active", label: "Vận động nhiều", desc: "Tập 6–7 buổi/tuần" },
+  { value: "VeryActive", label: "Vận động cực nhiều", desc: "Cấp độ vận động viên" },
+];
+
+export default function Calculate() {
+  const [form, setForm] = useState({
+    gender: "",
     dob: "",
-    phoneNumber: "",
+    age: "",
+    height: "",
+    weight: "",
+    activity: "Sedentary",
   });
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [result, setResult] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [errors, setErrors] = useState({ height: "", weight: "" });
   const [alert, setAlert] = useState({
     show: false,
     message: "",
     severity: "info",
   });
 
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const limit = 10;
+  const resultRef = useRef(null);
+  const navigate = useNavigate();
 
-  // ===== VALIDATIONS =====
-  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
-  const isValidPhone = (num) => /^\d{9,12}$/.test(num);
-  const isValidDate = (dob) => {
-    if (!dob) return true;
-    const date = new Date(dob);
-    return date <= new Date();
-  };
-
-  const showAlert = (message, severity = "info") => {
-    setAlert({ show: true, message, severity });
-    setTimeout(() => setAlert({ show: false, message: "", severity: "info" }), 3000);
-  };
-
-  const fetchUsers = async (pageNum = 1) => {
-    setLoading(true);
-    try {
-      const res = await getAllUsers(pageNum, limit);
-      const usersData = Array.isArray(res?.data)
-        ? res.data.map((u) => ({
-          ...u,
-          role: u.roleId?.name || u.role || "User",
-        }))
-        : [];
-      setUsers(usersData);
-      setTotalPages(res?.totalPages || 1);
-    } catch (err) {
-      console.error(err);
-      showAlert("Không thể tải danh sách người dùng!", "error");
-    } finally {
-      setLoading(false);
+  //Tính tuổi
+  const calculateAge = (dob) => {
+    if (!dob) return "";
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
+    return age >= 0 ? age : "";
   };
 
   useEffect(() => {
-    fetchUsers(page);
-  }, [page]);
+    const fetchData = async () => {
+      try {
+        const userRes = await getCurrentUser();
+        const userData = userRes?.data;
 
-  // ===== ADD USER =====
-  const handleAddUser = async () => {
-    const { fullname, email, password, gender, dob, role, phoneNumber } = newUser;
-    if (!fullname || !email || !password || !role || !phoneNumber) {
-      showAlert("Vui lòng điền đầy đủ thông tin bắt buộc!", "warning");
-      return;
-    }
-    if (!isValidEmail(email)) {
-      showAlert("Email không hợp lệ!", "warning");
-      return;
-    }
-    if (password.length < 6) {
-      showAlert("Mật khẩu phải có ít nhất 6 ký tự!", "warning");
-      return;
-    }
-    if (!isValidPhone(phoneNumber)) {
-      showAlert("Số điện thoại không hợp lệ (9–12 chữ số)!", "warning");
-      return;
-    }
-    if (!isValidDate(dob)) {
-      showAlert("Ngày sinh không hợp lệ hoặc là ngày tương lai!", "warning");
-      return;
-    }
+        if (userData) {
+          const age = calculateAge(userData?.dob);
+          setForm((prev) => ({
+            ...prev,
+            gender: userData?.gender || prev.gender,
+            dob: userData?.dob || "",
+            age: age.toString(),
+          }));
+        }
+      } catch (error) {
+        console.warn("Lỗi khi lấy user:", error);
+      }
 
-    setSaving(true);
-    try {
-      await createUser({ fullname, email, password, gender, dob, role, phoneNumber });
-      showAlert("Thêm người dùng thành công!", "success");
-      setOpenAdd(false);
-      setNewUser({
-        fullname: "",
-        email: "",
-        password: "",
-        role: "User",
-        gender: "Male",
-        dob: "",
-        phoneNumber: "",
+      try {
+        const physicalRes = await getLatestCalculation();
+        const physicalData = physicalRes?.data;
+
+        if (physicalData) {
+          setForm((prev) => ({
+            ...prev,
+            height: physicalData?.height || prev.height,
+            weight: physicalData?.weight || prev.weight,
+            activity: physicalData?.activityLevel || prev.activity,
+          }));
+        }
+      } catch (error) {
+        console.warn("Lỗi khi lấy physical info:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "dob") {
+      setForm({ ...form, dob: value, age: calculateAge(value) });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
+  };
+
+  const validateForm = () => {
+    const newErr = { height: "", weight: "" };
+
+    if (!form.height || isNaN(form.height) || Number(form.height) <= 0)
+      newErr.height = "Vui lòng nhập chiều cao hợp lệ.";
+
+    if (!form.weight || isNaN(form.weight) || Number(form.weight) <= 0)
+      newErr.weight = "Vui lòng nhập cân nặng hợp lệ.";
+
+    setErrors(newErr);
+    return !newErr.height && !newErr.weight;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      setAlert({
+        show: true,
+        message: "Vui lòng nhập đầy đủ và hợp lệ.",
+        severity: "warning",
       });
-      fetchUsers(page);
-    } catch (err) {
-      console.error(err);
-      showAlert("Thêm người dùng thất bại!", "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-
-  // ===== EDIT USER =====
-  const handleUpdateUser = async () => {
-    if (!selectedUser) return;
-    const { fullname, email, gender, dob, role, phoneNumber, password } = selectedUser;
-    if (!fullname || !email || !role || !phoneNumber) {
-      showAlert("Vui lòng điền đầy đủ thông tin!", "warning");
-      return;
-    }
-    if (!isValidEmail(email)) {
-      showAlert("Email không hợp lệ!", "warning");
-      return;
-    }
-    if (password && password.length < 6) {
-      showAlert("Mật khẩu phải có ít nhất 6 ký tự!", "warning");
-      return;
-    }
-    if (!isValidPhone(phoneNumber)) {
-      showAlert("Số điện thoại không hợp lệ!", "warning");
-      return;
-    }
-    if (!isValidDate(dob)) {
-      showAlert("Ngày sinh không hợp lệ!", "warning");
       return;
     }
 
-    setSaving(true);
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      setAlert({
+        show: true,
+        message: "Bạn cần đăng nhập để tính toán.",
+        severity: "error",
+      });
+      return;
+    }
+
     try {
-      await updateUser(selectedUser._id, { fullname, email, gender, dob, role, phoneNumber, password });
-      showAlert("Cập nhật thông tin thành công!", "success");
-      setOpenEdit(false);
-      fetchUsers(page);
+      // update age + gender
+      await updateCurrentUser({
+        gender: form.gender,
+        dob: form.dob,
+      });
+
+      // save calculation
+      const res = await createCalculation({
+        height: Number(form.height),
+        weight: Number(form.weight),
+        activityLevel: form.activity,
+      });
+      setResult(res.data);
+
+      setAlert({
+        show: true,
+        message: "Tính toán thành công và đã cập nhật thông tin cá nhân!",
+        severity: "success",
+      });
+      setTimeout(() => setAlert({ ...alert, show: false }), 3000);
     } catch (err) {
       console.error(err);
-      showAlert("Cập nhật thất bại!", "error");
-    } finally {
-      setSaving(false);
+      setAlert({
+        show: true,
+        message: "Có lỗi xảy ra. Vui lòng thử lại!",
+        severity: "error",
+      });
     }
   };
 
-  // ===== DELETE USER =====
-  const handleDeleteUser = async (id) => {
-    try {
-      await deleteUser(id);
-      showAlert("Đã xóa người dùng!", "success");
-      setOpenDelete(null);
-      fetchUsers(page);
-    } catch (err) {
-      console.error(err);
-      showAlert("Xóa thất bại!", "error");
-    }
+  const handleModalClose = (ans) => {
+    setOpenModal(false);
+    if (ans === "yes") navigate("/set-goal");
+    else navigate("/customer-homepage");
   };
 
-  // ===== RENDER =====
   return (
-    <Box p={4}>
+    <Container maxWidth="lg" className="tdee-wrapper">
       {/* Alert */}
       {alert.show && (
-        <Box sx={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 2000 }}>
-          <CustomAlert message={alert.message} variant={alert.severity} onClose={() => setAlert({ ...alert, show: false })} />
+        <Box sx={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", width: "90%", maxWidth: 500, zIndex: 9999 }}>
+          <CustomAlert
+            message={alert.message}
+            variant={alert.severity}
+            onClose={() => setAlert({ ...alert, show: false })}
+          />
         </Box>
       )}
 
-      <Typography variant="h4" align="center" fontWeight="bold" color="#2e7d32" mb={3}>
-        QUẢN LÝ NGƯỜI DÙNG
+      <Typography variant="h4" align="center" className="title">
+        CÔNG CỤ TÍNH BMI, TDEE VÀ BMR ONLINE
+      </Typography>
+      <Typography align="center" className="subtitle">
+        Tính lượng calo cần thiết cho cơ thể bạn mỗi ngày
+        <br />
+        Hãy nhập thông tin để HealthMate tính cho bạn nhé!
       </Typography>
 
-      <Box display="flex" justifyContent="space-between" mb={3}>
-        <TextField
-          variant="outlined"
-          size="small"
-          placeholder="Tìm kiếm người dùng..."
-          sx={{ width: "40%" }}
-          color="success"
-        />
-        <Button
-          variant="contained"
-          onClick={() => {
-            setNewUser({
-              fullname: "",
-              email: "",
-              password: "",
-              role: "User",
-              gender: "Male",
-              dob: "",
-              phoneNumber: "",
-            });
-            setOpenAdd(true);
-          }}
-          sx={{ backgroundColor: "#2e7d32", color: "white", "&:hover": { backgroundColor: "#256428" } }}
-        >
-          + Thêm người dùng
-        </Button>
+      <Box className="main-form-box">
+        <Grid container spacing={12}>
+          {/* Cột trái */}
+          <Grid item xs={12} md={6}>
+            <Typography className="label">Giới tính</Typography>
+            <RadioGroup
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              row
+            >
+              <FormControlLabel value="Male" control={<Radio />} label="Nam" />
+              <FormControlLabel value="Female" control={<Radio />} label="Nữ" />
+            </RadioGroup>
 
-      </Box>
+            <Typography className="label">Ngày sinh</Typography>
+            <TextField
+              fullWidth
+              type="date"
+              name="dob"
+              value={form.dob}
+              onChange={handleChange}
+              className="input-box"
+            />
 
-      {loading ? (
-        <Box textAlign="center" mt={6}>
-          <CircularProgress color="success" />
-        </Box>
-      ) : (
-        <Grid container spacing={3}>
-          {users.map((user) => (
-            <Grid item xs={12} md={6} lg={4} key={user._id}>
-              <Card sx={{ borderLeft: "5px solid #2e7d32", boxShadow: 3 }}>
-                <CardContent>
-                  <Typography fontWeight="bold">{user.fullname}</Typography>
-                  <Typography color="gray">{user.email}</Typography>
-                  <Typography>Giới tính: {user.gender}</Typography>
-                  <Typography>Vai trò: {user.role}</Typography>
-                  <Typography>SĐT: {user.phoneNumber}</Typography>
-                  <Typography>Ngày sinh: {user.dob ? new Date(user.dob).toLocaleDateString() : "—"}</Typography>
-                  <Box mt={2} display="flex" justifyContent="flex-end" gap={1}>
-                    <IconButton color="success" onClick={() => { setSelectedUser(user); setOpenEdit(true); }}>
-                      <EditOutlined />
-                    </IconButton>
-                    <IconButton color="error" onClick={() => setOpenDelete(user)}>
-                      <DeleteOutline />
-                    </IconButton>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+            <Typography className="label">Tuổi</Typography>
+            <TextField
+              fullWidth
+              disabled
+              value={form.age}
+              placeholder="Tuổi sẽ hiển thị ở đây"
+              className="input-box"
+            />
+
+            <Typography className="label">Chiều cao (cm)</Typography>
+            <TextField
+              fullWidth
+              name="height"
+              value={form.height}
+              onChange={handleChange}
+              placeholder="Nhập chiều cao..."
+              className="input-box"
+              error={Boolean(errors.height)}
+              helperText={errors.height}
+            />
+
+            <Typography className="label">Cân nặng (kg)</Typography>
+            <TextField
+              fullWidth
+              name="weight"
+              value={form.weight}
+              onChange={handleChange}
+              placeholder="Nhập cân nặng..."
+              className="input-box"
+              error={Boolean(errors.weight)}
+              helperText={errors.weight}
+            />
+
+            <Box textAlign="center" mt={3}>
+              <Button variant="contained" color="success" onClick={handleSubmit}>
+                TÍNH TOÁN
+              </Button>
+            </Box>
+          </Grid>
+
+          {/* Cột phải */}
+          <Grid item xs={12} md={6}>
+            <Paper className="activity-box">
+              <Typography align="center" className="activity-title">
+                CƯỜNG ĐỘ HOẠT ĐỘNG
+              </Typography>
+              <Grid container className="activity-header">
+                <Grid item xs={6}>
+                  <strong>Cường độ</strong>
+                </Grid>
+                <Grid item xs={6}>
+                  <strong>Mô tả</strong>
+                </Grid>
+              </Grid>
+              <RadioGroup
+                name="activity"
+                value={form.activity}
+                onChange={handleChange}
+                className="activity-group"
+              >
+                {activityLevels.map((a) => (
+                  <Grid container key={a.value} className="activity-row">
+                    <Grid item xs={6}>
+                      <FormControlLabel
+                        value={a.value}
+                        control={<Radio />}
+                        label={a.label}
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography>{a.desc}</Typography>
+                    </Grid>
+                  </Grid>
+                ))}
+              </RadioGroup>
+            </Paper>
+          </Grid>
         </Grid>
-      )}
 
-      {/* Pagination */}
-      <Box display="flex" justifyContent="center" mt={4}>
-        <Pagination
-          count={totalPages}
-          page={page}
-          onChange={(_, val) => setPage(val)}
-          color="success"
-          size="large"
-        />
+        {/* Kết quả */}
+        {result && (
+          <Box className="result-box" mt={6} ref={resultRef}>
+            <Typography
+              align="center"
+              fontWeight="bold"
+              fontSize={24}
+              color="#4CAF50"
+              mb={2}
+            >
+              CHỈ SỐ CALO CỦA BẠN
+            </Typography>
+            <Typography align="center" fontWeight="bold" mb={4}>
+              Dựa trên thông tin bạn đã cung cấp
+              <br />
+              HealthMate đã tính ra các chỉ số calo của bạn như sau:
+            </Typography>
+
+            <Grid container spacing={4} justifyContent="center">
+              <Grid item xs={12} md={3}>
+                <Typography align="center" fontWeight="bold" color="#2e7d32">
+                  BMR của bạn là:
+                </Typography>
+                <Typography
+                  align="center"
+                  fontSize={50}
+                  color="red"
+                  fontWeight="bold"
+                >
+                  {result.bmr}
+                </Typography>
+                <Typography align="center" color="gray">
+                  Calo / ngày
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={3}>
+                <Typography align="center" fontWeight="bold" color="#2e7d32">
+                  TDEE của bạn là:
+                </Typography>
+                <Typography
+                  align="center"
+                  fontSize={50}
+                  color="red"
+                  fontWeight="bold"
+                >
+                  {result.tdee}
+                </Typography>
+                <Typography align="center" color="gray">
+                  Calo / ngày
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={3}>
+                <Typography align="center" fontWeight="bold" color="#2e7d32">
+                  BMI của bạn là:
+                </Typography>
+                <Typography
+                  align="center"
+                  fontSize={50}
+                  color="red"
+                  fontWeight="bold"
+                >
+                  {result.bmi}
+                </Typography>
+                <Typography align="center" color="gray">
+                  Chỉ số khối cơ thể
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={3}>
+                <Typography align="center" fontWeight="bold" color="#2e7d32">
+                  Lượng nước cần uống:
+                </Typography>
+                <Typography
+                  align="center"
+                  fontSize={50}
+                  color="red"
+                  fontWeight="bold"
+                >
+                  {result.waterNeeded} L
+                </Typography>
+                <Typography align="center" color="gray">
+                  Lít / ngày
+                </Typography>
+              </Grid>
+            </Grid>
+            <Box textAlign="center" mt={4}>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => setOpenModal(true)}
+              >
+                Tạo kế hoạch ăn uống
+              </Button>
+            </Box>
+          </Box>
+        )}
       </Box>
 
-      {/* Dialog thêm user */}
-      <Dialog open={openAdd} onClose={() => setOpenAdd(false)} fullWidth>
-        <DialogTitle>Thêm người dùng mới</DialogTitle>
+      <Dialog open={openModal} onClose={() => handleModalClose("no")}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <WarningAmberIcon color="warning" />
+          Xác nhận
+        </DialogTitle>
         <DialogContent>
-          <TextField label="Họ và tên" fullWidth margin="dense" value={newUser.fullname} onChange={(e) => setNewUser({ ...newUser, fullname: e.target.value })} />
-          <TextField label="Email" fullWidth margin="dense" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
-          <TextField
-            label="Mật khẩu"
-            fullWidth
-            type={showPassword ? "text" : "password"}
-            margin="dense"
-            value={newUser.password}
-            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-            InputProps={{
-              endAdornment: (
-                <IconButton onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              ),
-            }}
-          />
-          <TextField
-            label="Số điện thoại"
-            fullWidth
-            margin="dense"
-            value={newUser.phoneNumber}
-            onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
-          />
-          <TextField
-            label="Ngày sinh"
-            type="date"
-            fullWidth
-            margin="dense"
-            InputLabelProps={{ shrink: true }}
-            value={newUser.dob}
-            onChange={(e) => setNewUser({ ...newUser, dob: e.target.value })}
-          />
-          <TextField
-            select
-            label="Giới tính"
-            fullWidth
-            margin="dense"
-            value={newUser.gender}
-            onChange={(e) => setNewUser({ ...newUser, gender: e.target.value })}
-          >
-            <MenuItem value="Male">Nam</MenuItem>
-            <MenuItem value="Female">Nữ</MenuItem>
-          </TextField>
-          <TextField
-            select
-            label="Vai trò"
-            fullWidth
-            margin="dense"
-            value={newUser.role}
-            onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-          >
-            <MenuItem value="User">User</MenuItem>
-            <MenuItem value="Admin">Admin</MenuItem>
-          </TextField>
+          Bạn có muốn tạo kế hoạch ăn uống dựa trên dữ liệu vừa tính?
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenAdd(false)}>Hủy</Button>
-          <Button variant="contained" color="success" onClick={handleAddUser} disabled={saving}>
-            {saving ? "Đang lưu..." : "Lưu"}
+          <Button
+            onClick={() => handleModalClose("no")}
+            variant="outlined"
+            color="inherit"
+          >
+            Không
+          </Button>
+          <Button
+            onClick={() => handleModalClose("yes")}
+            variant="contained"
+            color="success"
+          >
+            Có, tạo ngay
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Dialog sửa user */}
-      <Dialog open={openEdit} onClose={() => setOpenEdit(false)} fullWidth>
-        <DialogTitle>Cập nhật người dùng</DialogTitle>
-        <DialogContent>
-          {selectedUser && (
-            <>
-              <TextField label="Họ và tên" fullWidth margin="dense" value={selectedUser.fullname} onChange={(e) => setSelectedUser({ ...selectedUser, fullname: e.target.value })} />
-              <TextField label="Email" fullWidth margin="dense" value={selectedUser.email} onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })} />
-              <TextField label="Mật khẩu (để trống nếu không đổi)" fullWidth type="password" margin="dense" value={selectedUser.password || ""} onChange={(e) => setSelectedUser({ ...selectedUser, password: e.target.value })} />
-              <TextField label="Số điện thoại" fullWidth margin="dense" value={selectedUser.phoneNumber} onChange={(e) => setSelectedUser({ ...selectedUser, phoneNumber: e.target.value })} />
-              <TextField
-                label="Ngày sinh"
-                type="date"
-                fullWidth
-                margin="dense"
-                InputLabelProps={{ shrink: true }}
-                value={selectedUser.dob?.split("T")[0] || ""}
-                onChange={(e) => setSelectedUser({ ...selectedUser, dob: e.target.value })}
-              />
-              <TextField select label="Giới tính" fullWidth margin="dense" value={selectedUser.gender} onChange={(e) => setSelectedUser({ ...selectedUser, gender: e.target.value })}>
-                <MenuItem value="Male">Nam</MenuItem>
-                <MenuItem value="Female">Nữ</MenuItem>
-              </TextField>
-              <TextField select label="Vai trò" fullWidth margin="dense" value={selectedUser.role} onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value })}>
-                <MenuItem value="User">User</MenuItem>
-                <MenuItem value="Admin">Admin</MenuItem>
-              </TextField>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenEdit(false)}>Hủy</Button>
-          <Button variant="contained" color="success" onClick={handleUpdateUser} disabled={saving}>
-            {saving ? "Đang lưu..." : "Cập nhật"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Dialog xóa */}
-      <Dialog open={!!openDelete} onClose={() => setOpenDelete(null)}>
-        <DialogTitle>Xác nhận xóa</DialogTitle>
-        <DialogContent>Bạn có chắc chắn muốn xóa người dùng này?</DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDelete(null)}>Hủy</Button>
-          <Button color="error" variant="contained" onClick={() => handleDeleteUser(openDelete._id)}>
-            Xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+    </Container>
   );
 }
