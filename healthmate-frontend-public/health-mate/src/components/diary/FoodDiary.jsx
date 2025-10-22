@@ -305,7 +305,7 @@ function FoodDiary() {
             >
               {/* Tiêu đề */}
               <Typography
-                variant="h6"
+                variant="h4"
                 sx={{ color: "#4CAF50", fontWeight: 500, mb: 2 }}
               >
                 Nhật ký ăn uống hôm nay
@@ -363,62 +363,72 @@ function FoodDiary() {
                         )}`}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#999" }}>
-                    calories
+                    calo
                   </Typography>
                 </Box>
               </Box>
 
-              {/* Các chỉ số nhỏ phía dưới */}
+              {/* Các chỉ số*/}
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "space-around",
                   mt: 4,
                   px: 2,
+                  flexWrap: "wrap", // đảm bảo responsive nếu màn hình nhỏ
+                  gap: 2,
                 }}
               >
                 {[
                   {
-                    label: "Carbs",
+                    label: "Tinh bột",
                     current: totalNutrition.carbs,
                     target: calculationData.carbs,
                     color: "#FF9800",
+                    desc: "Cung cấp năng lượng chính cho cơ thể và các hoạt động hàng ngày",
                   },
                   {
-                    label: "Protein",
+                    label: "Chất đạm",
                     current: totalNutrition.protein,
                     target: calculationData.protein,
                     color: "#2196F3",
+                    desc: "Hỗ trợ xây dựng và sửa chữa cơ, mô, enzym quan trọng",
                   },
                   {
-                    label: "Fat",
+                    label: "Chất béo",
                     current: totalNutrition.fat,
                     target: calculationData.fat,
                     color: "#E91E63",
+                    desc: "Nguồn năng lượng, giúp hấp thu vitamin và duy trì chức năng tế bào",
                   },
                   {
-                    label: "Fiber",
+                    label: "Chất xơ",
                     current: totalNutrition.fiber,
                     target: calculationData.fiber,
                     color: "#9C27B0",
+                    desc: "Hỗ trợ tiêu hóa, kiểm soát đường huyết và giảm cholesterol",
                   },
                 ].map((item) => (
                   <Box
                     key={item.label}
-                    sx={{ textAlign: "center", width: "22%" }}
+                    sx={{
+                      textAlign: "center",
+                      width: { xs: "45%", sm: "22%" },
+                      mb: 2,
+                    }}
                   >
                     <Typography
-                      variant="body2"
+                      variant="h5"
                       sx={{
                         fontWeight: 500,
                         color: item.color,
-                        mb: 1,
+                        mb: 0.5,
                       }}
                     >
                       {item.label}
                     </Typography>
                     <Typography
-                      variant="subtitle2"
+                      variant="subtitle1"
                       sx={{ fontWeight: 600, color: item.color }}
                     >
                       {mealsLoading
@@ -426,6 +436,18 @@ function FoodDiary() {
                         : `${Number(item.current || 0).toFixed(1)} / ${Number(
                             item.target || 0
                           ).toFixed(1)}g`}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.75rem",
+                        color: "#999",
+                        mt: 0.5,
+                        whiteSpace: "normal",
+                        wordBreak: "break-word",
+                        minHeight: "60px",
+                      }}
+                    >
+                      {item.desc}
                     </Typography>
                     <LinearProgress
                       variant="determinate"
@@ -518,7 +540,10 @@ function FoodDiary() {
                   borderColor: "#4CAF50",
                   color: "#4CAF50",
                   py: 1.5,
-                  "&:hover": { borderColor: "#45a049", bgcolor: "rgba(76, 175, 80, 0.04)" },
+                  "&:hover": {
+                    borderColor: "#45a049",
+                    bgcolor: "rgba(76, 175, 80, 0.04)",
+                  },
                 }}
                 onClick={() => setView("history")}
               >
@@ -570,25 +595,23 @@ function FoodDiary() {
                     border: "1px solid #e0e0e0",
                     "&:hover": {
                       borderColor: meal.color,
-                      boxShadow: `0 4px 12px ${meal.color}20`
-                    }
+                      boxShadow: `0 4px 12px ${meal.color}20`,
+                    },
                   }}
                 >
-                  <CardActionArea 
+                  <CardActionArea
                     onClick={() => handleOpenAddMeal(meal.name)}
-                    sx={{ 
-                      p: 2, 
+                    sx={{
+                      p: 2,
                       height: "100%",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       textAlign: "center",
-                      justifyContent: "center" // Center content vertically
+                      justifyContent: "center", // Center content vertically
                     }}
                   >
-                    <Box sx={{ color: meal.color, mb: 1 }}>
-                      {meal.icon}
-                    </Box>
+                    <Box sx={{ color: meal.color, mb: 1 }}>{meal.icon}</Box>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                       {meal.name}
                     </Typography>
