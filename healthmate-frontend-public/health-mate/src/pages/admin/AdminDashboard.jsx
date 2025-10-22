@@ -66,11 +66,11 @@ const AdminDashboard = () => {
       setQuickStats({
         totalIngredients: ingredientsResponse.data?.length || 0,
         totalUsers: userStatsResponse.data?.totalUsers || 0,
-        pendingTransactions:
-          transactionStatsResponse.data?.stats?.find((s) => s._id === "pending")
-            ?.count || 0,
-        totalCoinsDistributed:
-          transactionStatsResponse.data?.totalCoinsDistributed || 0,
+        // pendingTransactions:
+        //   transactionStatsResponse.data?.stats?.find((s) => s._id === "pending")
+        //     ?.count || 0,
+        // totalCoinsDistributed:
+        //   transactionStatsResponse.data?.totalCoinsDistributed || 0,
       });
     } catch (error) {
       console.error('Error fetching quick stats:', error);
@@ -227,7 +227,8 @@ const AdminDashboard = () => {
                     {loading ? (
                       <CircularProgress size={24} />
                     ) : (
-                      quickStats.pendingTransactions
+                      // quickStats.pendingTransactions
+                        0
                     )}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#666' }}>
@@ -313,7 +314,8 @@ const AdminDashboard = () => {
                     {loading ? (
                       <CircularProgress size={24} />
                     ) : (
-                      quickStats.totalCoinsDistributed.toLocaleString('vi-VN')
+                     // quickStats.totalCoinsDistributed.toLocaleString('vi-VN')
+                        0
                     )}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#666' }}>

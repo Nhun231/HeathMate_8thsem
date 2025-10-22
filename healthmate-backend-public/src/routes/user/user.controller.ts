@@ -19,6 +19,7 @@ import {
   UpdateUserDTO,
 } from './user.dto';
 import { DeleteResult } from 'mongoose';
+import {IsPublic} from "../../shared/decorators/auth.decorator";
 
 @Controller('v1/users')
 export class UserController {
@@ -36,6 +37,7 @@ export class UserController {
   }
 
   @Get(':id')
+  @IsPublic()
   async getUser(@Param() params: GetUserDetailParamsDTO) {
     return this.usersService.getUserById(params.id);
   }

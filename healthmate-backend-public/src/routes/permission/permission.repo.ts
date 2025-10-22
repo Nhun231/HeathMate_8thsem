@@ -67,26 +67,22 @@ export class PermissionRepo {
   }
 
   async updateRolesDiff(
-    permissionId: Types.ObjectId,
-    added: Types.ObjectId[],
-    removed: Types.ObjectId[],
+      permissionId: Types.ObjectId,
+      added: Types.ObjectId[],
+      removed: Types.ObjectId[],
   ) {
-    const updateOps: Record<string, any> = {};
-
     if (added.length > 0) {
-      updateOps.$addToSet = { role: { $each: added } };
+      await this.permissionModel.findByIdAndUpdate(permissionId, {
+        $addToSet: { role: { $each: added } },
+      });
     }
 
     if (removed.length > 0) {
-      updateOps.$pull = { role: { $in: removed } };
+      await this.permissionModel.findByIdAndUpdate(permissionId, {
+        $pull: { role: { $in: removed } },
+      });
     }
 
-    if (Object.keys(updateOps).length === 0) {
-      return this.findOne(permissionId);
-    }
-
-    await this.permissionModel.updateOne({ _id: permissionId }, updateOps);
-
-    return this.findOne(permissionId);
+    return this.permissionModel.findById(permissionId);
   }
 }

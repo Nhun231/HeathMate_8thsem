@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import MealService from "../services/Meal";
-
+import {getMeals} from "../services/Meal.js";
 const DiaryContext = createContext();
 
 export function DiaryProvider({ children }) {
@@ -24,7 +23,7 @@ const [selectedDate, setSelectedDate] = useState(defaultDate);
   const loadMealsForDate = async (date) => {
     try {
       const dateObj = new Date(date);
-      const data = await MealService.getMeals(dateObj);
+      const data = await getMeals(dateObj);
 
       const totals = {
         calories: 0,
