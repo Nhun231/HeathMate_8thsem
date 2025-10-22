@@ -36,15 +36,12 @@ export class UserController {
     return this.usersService.getUserById(userId);
   }
 
-  @Get(':id')
+  @Get(':userId')
   @IsPublic()
   async getUser(@Param() params: GetUserDetailParamsDTO) {
-    return this.usersService.getUserById(params.id);
+    return this.usersService.getUserById(params.userId);
   }
-    // @Get(':userId')
-    // async getUser(@Param() params: GetUserDetailParamsDTO) {
-    //     return this.usersService.getUserById(params.userId);
-    // }
+
     @Post()
     async createUser(
         @Body() body: CreateUserDTO,
@@ -58,7 +55,7 @@ export class UserController {
         @ActiveUser('userId') userId: string,
         @Body() body: UpdateUserDTO,
     ) {
-        return this.usersService.updateUser(userId, body);
+        return this.usersService.updateMe(userId, body);
     }
 
   @Put(':userId')
