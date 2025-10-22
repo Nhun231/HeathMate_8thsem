@@ -24,6 +24,8 @@ import EditProfilePage from "../pages/EditProfilePage.jsx";
 import WaterInformation from "../components/water/WaterInformation.jsx";
 import UpdateNutrient from "../components/nutrients/UpdateNutrients.jsx"
 import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
+import ExpertChatPage from "../pages/expert/ExpertChatPage.jsx";
+import CustomerChatPage from "../pages/customer/CustomerChatPage.jsx";
 import RequireRole from "../components/common/RequireRole.jsx";
 class AuthLayout extends Component {
   render() {
@@ -51,6 +53,14 @@ const router = createBrowserRouter([
   {
     path: "/forgot-password",
     element: <ForgotPassword />,
+  },
+  {
+    path: "/expert-chat",
+    element: <ExpertChatPage />,
+  },
+  {
+    path: "/customer-chat",
+    element: <CustomerChatPage />,
   },
   {
     path: "/guest-homepage",

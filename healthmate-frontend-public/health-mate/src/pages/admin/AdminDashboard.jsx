@@ -17,13 +17,15 @@ import {
   AdminPanelSettings,
   Restaurant,
   AccountBalance,
-  Dashboard as DashboardIcon,
   People,
   Assessment,
   Lock,
+  MenuBook,
 } from "@mui/icons-material";
 import { listCustomAndPublicIngredients } from "../../services/Ingredient.js";
+import { listDishes } from "../../services/Dish.js";
 import IngredientManagement from "../../components/admin/IngredientManagement.jsx";
+import DishManagement from "../../components/admin/DishManagement.jsx";
 import PermissionManagement from "../../components/admin/PermissionManagement.jsx";
 // import IngredientManagement from '../components/admin/IngredientManagement';
 // import TransactionManagement from '../components/admin/TransactionManagement';
@@ -38,6 +40,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [quickStats, setQuickStats] = useState({
     totalIngredients: 0,
+    totalDishes: 0,
     totalUsers: 0,
     pendingTransactions: 0,
     totalCoinsDistributed: 0
@@ -56,15 +59,17 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
 
-      const [ingredientsResponse, userStatsResponse, transactionStatsResponse] =
+      const [ingredientsResponse, dishesResponse, userStatsResponse, transactionStatsResponse] =
         await Promise.all([
-          listCustomAndPublicIngredients(),
-            getUserStats(),
+          listCustomAndPublicIngredients({ limit: 1000 }),
+          listDishes({ limit: 1000 }),
+          getUserStats(),
           // coinTransactionService.getTransactionStats()
         ]);
 
       setQuickStats({
-        totalIngredients: ingredientsResponse.data?.length || 0,
+        totalIngredients: ingredientsResponse.items?.length || 0,
+        totalDishes: dishesResponse.total || 0,
         totalUsers: userStatsResponse.data?.totalUsers || 0,
         // pendingTransactions:
         //   transactionStatsResponse.data?.stats?.find((s) => s._id === "pending")
@@ -72,6 +77,7 @@ const AdminDashboard = () => {
         // totalCoinsDistributed:
         //   transactionStatsResponse.data?.totalCoinsDistributed || 0,
       });
+      console.log(quickStats);
     } catch (error) {
       console.error('Error fetching quick stats:', error);
       // Keep default values (0) on error
@@ -82,14 +88,14 @@ const AdminDashboard = () => {
 
   const tabContent = [
     {
-      label: 'Tổng quan',
-      icon: <DashboardIcon />,
-     // component: <AdminStats />
-    },
-    {
       label: 'Quản lý nguyên liệu',
       icon: <Restaurant />,
       component: <IngredientManagement />,
+    },
+    {
+      label: 'Quản lý món ăn',
+      icon: <MenuBook />,
+      component: <DishManagement />,
     },
     {
       label: "Quản lý Quyền",
@@ -187,6 +193,51 @@ const AdminDashboard = () => {
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#666' }}>
                     Tổng số nguyên liệu
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Card
+                sx={{
+                  backgroundColor: '#E1F5FE',
+                  border: '2px solid #00BCD4',
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  transition: 'all 0.25s ease',
+                  '&:hover': { transform: 'translateY(-5px)', boxShadow: 4 },
+                }}
+              >
+                <CardContent>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      mb: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 'bold', color: '#0097A7' }}
+                    >
+                      Món ăn
+                    </Typography>
+                    <MenuBook sx={{ fontSize: 36, color: '#0097A7' }} />
+                  </Box>
+                  <Typography
+                    variant="h4"
+                    sx={{ color: '#0097A7', fontWeight: 'bold' }}
+                  >
+                    {loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      quickStats.totalDishes
+                    )}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#666' }}>
+                    Tổng số món ăn
                   </Typography>
                 </CardContent>
               </Card>

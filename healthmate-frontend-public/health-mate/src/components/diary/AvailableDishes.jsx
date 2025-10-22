@@ -70,9 +70,10 @@ function AvailableDishes({ searchQuery, mealType, onClose, onAddDish }) {
       }
       
       const currentDate = new Date()
+      const defaultQuantity = dish.totalIngredientWeight || 100 // Use actual total ingredient weight as default
       const mealData = await addDishToMeal(
         dish._id,
-        100, // Default serving size
+        defaultQuantity,
         currentDate,
         mealTypeMap[mealType] || 'snack'
       )

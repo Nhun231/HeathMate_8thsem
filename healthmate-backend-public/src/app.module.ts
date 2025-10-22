@@ -23,6 +23,7 @@ import { ExpertCertificateModule } from './routes/expert-certificate/expert-cert
 import { AiModule } from './routes/ai/ai.module';
 import { RoleModule } from './routes/role/role.module';
 import { ProfileModule } from './routes/profile/profile.module';
+import { ChatModule } from './routes/chat/chat.module';
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -45,6 +46,7 @@ import { ProfileModule } from './routes/profile/profile.module';
     ExpertCertificateModule,
     RoleModule,
     ProfileModule,
+    ChatModule,
     WaterModule,
   ],
   controllers: [AppController],

@@ -83,20 +83,22 @@ export const createUser = async (data) => {
 export const getUserStats = async () => {
     try {
         const response = await baseAxios.get(`users`, {
-            params: { page: 1, limit: 1 },
+            params: { page: 1, limit: 1000 },
             headers: { "Cache-Control": "no-cache" },
         });
 
-        // Kiểm tra các kiểu dữ liệu trả về khác nhau
-        if (response.data?.total) {
-            return response.data.total; // backend trả về total riêng
-        } else if (response.data?.data) {
-            return response.data.data.length; // fallback nếu không có total
-        } else {
-            return 0;
-        }
+        // Backend trả về { data: [...], total: number, page, limit, totalPages }
+        return {
+            data: {
+                totalUsers: response.data?.total || 0
+            }
+        };
     } catch (error) {
         console.error("Lỗi khi lấy tổng số người dùng:", error);
-        return 0;
+        return {
+            data: {
+                totalUsers: 0
+            }
+        };
     }
 };

@@ -64,6 +64,12 @@ export const updateMeal = async (mealId, quantity) => {
   return res.data;
 };
 
+// Update meal with new dish
+export const updateMealWithDish = async (mealId, quantity, dishId) => {
+  const res = await axios.patch(`/meals/${mealId}`, { quantity, dishId });
+  return res.data;
+};
+
 // Delete meal
 export const deleteMeal = async (mealId) => {
   await axios.delete(`/meals/${mealId}`);
