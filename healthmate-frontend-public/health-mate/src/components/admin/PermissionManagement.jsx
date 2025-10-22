@@ -41,6 +41,7 @@ const PermissionManagement = () => {
 
   useEffect(() => {
     fetchData();
+    fetchModules();
   }, [currentPage, itemsPerPage, searchQuery, selectedModule]);
 
   const fetchData = async () => {
@@ -61,16 +62,19 @@ const PermissionManagement = () => {
       setPermissions(permissionsResponse.data);
       setRoles(rolesResponse.data);
       setTotalPages(permissionsResponse.totalPages || 1);
-
-      // Extract unique modules from permissions
-      const uniqueModules = [
-        ...new Set(permissionsResponse.data.map((p) => p.module)),
-      ];
-      setModules(uniqueModules);
     } catch (error) {
       setError("Lỗi khi tải dữ liệu: " + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchModules = async () => {
+    try {
+      const modulesResponse = await permissionApi.listModules();
+      setModules(modulesResponse);
+    } catch (error) {
+      setError("Lỗi khi tải danh sách module: " + error.message);
     }
   };
 
@@ -202,7 +206,6 @@ const PermissionManagement = () => {
   };
 
   const getRoleColumnWidth = () => {
-    // const numberOfRoles = roles.length;
     const baseWidth = 100;
     return `${baseWidth}px`;
   };
@@ -213,6 +216,23 @@ const PermissionManagement = () => {
         <CircularProgress />
       </Box>
     );
+  }
+
+  const groupedPermissions = [];
+  if (permissions && permissions.length > 0) {
+    const moduleMap = new Map();
+    permissions.forEach((p) => {
+      const moduleKey = p.module || "undefined";
+      if (!moduleMap.has(moduleKey)) {
+        moduleMap.set(moduleKey, []);
+      }
+      moduleMap.get(moduleKey).push(p);
+    });
+
+    for (const [moduleName, perms] of moduleMap.entries()) {
+      groupedPermissions.push({ module: moduleName, isModuleHeader: true });
+      groupedPermissions.push(...perms);
+    }
   }
 
   return (
@@ -330,98 +350,84 @@ const PermissionManagement = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {permissions
-              .reduce((acc, permission) => {
-                const lastModule =
-                  acc.length > 0 ? acc[acc.length - 1].module : null;
-
-                if (lastModule !== permission.module) {
-                  acc.push({ module: permission.module, isModuleHeader: true });
-                }
-
-                acc.push(permission);
-                return acc;
-              }, [])
-              .map((item, index) => {
-                if (item.isModuleHeader) {
-                  return (
-                    <TableRow
-                      key={`module-${index}`}
-                      sx={{ backgroundColor: "#F5F5F5" }}
-                    >
-                      <TableCell colSpan={4 + roles.length}>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: "bold" }}
-                        >
-                          Module: {item.module}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  );
-                }
-
-                const permission = item;
-
+            {groupedPermissions.map((item, index) => {
+              if (item.isModuleHeader) {
                 return (
-                  <TableRow key={permission._id} hover>
-                    <TableCell>
-                      {editName === permission._id ? (
-                        <Box display="flex" alignItems="center">
-                          <TextField
-                            size="small"
-                            defaultValue={permission.name}
-                            onChange={handleNameChange}
-                          />
-                          <IconButton
-                            onClick={() => handleSaveName(permission._id)}
-                          >
-                            <Save />
-                          </IconButton>
-                          <IconButton onClick={handleCancelEdit}>
-                            Hủy
-                          </IconButton>
-                        </Box>
-                      ) : (
-                        <Box display="flex" alignItems="center">
-                          <Typography>{permission.name}</Typography>
-                          <IconButton
-                            onClick={() => handleEditName(permission._id)}
-                          >
-                            <Edit />
-                          </IconButton>
-                        </Box>
-                      )}
+                  <TableRow
+                    key={`module-${item.module}-${index}`}
+                    sx={{ backgroundColor: "#F5F5F5" }}
+                  >
+                    <TableCell colSpan={4 + roles.length}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ fontWeight: "bold" }}
+                      >
+                        Module: {item.module}
+                      </Typography>
                     </TableCell>
-                    <TableCell>{permission.path}</TableCell>
-                    <TableCell>{permission.method}</TableCell>
-                    {roles.map((role) => {
-                      const hasPermission = permission.role.some(
-                        (r) => r._id === role._id
-                      );
-                      return (
-                        <TableCell key={role._id} align="center">
-                          <Checkbox
-                            checked={
-                              editedPermissions[permission._id]?.[role._id] !==
-                              undefined
-                                ? editedPermissions[permission._id][role._id]
-                                : hasPermission
-                            }
-                            onChange={(e) =>
-                              handlePermissionChange(
-                                permission._id,
-                                role._id,
-                                e.target.checked
-                              )
-                            }
-                          />
-                        </TableCell>
-                      );
-                    })}
                   </TableRow>
                 );
-              })}
+              }
+
+              const permission = item;
+
+              return (
+                <TableRow key={permission._id} hover>
+                  <TableCell>
+                    {editName === permission._id ? (
+                      <Box display="flex" alignItems="center">
+                        <TextField
+                          size="small"
+                          defaultValue={permission.name}
+                          onChange={handleNameChange}
+                        />
+                        <IconButton
+                          onClick={() => handleSaveName(permission._id)}
+                        >
+                          <Save />
+                        </IconButton>
+                        <IconButton onClick={handleCancelEdit}>Hủy</IconButton>
+                      </Box>
+                    ) : (
+                      <Box display="flex" alignItems="center">
+                        <Typography>{permission.name}</Typography>
+                        <IconButton
+                          onClick={() => handleEditName(permission._id)}
+                        >
+                          <Edit />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell>{permission.path}</TableCell>
+                  <TableCell>{permission.method}</TableCell>
+                  {roles.map((role) => {
+                    const hasPermission = permission.role.some(
+                      (r) => r._id === role._id
+                    );
+                    return (
+                      <TableCell key={role._id} align="center">
+                        <Checkbox
+                          checked={
+                            editedPermissions[permission._id]?.[role._id] !==
+                            undefined
+                              ? editedPermissions[permission._id][role._id]
+                              : hasPermission
+                          }
+                          onChange={(e) =>
+                            handlePermissionChange(
+                              permission._id,
+                              role._id,
+                              e.target.checked
+                            )
+                          }
+                        />
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Box,
@@ -10,8 +10,8 @@ import {
   Tabs,
   Tab,
   CircularProgress,
-  Divider
-} from '@mui/material';
+  Divider,
+} from "@mui/material";
 import {
   AdminPanelSettings,
   Restaurant,
@@ -19,8 +19,8 @@ import {
   Dashboard as DashboardIcon,
   People,
   Assessment,
-  Lock
-} from '@mui/icons-material';
+  Lock,
+} from "@mui/icons-material";
 import { listCustomAndPublicIngredients } from "../../services/Ingredient.js";
 import IngredientManagement from "../../components/admin/IngredientManagement.jsx";
 import PermissionManagement from "../../components/admin/PermissionManagement.jsx";
@@ -34,7 +34,7 @@ const AdminDashboard = () => {
     totalIngredients: 0,
     totalUsers: 0,
     pendingTransactions: 0,
-    totalCoinsDistributed: 0
+    totalCoinsDistributed: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -49,16 +49,17 @@ const AdminDashboard = () => {
   const fetchQuickStats = async () => {
     try {
       setLoading(true);
-      const [ingredientsResponse, totalUsers] = await Promise.all([
+
+      const [ingredientsResponse, userStatsResponse] = await Promise.all([
         listCustomAndPublicIngredients(),
-        getUserStats()
+        getUserStats(),
       ]);
 
       setQuickStats({
         totalIngredients: ingredientsResponse.data?.length || 0,
-        totalUsers: totalUsers || 0,
+        totalUsers: userStatsResponse || 0,
         pendingTransactions: 0, // Placeholder nếu chưa có API giao dịch
-        totalCoinsDistributed: 0 // Placeholder
+        totalCoinsDistributed: 0, // Placeholder nếu chưa có dữ liệu
       });
     } catch (error) {
       console.error("Error fetching quick stats:", error);
@@ -72,10 +73,10 @@ const AdminDashboard = () => {
       label: "Tổng quan",
       icon: <DashboardIcon />,
       component: (
-        <Typography sx={{ textAlign: 'center', mt: 2 }}>
+        <Typography sx={{ textAlign: "center", mt: 2 }}>
           Chào mừng bạn đến trang quản trị HealthMate!
         </Typography>
-      )
+      ),
     },
     {
       label: "Quản lý nguyên liệu",
@@ -91,10 +92,10 @@ const AdminDashboard = () => {
       label: "Giao dịch xu",
       icon: <AccountBalance />,
       component: (
-        <Typography sx={{ textAlign: 'center', mt: 2 }}>
+        <Typography sx={{ textAlign: "center", mt: 2 }}>
           Chức năng đang được phát triển...
         </Typography>
-      )
+      ),
     },
     {
       label: "Quản lý người dùng",
@@ -109,51 +110,80 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#fafafa' }}>
+    <Box sx={{ minHeight: "100vh", backgroundColor: "#fafafa" }}>
       <Container maxWidth="xl" sx={{ py: 5 }}>
         {/* Header */}
-        <Box sx={{ mb: 5, textAlign: 'center' }}>
+        <Box sx={{ mb: 5, textAlign: "center" }}>
           <Typography
             variant="h4"
             component="h1"
             gutterBottom
-            sx={{ color: '#2E7D32', fontWeight: 'bold' }}
+            sx={{ color: "#2E7D32", fontWeight: "bold" }}
           >
-            <AdminPanelSettings sx={{ mr: 1, verticalAlign: 'middle' }} />
+            <AdminPanelSettings sx={{ mr: 1, verticalAlign: "middle" }} />
             Bảng điều khiển Admin
           </Typography>
-          <Typography variant="body1" sx={{ color: '#666' }}>
-            Quản lý hệ thống HealthMate - Nguyên liệu, quyền, giao dịch và người dùng
+          <Typography variant="body1" sx={{ color: "#666" }}>
+            Quản lý hệ thống HealthMate - Nguyên liệu, quyền, giao dịch và người
+            dùng
           </Typography>
-          <Divider sx={{ my: 3, borderColor: '#C8E6C9' }} />
+          <Divider sx={{ my: 3, borderColor: "#C8E6C9" }} />
         </Box>
 
         {/* Quick Stats Cards */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 5 }}>
-          <Grid container spacing={3} justifyContent="center" sx={{ maxWidth: '1200px' }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            mb: 5,
+          }}
+        >
+          <Grid
+            container
+            spacing={3}
+            justifyContent="center"
+            sx={{ maxWidth: "1200px" }}
+          >
             {/* Nguyên liệu */}
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
-                  backgroundColor: '#E8F5E9',
-                  border: '2px solid #4CAF50',
+                  backgroundColor: "#E8F5E9",
+                  border: "2px solid #4CAF50",
                   borderRadius: 3,
                   boxShadow: 2,
-                  transition: 'all 0.25s ease',
-                  '&:hover': { transform: 'translateY(-5px)', boxShadow: 4 },
+                  transition: "all 0.25s ease",
+                  "&:hover": { transform: "translateY(-5px)", boxShadow: 4 },
                 }}
               >
                 <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2E7D32' }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: "bold", color: "#2E7D32" }}
+                    >
                       Nguyên liệu
                     </Typography>
-                    <Restaurant sx={{ fontSize: 36, color: '#2E7D32' }} />
+                    <Restaurant sx={{ fontSize: 36, color: "#2E7D32" }} />
                   </Box>
-                  <Typography variant="h4" sx={{ color: '#2E7D32', fontWeight: 'bold' }}>
-                    {loading ? <CircularProgress size={24} /> : quickStats.totalIngredients}
+                  <Typography
+                    variant="h4"
+                    sx={{ color: "#2E7D32", fontWeight: "bold" }}
+                  >
+                    {loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      quickStats.totalIngredients
+                    )}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#666' }}>
+                  <Typography variant="body2" sx={{ color: "#666" }}>
                     Tổng số nguyên liệu
                   </Typography>
                 </CardContent>
@@ -164,25 +194,44 @@ const AdminDashboard = () => {
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
-                  backgroundColor: '#E3F2FD',
-                  border: '2px solid #2196F3',
+                  backgroundColor: "#E3F2FD",
+                  border: "2px solid #2196F3",
                   borderRadius: 3,
                   boxShadow: 2,
-                  transition: 'all 0.25s ease',
-                  '&:hover': { transform: 'translateY(-5px)', boxShadow: 4 },
+                  transition: "all 0.25s ease",
+                  "&:hover": { transform: "translateY(-5px)", boxShadow: 4 },
                 }}
               >
                 <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976D2' }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: "bold", color: "#1976D2" }}
+                    >
                       Giao dịch
                     </Typography>
-                    <AccountBalance sx={{ fontSize: 36, color: '#1976D2' }} />
+                    <AccountBalance
+                      sx={{ fontSize: 36, color: "#1976D2" }}
+                    />
                   </Box>
-                  <Typography variant="h4" sx={{ color: '#1976D2', fontWeight: 'bold' }}>
-                    {loading ? <CircularProgress size={24} /> : quickStats.pendingTransactions}
+                  <Typography
+                    variant="h4"
+                    sx={{ color: "#1976D2", fontWeight: "bold" }}
+                  >
+                    {loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      quickStats.pendingTransactions
+                    )}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#666' }}>
+                  <Typography variant="body2" sx={{ color: "#666" }}>
                     Giao dịch chờ xử lý
                   </Typography>
                 </CardContent>
@@ -193,59 +242,89 @@ const AdminDashboard = () => {
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
-                  backgroundColor: '#FFF3E0',
-                  border: '2px solid #FF9800',
+                  backgroundColor: "#FFF3E0",
+                  border: "2px solid #FF9800",
                   borderRadius: 3,
                   boxShadow: 2,
-                  transition: 'all 0.25s ease',
-                  '&:hover': { transform: 'translateY(-5px)', boxShadow: 4 },
+                  transition: "all 0.25s ease",
+                  "&:hover": { transform: "translateY(-5px)", boxShadow: 4 },
                 }}
               >
                 <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#F57C00' }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: "bold", color: "#F57C00" }}
+                    >
                       Người dùng
                     </Typography>
-                    <People sx={{ fontSize: 36, color: '#F57C00' }} />
+                    <People sx={{ fontSize: 36, color: "#F57C00" }} />
                   </Box>
-                  <Typography variant="h4" sx={{ color: '#F57C00', fontWeight: 'bold' }}>
-                    {loading ? <CircularProgress size={24} /> : quickStats.totalUsers}
+                  <Typography
+                    variant="h4"
+                    sx={{ color: "#F57C00", fontWeight: "bold" }}
+                  >
+                    {loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      quickStats.totalUsers
+                    )}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#666' }}>
+                  <Typography variant="body2" sx={{ color: "#666" }}>
                     Tổng số người dùng
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
 
-            {/* Doanh thu */}
+            {/* Xu đã phân phối */}
             <Grid item xs={12} sm={6} md={3}>
               <Card
                 sx={{
-                  backgroundColor: '#F3E5F5',
-                  border: '2px solid #9C27B0',
+                  backgroundColor: "#F3E5F5",
+                  border: "2px solid #9C27B0",
                   borderRadius: 3,
                   boxShadow: 2,
-                  transition: 'all 0.25s ease',
-                  '&:hover': { transform: 'translateY(-5px)', boxShadow: 4 },
+                  transition: "all 0.25s ease",
+                  "&:hover": { transform: "translateY(-5px)", boxShadow: 4 },
                 }}
               >
                 <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#7B1FA2' }}>
-                      Doanh thu
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: "bold", color: "#7B1FA2" }}
+                    >
+                      Xu đã phân phối
                     </Typography>
-                    <Assessment sx={{ fontSize: 36, color: '#7B1FA2' }} />
+                    <Assessment sx={{ fontSize: 36, color: "#7B1FA2" }} />
                   </Box>
-                  <Typography variant="h4" sx={{ color: '#7B1FA2', fontWeight: 'bold' }}>
+                  <Typography
+                    variant="h4"
+                    sx={{ color: "#7B1FA2", fontWeight: "bold" }}
+                  >
                     {loading ? (
                       <CircularProgress size={24} />
                     ) : (
-                      quickStats.totalCoinsDistributed.toLocaleString('vi-VN')
+                      quickStats.totalCoinsDistributed
                     )}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#666' }}>
-                    Xu đã phân phối
+                  <Typography variant="body2" sx={{ color: "#666" }}>
+                    Tổng xu đã phát
                   </Typography>
                 </CardContent>
               </Card>
@@ -254,7 +333,13 @@ const AdminDashboard = () => {
         </Box>
 
         {/* Tabs */}
-        <Paper sx={{ width: '100%', borderRadius: 3, boxShadow: 3 }}>
+        <Paper
+          sx={{
+            width: "100%",
+            borderRadius: 3,
+            boxShadow: 3,
+          }}
+        >
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
@@ -262,13 +347,13 @@ const AdminDashboard = () => {
             scrollButtons="auto"
             sx={{
               borderBottom: 1,
-              borderColor: 'divider',
-              '& .MuiTab-root': {
+              borderColor: "divider",
+              "& .MuiTab-root": {
                 minHeight: 60,
-                textTransform: 'none',
-                fontSize: '1rem',
-                fontWeight: 'bold'
-              }
+                textTransform: "none",
+                fontSize: "1rem",
+                fontWeight: "bold",
+              },
             }}
           >
             {tabContent.map((tab, index) => (
@@ -278,12 +363,12 @@ const AdminDashboard = () => {
                 label={tab.label}
                 iconPosition="start"
                 sx={{
-                  color: activeTab === index ? '#2E7D32' : '#666',
-                  '&.Mui-selected': {
-                    color: '#2E7D32',
-                    backgroundColor: '#E8F5E9',
-                    borderRadius: 2
-                  }
+                  color: activeTab === index ? "#2E7D32" : "#666",
+                  "&.Mui-selected": {
+                    color: "#2E7D32",
+                    backgroundColor: "#E8F5E9",
+                    borderRadius: 2,
+                  },
                 }}
               />
             ))}

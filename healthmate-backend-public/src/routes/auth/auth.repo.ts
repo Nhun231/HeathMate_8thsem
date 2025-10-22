@@ -28,16 +28,20 @@ export class AuthRepository {
   async createUser(
     user: Pick<
       User,
-      'email' | 'password' | 'fullname' | 'gender' | 'phoneNumber' | 'roleId'
+      | 'email'
+      | 'password'
+      | 'fullname'
+      | 'gender'
+      | 'phoneNumber'
+      | 'roleId'
+      | 'status'
     > &
       Partial<Pick<User, 'avatar' | 'dob'>>,
   ): Promise<UserDocument> {
+    console.log(user);
     const createdUser = await (
       await this.userModel.create(user)
     ).populate('roleId');
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // const { password, ...userWithoutPassword } = createdUser.toObject();
 
     return createdUser;
   }

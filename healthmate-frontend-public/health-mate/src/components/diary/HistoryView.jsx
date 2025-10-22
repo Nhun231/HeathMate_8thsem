@@ -1,142 +1,284 @@
-"use client"
+import { useState, useEffect } from "react";
+import RestaurantIcon from "@mui/icons-material/Restaurant";
+import { Box, Typography, Card, CircularProgress } from "@mui/material";
+import { DateCalendar, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import viLocale from "date-fns/locale/vi";
+import { useDiary } from "../../context/DiaryContext";
+import MealSection from "./MealSection";
+import format from "date-fns/format";
+import { subDays } from "date-fns";
+function HistoryView() {
+  const {
+    selectedDate,
+    setSelectedDate,
+    getTotalNutrition,
+    getDayEntries,
+    reloadDate,
+  } = useDiary();
 
-import { useState } from "react"
-import { Box, Typography, IconButton, Card, CardContent, Divider } from "@mui/material"
-import { ChevronLeft, ChevronRight } from "@mui/icons-material"
-import { useDiary } from "../../context/DiaryContext"
+  const [currentDate, setCurrentDate] = useState(new Date(selectedDate));
+  const [mealsGrouped, setMealsGrouped] = useState({
+    breakfast: [],
+    lunch: [],
+    dinner: [],
+    snack: [],
+  });
+  const [loading, setLoading] = useState(false);
 
-function HistoryView({ onBack }) {
-  const { selectedDate, setSelectedDate, getTotalCalories, getDiaryEntries } = useDiary()
-  const [currentDate, setCurrentDate] = useState(new Date(selectedDate))
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
 
-  const formatDate = (date) => {
-    const d = new Date(date)
-    const day = d.getDate()
-    const month = d.getMonth() + 1
-    const year = d.getFullYear()
-    return `${day}/${month}/${year}`
-  }
+      // Lấy meals từ context
+      const meals = getDayEntries(selectedDate);
 
-  const formatDateFull = (date) => {
-    const d = new Date(date)
-    const days = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"]
-    const dayName = days[d.getDay()]
-    return `${dayName}, ${formatDate(date)}`
-  }
+      // Khởi tạo grouped meals
+      const grouped = { breakfast: [], lunch: [], dinner: [], snack: [] };
 
-  const handlePrevDay = () => {
-    const newDate = new Date(currentDate)
-    newDate.setDate(newDate.getDate() - 1)
-    setCurrentDate(newDate)
-    setSelectedDate(newDate.toISOString().split("T")[0])
-  }
+      meals.forEach((meal) => {
+        if (grouped[meal.mealType]) {
+          grouped[meal.mealType].push({
+            id: meal._id,
+            name: meal.dishId?.name || meal.name,
+            calories: meal.calories || 0,
+            protein: meal.protein || 0,
+            fat: meal.fat || 0,
+            carbs: meal.carbs || 0,
+            fiber: meal.fiber || 0,
+            quantity: meal.quantity || 0,
+          });
+        }
+      });
 
-  const handleNextDay = () => {
-    const newDate = new Date(currentDate)
-    newDate.setDate(newDate.getDate() + 1)
-    setCurrentDate(newDate)
-    setSelectedDate(newDate.toISOString().split("T")[0])
-  }
+      console.log("Meals grouped for MealSection:", grouped);
+      setMealsGrouped(grouped);
+      setLoading(false);
+    };
 
-  const currentDateStr = currentDate.toISOString().split("T")[0]
-  const totalCalories = getTotalCalories(currentDateStr)
-  const entries = getDiaryEntries()
+    load();
+  }, [selectedDate, getDayEntries]);
 
-  // Get all dates with entries
-  const datesWithEntries = Object.keys(entries).sort((a, b) => new Date(b) - new Date(a))
+  const totals = getTotalNutrition(selectedDate);
+  const formattedDate = format(currentDate, "dd/MM/yyyy");
 
   return (
     <Box>
-      {/* Date Navigator */}
-      <Card sx={{ mb: 3, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-        <CardContent>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-            <IconButton onClick={handlePrevDay} sx={{ color: "#4CAF50" }}>
-              <ChevronLeft />
-            </IconButton>
-            <Typography variant="h6" sx={{ fontWeight: 600, color: "#333" }}>
-              {formatDateFull(currentDate)}
-            </Typography>
-            <IconButton onClick={handleNextDay} sx={{ color: "#4CAF50" }}>
-              <ChevronRight />
-            </IconButton>
-          </Box>
+      {/* Combined Calendar + Nutrition Box */}
+      <Card
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" }, // cột trên mobile, hàng ngang trên desktop
+          p: 2,
+          mb: 3,
+          borderRadius: 2,
+          border: "1px solid #e0e0e0",
+          gap: 2,
+          alignItems: "stretch",
+        }}
+      >
+        {/* Left: Calendar */}
+        <Box
+          sx={{
+            flex: { xs: "unset", sm: 1 },
+            pr: { xs: 0, sm: 2 },
+            mb: { xs: 2, sm: 0 },
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            border: "1px solid #e0e0e0",
+            borderRadius: 2,
+            p: 2,
+            backgroundColor: "rgb(241, 248, 244)",
+          }}
+        >
+          <Typography sx={{ mb: 1, fontWeight: 500, textAlign: "center" }}>
+            Chọn ngày để xem nhật ký dinh dưỡng
+          </Typography>
+          <LocalizationProvider
+            dateAdapter={AdapterDateFns}
+            adapterLocale={viLocale}
+          >
+            <DateCalendar
+              value={currentDate}
+              maxDate={subDays(new Date(), 1)}
+              onChange={(newDate) => {
+                setCurrentDate(newDate);
+                const isoDate = newDate.toLocaleDateString("en-CA");
+                setSelectedDate(isoDate);
+                reloadDate(isoDate);
+              }}
+              sx={{
+                "& .MuiPickersDay-root": { borderRadius: "50%" },
+                "& .MuiPickersCalendarHeader-root": {
+                  borderBottom: "1px solid #e0e0e0",
+                },
+                border: "none",
+                borderRadius: "8px",
+                p: 1,
+              }}
+            />
+          </LocalizationProvider>
+        </Box>
 
-          <Divider sx={{ my: 2 }} />
+        {/* Right: Total Nutrition */}
+        <Box
+          sx={{
+            flex: { xs: "unset", sm: 2 },
+            pl: { xs: 0, sm: 2 },
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-start",
+            alignItems: "center",
+            textAlign: "center",
+            border: "1px solid #e0e0e0",
+            borderRadius: 2,
+            p: 2,
+          }}
+        >
+          <Typography sx={{ fontWeight: 500, mb: 4 }}>
+            Chỉ số dinh dưỡng ngày {formattedDate}
+          </Typography>
 
-          {/* Total Calories for Selected Date */}
-          <Box sx={{ textAlign: "center" }}>
-            <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
-              Tổng calories
-            </Typography>
-            <Typography variant="h4" sx={{ color: "#4CAF50", fontWeight: 600 }}>
-              {totalCalories}
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
+          {totals ? (
+            <>
+              <Typography
+                variant="h4"
+                sx={{ color: "#4CAF50", fontWeight: 600, mb: 2 }}
+              >
+                {Math.round(totals.calories)} calo
+              </Typography>
 
-      {/* History List */}
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: "#333" }}>
-        Lịch sử ghi chép
-      </Typography>
-
-      {datesWithEntries.length > 0 ? (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {datesWithEntries.map((date) => {
-            const dateCalories = getTotalCalories(date)
-            const dateObj = new Date(date)
-
-            return (
-              <Card
-                key={date}
+              <Box
                 sx={{
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                  "&:hover": {
-                    boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-                    transform: "translateY(-2px)",
-                  },
-                }}
-                onClick={() => {
-                  setCurrentDate(dateObj)
-                  setSelectedDate(date)
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "space-around",
+                  mt: 2,
+                  width: "100%",
+                  gap: 3,
                 }}
               >
-                <CardContent>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#333" }}>
-                        {formatDateFull(dateObj)}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "#666", mt: 0.5 }}>
-                        {Object.keys(entries[date] || {}).length} bữa ăn
-                      </Typography>
-                    </Box>
-                    <Box sx={{ textAlign: "right" }}>
-                      <Typography variant="h6" sx={{ color: "#4CAF50", fontWeight: 600 }}>
-                        {dateCalories}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "#999" }}>
-                        calories
-                      </Typography>
-                    </Box>
+                {[
+                  {
+                    label: "Tinh bột",
+                    value: totals.carbs,
+                    color: "#FF9800",
+                    desc: "Cung cấp năng lượng chính cho cơ thể và hoạt động hàng ngày",
+                  },
+                  {
+                    label: "Chất đạm",
+                    value: totals.protein,
+                    color: "#2196F3",
+                    desc: "Giúp xây dựng và sửa chữa cơ, mô, và các enzym quan trọng",
+                  },
+                  {
+                    label: "Chất béo",
+                    value: totals.fat,
+                    color: "#E91E63",
+                    desc: "Nguồn năng lượng, giúp hấp thu vitamin và duy trì chức năng tế bào",
+                  },
+                  {
+                    label: "Chất xơ",
+                    value: totals.fiber,
+                    color: "#9C27B0",
+                    desc: "Hỗ trợ tiêu hóa, kiểm soát đường huyết và giảm cholesterol",
+                  },
+                ].map((item) => (
+                  <Box
+                    key={item.label}
+                    sx={{
+                      textAlign: "center",
+                      flex: "1 1 45%",
+                      minWidth: 100,
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 500, color: item.color }}>
+                      {item.label}
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, color: item.color }}>
+                      {Number(item.value || 0).toFixed(1)}g
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.7rem",
+                        color: "#999",
+                        mt: 0.5,
+                        whiteSpace: "normal",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {item.desc}
+                    </Typography>
                   </Box>
-                </CardContent>
-              </Card>
-            )
-          })}
+                ))}
+              </Box>
+            </>
+          ) : (
+            <Typography sx={{ color: "#999" }}>
+              Chưa có dữ liệu dinh dưỡng
+            </Typography>
+          )}
+        </Box>
+      </Card>
+
+      {/* Meal Sections */}
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <CircularProgress />
         </Box>
       ) : (
-        <Box sx={{ textAlign: "center", py: 6 }}>
-          <Typography variant="body1" sx={{ color: "#999" }}>
-            Chưa có lịch sử ghi chép nào
-          </Typography>
-        </Box>
+        <>
+          {["breakfast", "lunch", "dinner", "snack"].every(
+            (key) => mealsGrouped[key].length === 0
+          ) ? (
+            <Box
+              sx={{
+                bgcolor: "white",
+                borderRadius: 2,
+                p: 3,
+                mb: 2,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                textAlign: "center",
+              }}
+            >
+              <RestaurantIcon sx={{ fontSize: 48, color: "#C8E6C9", mb: 1 }} />
+              <Typography sx={{ color: "#999", mb: 1, fontWeight: 500 }}>
+                Không có bữa ăn nào trong ngày này
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              {console.log("mealsGrouped:", mealsGrouped)}
+              <MealSection
+                mealType="Bữa sáng"
+                meals={mealsGrouped.breakfast}
+                readOnly
+              />
+              <MealSection
+                mealType="Bữa trưa"
+                meals={mealsGrouped.lunch}
+                readOnly
+              />
+              <MealSection
+                mealType="Bữa tối"
+                meals={mealsGrouped.dinner}
+                readOnly
+              />
+              <MealSection
+                mealType="Ăn vặt"
+                meals={mealsGrouped.snack}
+                readOnly
+              />
+            </>
+          )}
+        </>
       )}
     </Box>
-  )
+  );
 }
 
-export default HistoryView
+export default HistoryView;

@@ -72,7 +72,7 @@ function AvailableDishes({ searchQuery, mealType, onClose, onAddDish }) {
       const currentDate = new Date()
       const mealData = await addDishToMeal(
         dish._id,
-        1, // Default serving size
+        100, // Default serving size
         currentDate,
         mealTypeMap[mealType] || 'snack'
       )

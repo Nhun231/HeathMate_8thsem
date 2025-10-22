@@ -95,4 +95,8 @@ export class PermissionService {
       results,
     };
   }
+
+  getModules() {
+    return this.permissionRepo.getModules();
+  }
 }

@@ -57,7 +57,7 @@ export default function Calculate() {
   const resultRef = useRef(null);
   const navigate = useNavigate();
 
-  //Tính tuổi
+  // Hàm tính tuổi
   const calculateAge = (dob) => {
     if (!dob) return "";
     const birthDate = new Date(dob);
@@ -70,6 +70,7 @@ export default function Calculate() {
     return age >= 0 ? age : "";
   };
 
+  // Lấy dữ liệu user + calculation
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -128,20 +129,33 @@ export default function Calculate() {
       newErr.weight = "Vui lòng nhập cân nặng hợp lệ.";
 
     setErrors(newErr);
+
+    if (!form.gender) {
+      setAlert({
+        show: true,
+        message: "Vui lòng chọn giới tính.",
+        severity: "warning",
+      });
+      return false;
+    }
+
+    if (!form.dob || !form.age) {
+      setAlert({
+        show: true,
+        message: "Vui lòng nhập ngày sinh hợp lệ.",
+        severity: "warning",
+      });
+      return false;
+    }
+
     return !newErr.height && !newErr.weight;
   };
 
+  // Gửi dữ liệu tính toán
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      setAlert({
-        show: true,
-        message: "Vui lòng nhập đầy đủ và hợp lệ.",
-        severity: "warning",
-      });
-      return;
-    }
+    if (!validateForm()) return;
 
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -154,20 +168,20 @@ export default function Calculate() {
     }
 
     try {
-      // update age + gender
       await updateCurrentUser({
         gender: form.gender,
         dob: form.dob,
       });
 
-      // save calculation
       const res = await createCalculation({
+        age: Number(form.age),
+        gender: form.gender,
         height: Number(form.height),
         weight: Number(form.weight),
         activityLevel: form.activity,
       });
-      setResult(res.data);
 
+      setResult(res.data);
       setAlert({
         show: true,
         message: "Tính toán thành công và đã cập nhật thông tin cá nhân!",
@@ -175,7 +189,7 @@ export default function Calculate() {
       });
       setTimeout(() => setAlert({ ...alert, show: false }), 3000);
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi khi gửi dữ liệu:", err);
       setAlert({
         show: true,
         message: "Có lỗi xảy ra. Vui lòng thử lại!",
@@ -194,7 +208,17 @@ export default function Calculate() {
     <Container maxWidth="lg" className="tdee-wrapper">
       {/* Alert */}
       {alert.show && (
-        <Box sx={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", width: "90%", maxWidth: 500, zIndex: 9999 }}>
+        <Box
+          sx={{
+            position: "fixed",
+            top: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "90%",
+            maxWidth: 500,
+            zIndex: 9999,
+          }}
+        >
           <CustomAlert
             message={alert.message}
             variant={alert.severity}
@@ -403,6 +427,59 @@ export default function Calculate() {
                 </Typography>
               </Grid>
             </Grid>
+
+            {/* === PHẦN GIẢI THÍCH === */}
+            <Box
+              mt={6}
+              p={3}
+              sx={{
+                backgroundColor: "#f9f9f9",
+                borderRadius: "12px",
+                border: "1px solid #e0e0e0",
+                maxWidth: 900,
+                margin: "2 auto",
+              }}
+            >
+              <Typography
+                variant="h6"
+                align="center"
+                color="#2e7d32"
+                fontWeight="bold"
+                mb={2}
+              >
+                Giải thích các chỉ số
+              </Typography>
+
+              <Typography variant="body1" paragraph>
+                <strong>BMR (Basal Metabolic Rate):</strong> Lượng calo tối thiểu
+                cơ thể cần để duy trì các chức năng sống cơ bản như hít thở, tuần
+                hoàn và trao đổi chất khi nghỉ ngơi.
+              </Typography>
+
+              <Typography variant="body1" paragraph>
+                <strong>TDEE (Total Daily Energy Expenditure):</strong> Tổng năng
+                lượng bạn tiêu hao trong một ngày (bao gồm cả vận động và hoạt
+                động thường nhật). Đây là cơ sở để xác định nên ăn bao nhiêu
+                calo mỗi ngày.
+              </Typography>
+
+              <Typography variant="body1" paragraph>
+                <strong>BMI (Body Mass Index):</strong> Chỉ số khối cơ thể, giúp
+                xác định bạn đang gầy, bình thường hay thừa cân:
+                <br />
+                - Dưới 18.5: Gầy <br />
+                - 18.5 – 24.9: Bình thường <br />
+                - 25 – 29.9: Thừa cân <br />
+                - ≥ 30: Béo phì
+              </Typography>
+
+              <Typography variant="body1" paragraph>
+                <strong>Lượng nước cần uống:</strong> Là lượng nước khuyến nghị
+                mỗi ngày để duy trì cân bằng cơ thể và hỗ trợ trao đổi chất, tính
+                dựa theo cân nặng và mức độ vận động.
+              </Typography>
+            </Box>
+
             <Box textAlign="center" mt={4}>
               <Button
                 variant="contained"
@@ -416,6 +493,7 @@ export default function Calculate() {
         )}
       </Box>
 
+      {/* Dialog xác nhận */}
       <Dialog open={openModal} onClose={() => handleModalClose("no")}>
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <WarningAmberIcon color="warning" />

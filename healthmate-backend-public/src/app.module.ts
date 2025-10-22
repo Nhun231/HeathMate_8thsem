@@ -15,12 +15,14 @@ import { IngredientModule } from './routes/ingredient/ingredient.module';
 import { DietPlanModule } from './routes/dietplan/dietplan.module';
 import { DishModule } from './routes/dish/dish.module';
 import { MealModule } from './routes/meal/meal.module';
+import { WaterModule } from './routes/water/water.module';
 import { PermissionModule } from './routes/permission/permission.module';
 import { UserModule } from './routes/user/user.module';
 import { MediaModule } from './routes/media/media.module';
 import { ExpertCertificateModule } from './routes/expert-certificate/expert-certificate.module';
 import { AiModule } from './routes/ai/ai.module';
 import { RoleModule } from './routes/role/role.module';
+import { ProfileModule } from './routes/profile/profile.module';
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -42,6 +44,8 @@ import { RoleModule } from './routes/role/role.module';
     MediaModule,
     ExpertCertificateModule,
     RoleModule,
+    ProfileModule,
+    WaterModule,
   ],
   controllers: [AppController],
   providers: [
@@ -64,4 +68,4 @@ import { RoleModule } from './routes/role/role.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

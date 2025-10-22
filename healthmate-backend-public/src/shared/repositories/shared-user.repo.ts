@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from '../schemas/user.schema';
 import { Model, Types } from 'mongoose';
 import { NotFoundRecordException } from '../utils/error';
+import { UserStatus } from '../constants/auth.constant';
 
 @Injectable()
 export class SharedUserRepository {
@@ -11,7 +12,13 @@ export class SharedUserRepository {
   async findUnique(
     uniqueObject: { email: string } | { _id: Types.ObjectId },
   ): Promise<UserDocument | null> {
-    return this.userModel.findOne(uniqueObject).populate('roleId').exec();
+    return this.userModel
+      .findOne({
+        ...uniqueObject,
+        status: UserStatus.Active,
+      })
+      .populate('roleId')
+      .exec();
   }
 
   async getUserById(id: Types.ObjectId): Promise<UserDocument | null> {

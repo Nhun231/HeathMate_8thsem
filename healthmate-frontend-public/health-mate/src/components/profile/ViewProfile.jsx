@@ -10,6 +10,7 @@ import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import SpeedIcon from "@mui/icons-material/Speed";
 import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
+import RestaurantMenuRoundedIcon from "@mui/icons-material/RestaurantMenuRounded";
 
 import { getCurrentUser } from "../../services/UserService.js";
 import { getLatestCalculation } from "../../services/CalculateService.js";
@@ -318,12 +319,12 @@ const ProfilePage = () => {
               label: "Xem thông tin uống nước",
             },
             {
-              to: "/edit-profile",
-              icon: SpeedIcon,
-              label: "Thay đổi cường độ vận động",
+              to: "/diary",
+              icon: RestaurantMenuRoundedIcon,
+              label: "Xem nhật ký ăn uống",
             },
             {
-              to: "/edit-profile",
+              to: "/set-goal",
               icon: TrackChangesIcon,
               label: "Thiết lập mục tiêu mới",
             },

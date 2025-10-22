@@ -14,6 +14,7 @@ export const RegisterBodySchema = z
     gender: z.enum([Gender.Male, Gender.Female]),
     dob: z.coerce.date(),
     phoneNumber: z.string(),
+    isExpert: z.boolean().default(false).optional(),
   })
   .strict()
   .superRefine(({ password, confirmPassword }, ctx) => {
