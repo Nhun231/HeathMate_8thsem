@@ -11,6 +11,11 @@ export const permissionApi = {
     }
   },
 
+  listModules: async () => {
+    const response = await axios.get("/permission/modules");
+    return response.data;
+  },
+
   listRoles: async () => {
     try {
       const response = await axios.get("/roles");

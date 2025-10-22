@@ -30,7 +30,7 @@ export class PermissionRepo {
   async findAll(query: QueryType) {
     const queryPermissions = await this.queryBuilder.query({
       query,
-      allowedFilters: ['name', 'method'],
+      allowedFilters: ['name', 'module'],
       populateFields: [
         {
           path: 'role',
@@ -67,9 +67,9 @@ export class PermissionRepo {
   }
 
   async updateRolesDiff(
-      permissionId: Types.ObjectId,
-      added: Types.ObjectId[],
-      removed: Types.ObjectId[],
+    permissionId: Types.ObjectId,
+    added: Types.ObjectId[],
+    removed: Types.ObjectId[],
   ) {
     if (added.length > 0) {
       await this.permissionModel.findByIdAndUpdate(permissionId, {
@@ -84,5 +84,10 @@ export class PermissionRepo {
     }
 
     return this.permissionModel.findById(permissionId);
+  }
+
+  async getModules() {
+    const modules = await this.permissionModel.distinct('module');
+    return modules;
   }
 }

@@ -41,30 +41,40 @@ export class UserController {
   async getUser(@Param() params: GetUserDetailParamsDTO) {
     return this.usersService.getUserById(params.id);
   }
+    // @Get(':userId')
+    // async getUser(@Param() params: GetUserDetailParamsDTO) {
+    //     return this.usersService.getUserById(params.userId);
+    // }
+    @Post()
+    async createUser(
+        @Body() body: CreateUserDTO,
+        @ActiveUser('userId') activeUserId: string,
+    ) {
+        return this.usersService.createUser(body, activeUserId);
+    }
 
-  @Post()
-  async createUser(@Body() body: CreateUserDTO) {
-    return this.usersService.createUser(body);
-  }
+    @Put('me')
+    async updateCurrentUser(
+        @ActiveUser('userId') userId: string,
+        @Body() body: UpdateUserDTO,
+    ) {
+        return this.usersService.updateUser(userId, body);
+    }
 
-  @Put('me')
-  async updateCurrentUser(
-    @ActiveUser('userId') userId: string,
-    @Body() body: UpdateUserDTO,
-  ) {
-    return this.usersService.updateUser(userId, body);
-  }
-
-  @Put(':id')
+  @Put(':userId')
   async updateUser(
     @Param() params: GetUserDetailParamsDTO,
     @Body() body: UpdateUserDTO,
+    @ActiveUser('userId') activeUserId: string,
   ) {
-    return this.usersService.updateUser(params.id, body);
+    return this.usersService.updateUser(params.userId, body, activeUserId);
   }
 
-  @Delete(':id')
-  async deleteUser(@Param() params: DeleteUserDTO): Promise<DeleteResult> {
-    return this.usersService.deleteUser(params.id);
+  @Delete(':userId')
+  async deleteUser(
+    @Param() params: DeleteUserDTO,
+    @ActiveUser('userId') activeUserId: string,
+  ): Promise<DeleteResult> {
+    return this.usersService.deleteUser(params.userId, activeUserId);
   }
 }

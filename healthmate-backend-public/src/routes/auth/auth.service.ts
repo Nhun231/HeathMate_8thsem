@@ -19,6 +19,7 @@ import {
 import {
   TypeOfVerificationCode,
   TypeOfVerificationCodeType,
+  UserStatus,
 } from 'src/shared/constants/auth.constant';
 import {
   ForgotPasswordBodyType,
@@ -44,12 +45,17 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly sharedUserRepository: SharedUserRepository,
     private readonly emailService: EmailService,
-  ) { }
+  ) {}
 
   async register(body: RegisterBodyType) {
     try {
-      const clientRoleId = await this.rolesService.getClientRole();
-      // console.log(clientRoleId);
+      const roleId =
+        body.isExpert === true
+          ? await this.rolesService.getExpertRole()
+          : await this.rolesService.getCustomerRole();
+
+      const createUserStatus =
+        body.isExpert === true ? UserStatus.Inactive : UserStatus.Active;
 
       // Validate verification code
       await this.validateVerificationCode({
@@ -71,7 +77,8 @@ export class AuthService {
         gender: body.gender,
         dob: body.dob,
         phoneNumber: body.phoneNumber,
-        roleId: clientRoleId,
+        roleId,
+        status: createUserStatus,
       });
 
       const $deleteVerificationCode =

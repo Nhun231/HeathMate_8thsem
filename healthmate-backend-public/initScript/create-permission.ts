@@ -10,6 +10,8 @@ import {
   PermissionDocument,
 } from 'src/shared/schemas/permission.schema';
 
+// const customerModule = ['AUTH', 'CALCULATION', '']
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   await app.listen(3010);
