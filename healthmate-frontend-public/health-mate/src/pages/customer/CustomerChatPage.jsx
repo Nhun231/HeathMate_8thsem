@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container, Box } from '@mui/material';
-import CustomerChat from '../components/customer/CustomerChat';
+import CustomerChat from '../../components/customer/CustomerChat.jsx';
 
 const CustomerChatPage = () => {
   return (

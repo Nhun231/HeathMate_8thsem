@@ -83,7 +83,7 @@ export const createUser = async (data) => {
 export const getUserStats = async () => {
     try {
         const response = await baseAxios.get(`users`, {
-            params: { page: 1, limit: 1000 },
+            params: { page: 1, limit: 1 },
             headers: { "Cache-Control": "no-cache" },
         });
 

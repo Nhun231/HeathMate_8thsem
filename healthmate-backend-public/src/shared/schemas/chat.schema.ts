@@ -6,8 +6,8 @@ export type MessageDocument = Message & Document;
 
 @Schema({ timestamps: true })
 export class ChatRoom {
-  @Prop({ required: true, unique: true })
-  roomId: string;
+  @Prop({ required: true, unique: true, type: Types.ObjectId })
+  roomId: Types.ObjectId;
 
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   customerId: Types.ObjectId;
@@ -37,8 +37,8 @@ export class ChatRoom {
 
 @Schema({ timestamps: true })
 export class Message {
-  @Prop({ required: true })
-  roomId: string;
+  @Prop({ required: true, type: Types.ObjectId })
+  roomId: Types.ObjectId;
 
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   senderId: Types.ObjectId;
@@ -46,7 +46,7 @@ export class Message {
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   receiverId: Types.ObjectId;
 
-  @Prop({ required: true, enum: ['customer', 'expert'] })
+  @Prop({ required: true, enum: ['Customer', 'NutrientExpert'] })
   senderType: string;
 
   @Prop({ required: true })

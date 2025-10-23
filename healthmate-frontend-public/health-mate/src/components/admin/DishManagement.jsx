@@ -213,7 +213,10 @@ const DishManagement = () => {
   const removeIngredient = (ingredientId) => {
     setFormData(prev => ({
       ...prev,
-      ingredients: prev.ingredients.filter(ing => ing.ingredient !== ingredientId)
+      ingredients: prev.ingredients.filter(ing => {
+        const currentIngredientId = typeof ing.ingredient === 'object' ? ing.ingredient._id : ing.ingredient;
+        return currentIngredientId !== ingredientId;
+      })
     }));
   };
 
@@ -221,11 +224,12 @@ const DishManagement = () => {
   const updateIngredientAmount = (ingredientId, newAmount) => {
     setFormData(prev => ({
       ...prev,
-      ingredients: prev.ingredients.map(ing => 
-        ing.ingredient === ingredientId 
+      ingredients: prev.ingredients.map(ing => {
+        const currentIngredientId = typeof ing.ingredient === 'object' ? ing.ingredient._id : ing.ingredient;
+        return currentIngredientId === ingredientId 
           ? { ...ing, amount: Number(newAmount) }
-          : ing
-      )
+          : ing;
+      })
     }));
   };
 
@@ -239,7 +243,11 @@ const DishManagement = () => {
   // Calculate nutrition
   const calculateNutrition = () => {
     return formData.ingredients.reduce((totals, ing) => {
-      const ingredient = availableIngredients.find(ingItem => ingItem._id === ing.ingredient);
+      // Sử dụng ingredient đã populate từ API hoặc tìm từ availableIngredients
+      const ingredient = ing.ingredient && typeof ing.ingredient === 'object' 
+        ? ing.ingredient 
+        : availableIngredients.find(ingItem => ingItem._id === ing.ingredient);
+      
       if (!ingredient) return totals;
       
       const factor = ing.amount / 100;
@@ -268,7 +276,7 @@ const DishManagement = () => {
         type: formData.type,
         servings: formData.servings,
         ingredients: formData.ingredients.map(ing => ({
-          ingredient: ing.ingredient,
+          ingredient: typeof ing.ingredient === 'object' ? ing.ingredient._id : ing.ingredient,
           amount: ing.amount,
           unit: ing.unit || 'g'
         }))
@@ -515,196 +523,291 @@ const DishManagement = () => {
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>
-          {editingDish ? 'Chỉnh sửa món ăn' : 'Tạo món ăn mới'}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Restaurant sx={{ color: '#4CAF50' }} />
+            <Typography variant="h6" sx={{ color: '#4CAF50', fontWeight: 600 }}>
+              {editingDish ? 'Chỉnh sửa món ăn' : 'Tạo món ăn mới'}
+            </Typography>
+          </Box>
         </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            {/* Basic Info */}
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mb: 2, color: '#4CAF50' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
+            {/* Basic Info Section */}
+            <Box>
+              <Typography variant="body2" sx={{ color: '#4CAF50', fontWeight: 500, mb: 2 }}>
                 Thông tin cơ bản
               </Typography>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Tên món ăn"
-                value={formData.name}
-                onChange={handleInputChange('name')}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Loại món ăn</InputLabel>
-                <Select
-                  value={formData.type}
-                  onChange={handleInputChange('type')}
-                  label="Loại món ăn"
-                >
-                  <SelectMenuItem value="Bữa sáng">Bữa sáng</SelectMenuItem>
-                  <SelectMenuItem value="Bữa trưa">Bữa trưa</SelectMenuItem>
-                  <SelectMenuItem value="Bữa tối">Bữa tối</SelectMenuItem>
-                  <SelectMenuItem value="Ăn vặt">Ăn vặt</SelectMenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Mô tả"
-                value={formData.description}
-                onChange={handleInputChange('description')}
-                multiline
-                rows={2}
-                required
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Số phần ăn"
-                type="number"
-                value={formData.servings}
-                onChange={handleInputChange('servings')}
-                inputProps={{ min: 1 }}
-                required
-              />
-            </Grid>
-
-            {/* Ingredients */}
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="h6" sx={{ mb: 2, color: '#4CAF50' }}>
-                Nguyên liệu ({formData.ingredients.length})
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12}>
-              <Autocomplete
-                options={availableIngredients}
-                getOptionLabel={(option) => option.name}
-                loading={ingredientsLoading}
-                onChange={(event, value) => {
-                  if (value) addIngredient(value);
-                }}
-                renderInput={(params) => (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                <Box>
+                  <Typography variant="body2" sx={{ color: '#4CAF50', fontWeight: 500, mb: 1 }}>
+                    Tên món ăn *
+                  </Typography>
                   <TextField
-                    {...params}
-                    label="Thêm nguyên liệu"
-                    placeholder="Tìm và chọn nguyên liệu"
+                    fullWidth
+                    placeholder="Nhập tên món ăn"
+                    value={formData.name}
+                    onChange={handleInputChange('name')}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        '& fieldset': { borderColor: '#e0e0e0' },
+                        '&:hover fieldset': { borderColor: '#4CAF50' },
+                        '&.Mui-focused fieldset': { borderColor: '#4CAF50' },
+                      },
+                    }}
                   />
-                )}
-              />
-            </Grid>
+                </Box>
+                
+                <Box>
+                  <Typography variant="body2" sx={{ color: '#4CAF50', fontWeight: 500, mb: 1 }}>
+                    Loại món ăn *
+                  </Typography>
+                  <FormControl fullWidth>
+                    <Select
+                      value={formData.type}
+                      onChange={handleInputChange('type')}
+                      sx={{
+                        borderRadius: 2,
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e0e0e0' },
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4CAF50' },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4CAF50' },
+                      }}
+                    >
+                      <SelectMenuItem value="Bữa sáng">Bữa sáng</SelectMenuItem>
+                      <SelectMenuItem value="Bữa trưa">Bữa trưa</SelectMenuItem>
+                      <SelectMenuItem value="Bữa tối">Bữa tối</SelectMenuItem>
+                      <SelectMenuItem value="Ăn vặt">Ăn vặt</SelectMenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
+              
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ color: '#4CAF50', fontWeight: 500, mb: 1 }}>
+                  Mô tả *
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  placeholder="Mô tả món ăn"
+                  value={formData.description}
+                  onChange={handleInputChange('description')}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '& fieldset': { borderColor: '#e0e0e0' },
+                      '&:hover fieldset': { borderColor: '#4CAF50' },
+                      '&.Mui-focused fieldset': { borderColor: '#4CAF50' },
+                    },
+                  }}
+                />
+              </Box>
+              
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ color: '#4CAF50', fontWeight: 500, mb: 1 }}>
+                  Số phần ăn
+                </Typography>
+                <TextField
+                  type="number"
+                  value={formData.servings}
+                  onChange={handleInputChange('servings')}
+                  sx={{ width: 120 }}
+                  inputProps={{ min: 1, max: 20 }}
+                />
+              </Box>
+            </Box>
+
+            {/* Ingredients Section */}
+            <Box>
+              <Typography variant="body2" sx={{ color: '#4CAF50', fontWeight: 500, mb: 1 }}>
+                Thêm nguyên liệu * ({availableIngredients.length} có sẵn)
+              </Typography>
+              {ingredientsLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress sx={{ color: '#4CAF50' }} />
+                </Box>
+              ) : (
+                <Autocomplete
+                  options={availableIngredients}
+                  getOptionLabel={(option) => option.name}
+                  onChange={(event, value) => {
+                    if (value) addIngredient(value);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder={`Tìm và chọn nguyên liệu (${availableIngredients.length} có sẵn)`}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                          '& fieldset': { borderColor: '#e0e0e0' },
+                          '&:hover fieldset': { borderColor: '#4CAF50' },
+                          '&.Mui-focused fieldset': { borderColor: '#4CAF50' },
+                        },
+                      }}
+                    />
+                  )}
+                />
+              )}
+            </Box>
 
             {/* Selected Ingredients */}
-            {formData.ingredients.length > 0 && (
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Nguyên liệu đã chọn:
-                </Typography>
-                {formData.ingredients.map((ing, index) => {
-                  const ingredient = availableIngredients.find(ingItem => ingItem._id === ing.ingredient);
-                  return (
-                    <Card key={index} sx={{ mb: 1 }}>
-                      <CardContent sx={{ py: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                              {ingredient?.name || 'Unknown'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {Math.round((ingredient?.caloPer100g || 0) * ing.amount / 100)} kcal
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <TextField
-                              type="number"
-                              value={ing.amount}
-                              onChange={(e) => updateIngredientAmount(ing.ingredient, Number(e.target.value))}
-                              size="small"
-                              sx={{ width: 80 }}
-                              inputProps={{ min: 1 }}
-                            />
-                            <Typography variant="caption">g</Typography>
-                            <IconButton
-                              size="small"
-                              onClick={() => removeIngredient(ing.ingredient)}
-                              sx={{ color: '#f44336' }}
-                            >
-                              <Delete />
-                            </IconButton>
-                          </Box>
+            <Box>
+              <Typography variant="body2" sx={{ color: '#4CAF50', fontWeight: 500, mb: 2 }}>
+                Nguyên liệu đã chọn ({formData.ingredients.length})
+              </Typography>
+              {formData.ingredients.length === 0 ? (
+                <Box
+                  sx={{
+                    bgcolor: '#F1F8F4',
+                    borderRadius: 2,
+                    p: 4,
+                    textAlign: 'center',
+                  }}
+                >
+                  <Restaurant sx={{ fontSize: 48, color: '#C8E6C9', mb: 1 }} />
+                  <Typography variant="body2" sx={{ color: '#999', mb: 0.5 }}>
+                    Chưa chọn nguyên liệu nào
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#bbb' }}>
+                    Sử dụng ô tìm kiếm ở trên để thêm nguyên liệu
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {formData.ingredients.map((ing, index) => {
+                    // Sử dụng ingredient đã populate từ API hoặc tìm từ availableIngredients
+                    const ingredient = ing.ingredient && typeof ing.ingredient === 'object' 
+                      ? ing.ingredient 
+                      : availableIngredients.find(ingItem => ingItem._id === ing.ingredient);
+                    return (
+                      <Box
+                        key={index}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          p: 2,
+                          bgcolor: '#F1F8F4',
+                          borderRadius: 2,
+                          border: '1px solid #E8F5E9',
+                        }}
+                      >
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="body2" sx={{ color: '#4CAF50', fontWeight: 600, mb: 0.5 }}>
+                            {ingredient?.name || 'Unknown'}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#666' }}>
+                            {Math.round((ingredient?.caloPer100g || 0) * ing.amount / 100)} kcal
+                          </Typography>
                         </Box>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </Grid>
-            )}
+                        
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <TextField
+                            type="number"
+                            value={ing.amount}
+                            onChange={(e) => updateIngredientAmount(
+                              typeof ing.ingredient === 'object' ? ing.ingredient._id : ing.ingredient, 
+                              Number(e.target.value)
+                            )}
+                            size="small"
+                            sx={{ width: 80 }}
+                            inputProps={{ min: 1, max: 10000 }}
+                          />
+                          <Typography variant="caption" sx={{ color: '#666', minWidth: 20 }}>
+                            g
+                          </Typography>
+                          <Button
+                            size="small"
+                            onClick={() => removeIngredient(
+                              typeof ing.ingredient === 'object' ? ing.ingredient._id : ing.ingredient
+                            )}
+                            sx={{ minWidth: 'auto', p: 0.5, color: '#f44336' }}
+                          >
+                            <Delete fontSize="small" />
+                          </Button>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              )}
+            </Box>
 
             {/* Nutrition Summary */}
             {formData.ingredients.length > 0 && (
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" sx={{ mb: 2, color: '#4CAF50' }}>
-                  Thông tin dinh dưỡng
+              <Box
+                sx={{
+                  bgcolor: '#E8F5E9',
+                  borderRadius: 2,
+                  p: 3,
+                }}
+              >
+                <Typography variant="h6" sx={{ color: '#4CAF50', fontWeight: 600, mb: 1, textAlign: 'center' }}>
+                  Thông tin dinh dưỡng (tổng)
                 </Typography>
-                <Card sx={{ bgcolor: '#E8F5E9' }}>
-                  <CardContent>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Typography variant="h4" sx={{ color: '#4CAF50', fontWeight: 'bold' }}>
-                          {Math.round(nutrition.calories)}
-                        </Typography>
-                        <Typography variant="caption">Calories</Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                          <Typography variant="body2">
-                            Đạm: {nutrition.protein.toFixed(1)}g
-                          </Typography>
-                          <Typography variant="body2">
-                            Béo: {nutrition.fat.toFixed(1)}g
-                          </Typography>
-                          <Typography variant="body2">
-                            Tinh bột: {nutrition.carbs.toFixed(1)}g
-                          </Typography>
-                          <Typography variant="body2">
-                            Chất xơ: {nutrition.fiber.toFixed(1)}g
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Typography variant="body2" sx={{ color: '#666' }}>
-                          Tổng trọng lượng: {totalWeight}g
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
+                <Typography variant="body2" sx={{ color: '#666', mb: 2, textAlign: 'center' }}>
+                  Tổng trọng lượng nguyên liệu: {totalWeight}g
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" sx={{ color: '#4CAF50', fontWeight: 600 }}>
+                      {Math.round(nutrition.calories)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#4CAF50' }}>
+                      Calories
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: '#666' }}>
+                      Đạm: {nutrition.protein.toFixed(1)}g
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#666' }}>
+                      Béo: {nutrition.fat.toFixed(1)}g
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#666' }}>
+                      Tinh bột: {nutrition.carbs.toFixed(1)}g
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#666' }}>
+                      Chất xơ: {nutrition.fiber.toFixed(1)}g
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
             )}
-          </Grid>
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button 
+            onClick={() => setDialogOpen(false)}
+            sx={{ 
+              color: '#666',
+              textTransform: 'none',
+              px: 3
+            }}
+          >
             Hủy
           </Button>
           <Button
             onClick={handleSave}
             variant="contained"
+            disabled={!formData.name || !formData.description || !formData.type || formData.ingredients.length === 0}
             sx={{
               bgcolor: '#4CAF50',
-              '&:hover': { bgcolor: '#45a049' }
+              color: 'white',
+              py: 1.5,
+              px: 4,
+              textTransform: 'none',
+              fontSize: 16,
+              '&:hover': { bgcolor: '#45a049' },
+              '&:disabled': {
+                bgcolor: '#e0e0e0',
+                color: '#999',
+              },
             }}
           >
-            {editingDish ? 'Cập nhật' : 'Tạo món ăn'}
+            {editingDish ? 'Cập nhật món ăn' : 'Tạo món ăn'}
           </Button>
         </DialogActions>
       </Dialog>

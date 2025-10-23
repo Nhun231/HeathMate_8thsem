@@ -54,14 +54,8 @@ const router = createBrowserRouter([
     path: "/forgot-password",
     element: <ForgotPassword />,
   },
-  {
-    path: "/expert-chat",
-    element: <ExpertChatPage />,
-  },
-  {
-    path: "/customer-chat",
-    element: <CustomerChatPage />,
-  },
+
+
   {
     path: "/guest-homepage",
     element: <GuestHomePage />,
@@ -87,7 +81,14 @@ const router = createBrowserRouter([
           //     path: "/oauth-callback",
           //     element: <OAuthCallback />,
           // },
-
+          {
+            path: "/customer-chat",
+            element: <CustomerChatPage />,
+          },
+          {
+            path: "/expert-chat",
+            element: <ExpertChatPage />,
+          },
           {
             path: "/",
             element: <DefaultRedirect />,

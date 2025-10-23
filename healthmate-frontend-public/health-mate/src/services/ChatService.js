@@ -3,9 +3,11 @@ import axios from '../api/axios';
 // Chat Service for managing messages and chat rooms
 class ChatService {
   // Get all chat rooms for current user
-  async getChatRooms() {
+  async getChatRooms(userType = 'Customer') {
     try {
-      const response = await axios.get('/chat/rooms');
+      const response = await axios.get('/chat/rooms', {
+        params: { userType }
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching chat rooms:', error);

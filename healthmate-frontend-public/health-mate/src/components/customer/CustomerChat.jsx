@@ -28,8 +28,6 @@ import {
   Send as SendIcon,
   AttachFile as AttachFileIcon,
   EmojiEmotions as EmojiIcon,
-  Videocam as VideoIcon,
-  Phone as PhoneIcon,
   MoreVert as MoreVertIcon,
   OnlinePrediction as OnlineIcon,
   OfflineBolt as OfflineIcon,
@@ -40,12 +38,16 @@ import {
 } from '@mui/icons-material';
 import socketService from '../../services/SocketService';
 import chatService from '../../services/ChatService';
+import { useAuth } from '../../context/AuthProvider';
 
 const CustomerChat = () => {
+  // Get real user data from auth context
+  const { user, loading: authLoading } = useAuth();
+  
   // State management
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -60,12 +62,13 @@ const CustomerChat = () => {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // Mock current user data (will be replaced with real auth data)
-  const currentUser = {
-    id: 'customer_1',
-    name: 'Nguyễn Văn Customer',
-    avatar: null,
-  };
+  // Current user data from auth
+  const currentUser = user ? {
+    _id: user._id,
+    fullname: user.fullname,
+    avatar: user.avatar || null,
+    role: user.roleId?.name || 'Customer'
+  } : null;
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
@@ -75,12 +78,16 @@ const CustomerChat = () => {
   // Load available users (experts)
   const loadAvailableUsers = async () => {
     try {
+      console.log('🔍 Loading available users...');
       setLoading(true);
       const response = await chatService.getAvailableUsers();
-      setAvailableUsers(response.users || []);
+      console.log('📡 Available users response:', response);
+      setAvailableUsers(response?.users || []);
+      console.log('✅ Available users loaded:', response?.users || []);
     } catch (err) {
-      console.error('Error loading available users:', err);
+      console.error('❌ Error loading available users:', err);
       setError('Không thể tải danh sách chuyên gia');
+      setAvailableUsers([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -89,24 +96,33 @@ const CustomerChat = () => {
   // Load chat rooms
   const loadChatRooms = async () => {
     try {
-      const response = await chatService.getChatRooms();
-      setChatRooms(response.rooms || []);
+      const userType = currentUser?.role === 'Customer' ? 'Customer' : 'NutrientExpert';
+      console.log('🔍 Loading chat rooms for user type:', userType);
+      const response = await chatService.getChatRooms(userType);
+      console.log('📡 Chat rooms response:', response);
+      setChatRooms(response?.rooms || []);
+      console.log('✅ Chat rooms loaded:', response?.rooms || []);
     } catch (err) {
-      console.error('Error loading chat rooms:', err);
+      console.error('❌ Error loading chat rooms:', err);
       setError('Không thể tải danh sách cuộc trò chuyện');
+      setChatRooms([]); // Set empty array on error
     }
   };
 
   // Load messages for selected user
   const loadMessages = async (roomId) => {
     try {
+      console.log('🔍 Loading messages for roomId:', roomId);
       setLoading(true);
-      const response = await chatService.getMessages(roomId);
-      setMessages(response.messages || []);
+      const response = await chatService.getMessages(roomId, 1, 50);
+      console.log('📡 Messages response:', response);
+      setMessages(response?.messages || []);
+      console.log('✅ Messages loaded:', response?.messages || []);
       scrollToBottom();
     } catch (err) {
-      console.error('Error loading messages:', err);
+      console.error('❌ Error loading messages:', err);
       setError('Không thể tải tin nhắn');
+      setMessages([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -114,23 +130,46 @@ const CustomerChat = () => {
 
   // Initialize socket connection
   useEffect(() => {
-    const socket = socketService.connect();
+    console.log('🚀 useEffect triggered with currentUser:', currentUser);
+    // Only initialize if we have a valid user
+    if (!currentUser || !currentUser._id) {
+      console.log('❌ No valid user, skipping initialization');
+      return;
+    }
+
+    console.log('✅ Valid user found, initializing...');
+    socketService.connect();
     
     // Set connection status
     setIsConnected(socketService.getConnectionStatus());
 
     // Join customer room
-    socketService.joinCustomerRoom(currentUser.id);
+    socketService.joinCustomerRoom(currentUser._id);
 
     // Listen for messages
     socketService.onMessage((message) => {
-      setMessages(prev => [...prev, message]);
-      scrollToBottom();
+      console.log('📨 Socket: Customer received message:', message.roomId, 'sender:', message.senderId, 'current user:', currentUser._id);
+      
+      // Only add message if it's not from current user (to avoid duplicates)
+      if (message.senderId !== currentUser._id) {
+        console.log('📨 Socket: Adding message from other user');
+        
+        // If we have a selected user and this message is for that room, add it
+        if (selectedUser && message.roomId === selectedUser.roomId) {
+          console.log('📨 Socket: Adding to current chat room');
+          setMessages(prev => [...prev, message]);
+          scrollToBottom();
+        } else {
+          console.log('📨 Socket: Message not for current room, but keeping for potential future display');
+        }
+      } else {
+        console.log('📨 Socket: Ignoring own message');
+      }
     });
 
     // Listen for typing indicators
     socketService.onTyping((data) => {
-      if (data.userId !== currentUser.id) {
+      if (data.userId !== currentUser._id) {
         setTypingUsers(prev => {
           if (!prev.includes(data.userId)) {
             return [...prev, data.userId];
@@ -142,9 +181,12 @@ const CustomerChat = () => {
     });
 
     socketService.onStopTyping((data) => {
-      if (data.userId !== currentUser.id) {
-        setTypingUsers(prev => prev.filter(id => id !== data.userId));
-        setIsTyping(typingUsers.length > 1);
+      if (data.userId !== currentUser._id) {
+        setTypingUsers(prev => {
+          const filtered = prev.filter(id => id !== data.userId);
+          setIsTyping(filtered.length > 0);
+          return filtered;
+        });
       }
     });
 
@@ -157,7 +199,7 @@ const CustomerChat = () => {
       socketService.removeAllListeners();
       socketService.disconnect();
     };
-  }, []);
+  }, [currentUser?._id]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -166,45 +208,68 @@ const CustomerChat = () => {
 
   // Handle sending message
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedUser) return;
+    if (!newMessage.trim() || !selectedUser || !currentUser) return;
 
+    // Use the roomId from selectedUser
+    const roomId = selectedUser.roomId;
+    
     const messageData = {
-      roomId: selectedUser.roomId || `room_${currentUser.id}_${selectedUser.id}`,
-      senderId: currentUser.id,
-      receiverId: selectedUser.id,
-      senderName: currentUser.name,
+      roomId: roomId,
+      receiverId: selectedUser._id,
       content: newMessage.trim(),
-      timestamp: new Date().toISOString(),
-      type: 'text',
+      messageType: 'text',
     };
 
-    try {
-      // Save message to database
-      await chatService.sendMessage(messageData);
-      
-      // Add message to local state immediately
-      setMessages(prev => [...prev, messageData]);
-      setNewMessage('');
+    // Add message to local state immediately for better UX
+    const tempMessage = {
+      id: `temp_${Date.now()}`,
+      ...messageData,
+      senderId: currentUser._id,
+      content: newMessage.trim(),
+      timestamp: new Date().toISOString(),
+    };
+    
+    setMessages(prev => [...prev, tempMessage]);
+    setNewMessage('');
 
-      // Send via socket
-      socketService.sendMessage(messageData);
+    try {
+      // Always try socket first
+      console.log('📤 Socket: Customer attempting to send message to room:', roomId);
+      console.log('📤 Socket: Connection status:', isConnected);
+      
+      socketService.sendMessage({
+        roomId: roomId,
+        senderId: currentUser._id,
+        receiverId: selectedUser._id,
+        content: newMessage.trim(),
+        messageType: 'text',
+      });
 
       // Stop typing indicator
-      socketService.sendStopTyping(currentUser.id, selectedUser.id);
+      if (isConnected) {
+        socketService.sendStopTyping(currentUser._id, selectedUser._id);
+      }
     } catch (err) {
-      console.error('Error sending message:', err);
-      setError('Không thể gửi tin nhắn');
+      setError('Không thể gửi tin nhắn: ' + (err.response?.data?.message || err.message));
+      // Remove the temp message if sending failed
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
     }
   };
 
   // Handle typing indicator
   const handleTyping = (e) => {
+    console.log('⌨️ Typing detected:', e.target.value);
     setNewMessage(e.target.value);
 
-    if (!selectedUser) return;
+    if (!selectedUser || !currentUser) {
+      console.log('❌ No selectedUser or currentUser, skipping typing indicator');
+      return;
+    }
 
-    // Send typing indicator
-    socketService.sendTyping(currentUser.id, selectedUser.id);
+    // Send typing indicator only if connected
+    if (isConnected) {
+      socketService.sendTyping(currentUser._id, selectedUser._id);
+    }
 
     // Clear previous timeout
     if (typingTimeoutRef.current) {
@@ -213,30 +278,62 @@ const CustomerChat = () => {
 
     // Set timeout to stop typing indicator
     typingTimeoutRef.current = setTimeout(() => {
-      socketService.sendStopTyping(currentUser.id, selectedUser.id);
+      if (currentUser && selectedUser && isConnected) {
+        socketService.sendStopTyping(currentUser._id, selectedUser._id);
+      }
     }, 1000);
   };
 
   // Handle user selection
   const handleSelectUser = async (user) => {
+    console.log('👤 User selected:', user);
     setSelectedUser(user);
     setMessages([]);
     
     // Try to find existing room or create new one
-    const existingRoom = chatRooms.find(room => 
-      room.participants.some(p => p.id === user.id)
+    const existingRoom = (chatRooms || []).find(room => 
+      room?.expertId?._id === user._id || room?.customerId?._id === user._id
     );
     
+    console.log('🔍 All chat rooms:', chatRooms);
+    console.log('🔍 Looking for user._id:', user._id);
+    console.log('🔍 Existing room found:', existingRoom);
+    console.log('🔍 RoomId from existing room:', existingRoom?.roomId);
+    
     if (existingRoom) {
-      await loadMessages(existingRoom.id);
+      // Set the selected user with the correct roomId
+      const roomId = existingRoom.roomId;
+      const userWithRoomId = { ...user, roomId: roomId };
+      setSelectedUser(userWithRoomId);
+      
+      // Join the room via socket
+      if (isConnected) {
+        console.log('🔌 Socket: Customer joining room:', roomId);
+        socketService.joinRoom(roomId, currentUser._id);
+      }
+      
+      await loadMessages(roomId);
     } else {
       // Create new room
       try {
-        const newRoom = await chatService.createChatRoom(user.id);
+        const response = await chatService.createChatRoom(user._id);
+        const newRoom = response.room;
+        console.log('✅ New room created:', newRoom);
         setChatRooms(prev => [...prev, newRoom]);
-        setSelectedUser({ ...user, roomId: newRoom.id });
+        
+        // Set the selected user with the correct roomId
+        const userWithRoomId = { ...user, roomId: newRoom.roomId };
+        setSelectedUser(userWithRoomId);
+        
+        // Join the room via socket
+        if (isConnected) {
+          console.log('🔌 Socket: Customer joining new room:', newRoom.roomId);
+          socketService.joinRoom(newRoom.roomId, currentUser._id);
+        }
+        
+        await loadMessages(newRoom.roomId);
       } catch (err) {
-        console.error('Error creating chat room:', err);
+        console.error('❌ Error creating chat room:', err);
         setError('Không thể tạo cuộc trò chuyện');
       }
     }
@@ -245,9 +342,10 @@ const CustomerChat = () => {
   // Handle starting new chat
   const handleStartNewChat = async (user) => {
     try {
-      const newRoom = await chatService.createChatRoom(user.id);
+      const response = await chatService.createChatRoom(user._id);
+      const newRoom = response.room;
       setChatRooms(prev => [...prev, newRoom]);
-      setSelectedUser({ ...user, roomId: newRoom.id });
+      setSelectedUser({ ...user, roomId: newRoom.roomId });
       setShowUserDialog(false);
       setMessages([]);
     } catch (err) {
@@ -273,13 +371,47 @@ const CustomerChat = () => {
   };
 
   // Filter users based on search
-  const filteredUsers = availableUsers.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.specialty?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = (availableUsers || []).filter(user =>
+    user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user?.specialty?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Show loading while auth is loading
+  if (authLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Show error if user is not authenticated
+  if (!user || !currentUser) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Alert severity="error">
+          Bạn cần đăng nhập để sử dụng tính năng chat
+        </Alert>
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ height: '100vh', display: 'flex', bgcolor: '#f5f5f5' }}>
+      <Box
+          sx={{
+            flex: 1,
+            overflow: 'auto',
+            p: 2,
+            m: 2,
+            bgcolor: '#f5f5f5',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            borderRadius: 3,
+            border: '1px solid #e0e0e0',
+          }}
+      >
+    <Box sx={{ height: '80vh', display: 'flex', bgcolor: '#f5f5f5' }}>
       {/* Sidebar - Chat Rooms & Available Users */}
       <Paper
         elevation={2}
@@ -295,7 +427,7 @@ const CustomerChat = () => {
         <Box
           sx={{
             p: 2,
-            bgcolor: '#2196F3',
+            bgcolor: '#4CAF50',
             color: 'white',
             display: 'flex',
             alignItems: 'center',
@@ -307,10 +439,10 @@ const CustomerChat = () => {
           </Avatar>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              {currentUser.name}
+              {currentUser.fullname}
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.8 }}>
-              Khách hàng
+              {currentUser.role === 'Customer' ? 'Khách hàng' : currentUser.role}
             </Typography>
           </Box>
           <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -351,18 +483,21 @@ const CustomerChat = () => {
         {/* Chat Rooms List */}
         <Box sx={{ flex: 1, overflow: 'auto' }}>
           <Typography variant="subtitle2" sx={{ p: 2, color: '#666', fontWeight: 'bold' }}>
-            Cuộc trò chuyện ({chatRooms.length})
+            Cuộc trò chuyện ({(chatRooms || []).length})
           </Typography>
           <List>
-            {chatRooms.map((room) => {
-              const otherUser = room.participants.find(p => p.id !== currentUser.id);
+            {(chatRooms || []).map((room) => {
+              // Get the other user (expert if current user is customer, customer if current user is expert)
+              const otherUser = currentUser?.role === 'Customer' 
+                ? room?.expertId 
+                : room?.customerId;
               return (
                 <ListItem
-                  key={room.id}
+                  key={room.roomId}
                   button
-                  onClick={() => handleSelectUser({ ...otherUser, roomId: room.id })}
+                  onClick={() => handleSelectUser({ ...otherUser, roomId: room.roomId })}
                   sx={{
-                    bgcolor: selectedUser?.id === otherUser?.id ? '#E3F2FD' : 'transparent',
+                    bgcolor: selectedUser?._id === otherUser?._id ? '#E8F5E8' : 'transparent',
                     '&:hover': { bgcolor: '#F5F5F5' },
                   }}
                 >
@@ -376,13 +511,13 @@ const CustomerChat = () => {
                         ) : null
                       }
                     >
-                      <Avatar sx={{ bgcolor: '#2196F3' }}>
-                        {otherUser?.name?.charAt(0) || 'U'}
+                      <Avatar sx={{ bgcolor: '#4CAF50' }}>
+                        {otherUser?.fullname?.charAt(0) || 'U'}
                       </Avatar>
                     </Badge>
                   </ListItemAvatar>
                   <ListItemText
-                    primary={otherUser?.name || 'Unknown User'}
+                    primary={otherUser?.fullname || 'Unknown User'}
                     secondary={
                       <Box>
                         <Typography variant="caption" sx={{ display: 'block', color: '#666' }}>
@@ -445,16 +580,6 @@ const CustomerChat = () => {
                 </Typography>
               </Box>
               <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-                <Tooltip title="Gọi video">
-                  <IconButton size="small">
-                    <VideoIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Gọi thoại">
-                  <IconButton size="small">
-                    <PhoneIcon />
-                  </IconButton>
-                </Tooltip>
                 <IconButton size="small">
                   <MoreVertIcon />
                 </IconButton>
@@ -467,49 +592,109 @@ const CustomerChat = () => {
                 flex: 1,
                 overflow: 'auto',
                 p: 2,
-                bgcolor: '#fafafa',
+                bgcolor: '#f5f5f5',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1,
+                borderRadius: 2,
+                border: '1px solid #e0e0e0',
               }}
             >
-              {loading && messages.length === 0 ? (
+              {loading && (messages || []).length === 0 ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                   <CircularProgress />
                 </Box>
+              ) : (messages || []).length === 0 ? (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  mt: 8,
+                  gap: 2 
+                }}>
+                  <Avatar sx={{ width: 60, height: 60, bgcolor: '#e0e0e0' }}>
+                    <ChatIcon sx={{ fontSize: 30, color: '#999' }} />
+                  </Avatar>
+                  <Typography variant="h6" sx={{ color: '#666', textAlign: 'center' }}>
+                    Chưa có tin nhắn nào
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#999', textAlign: 'center' }}>
+                    Hãy gửi tin nhắn đầu tiên để bắt đầu cuộc trò chuyện
+                  </Typography>
+                </Box>
               ) : (
-                messages.map((message) => (
-                  <Fade key={message.id} in={true} timeout={300}>
+                (messages || []).map((message) => (
+                  <Fade key={message.id || message._id} in={true} timeout={300}>
                     <Box
                       sx={{
                         display: 'flex',
-                        justifyContent: message.senderId === currentUser.id ? 'flex-end' : 'flex-start',
-                        mb: 1,
+                        justifyContent: message.senderId === currentUser?._id ? 'flex-end' : 'flex-start',
+                        mb: 2,
+                        px: 1,
                       }}
                     >
-                      <Paper
-                        elevation={1}
+                      <Box
                         sx={{
-                          p: 2,
-                          maxWidth: '70%',
-                          bgcolor: message.senderId === currentUser.id ? '#2196F3' : 'white',
-                          color: message.senderId === currentUser.id ? 'white' : 'text.primary',
-                          borderRadius: 2,
+                          maxWidth: '75%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: message.senderId === currentUser?._id ? 'flex-end' : 'flex-start',
                         }}
                       >
-                        <Typography variant="body1">{message.content}</Typography>
+                        <Paper
+                          elevation={2}
+                          sx={{
+                            p: 2,
+                            bgcolor: message.senderId === currentUser?._id ? '#4CAF50' : '#f5f5f5',
+                            color: message.senderId === currentUser?._id ? 'white' : 'text.primary',
+                            borderRadius: 4,
+                            border: message.senderId === currentUser?._id ? 'none' : '1px solid #e0e0e0',
+                            boxShadow: message.senderId === currentUser?._id 
+                              ? '0 2px 8px rgba(76, 175, 80, 0.3)' 
+                              : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                            position: 'relative',
+                            '&::before': message.senderId === currentUser?._id ? {
+                              content: '""',
+                              position: 'absolute',
+                              right: -8,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              width: 0,
+                              height: 0,
+                              borderLeft: '8px solid #4CAF50',
+                              borderTop: '8px solid transparent',
+                              borderBottom: '8px solid transparent',
+                            } : {
+                              content: '""',
+                              position: 'absolute',
+                              left: -8,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              width: 0,
+                              height: 0,
+                              borderRight: '8px solid #f5f5f5',
+                              borderTop: '8px solid transparent',
+                              borderBottom: '8px solid transparent',
+                            }
+                          }}
+                        >
+                          <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
+                            {message.content}
+                          </Typography>
+                        </Paper>
                         <Typography
                           variant="caption"
                           sx={{
-                            display: 'block',
                             mt: 0.5,
-                            opacity: 0.7,
-                            textAlign: 'right',
+                            px: 1,
+                            opacity: 0.6,
+                            fontSize: '0.75rem',
                           }}
                         >
                           {formatTime(message.timestamp)}
                         </Typography>
-                      </Paper>
+                      </Box>
                     </Box>
                   </Fade>
                 ))
@@ -530,16 +715,24 @@ const CustomerChat = () => {
 
             {/* Message Input */}
             <Paper
-              elevation={2}
+              elevation={3}
               sx={{
                 p: 2,
                 borderRadius: 0,
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-end',
                 gap: 1,
+                bgcolor: 'white',
+                borderTop: '1px solid #e0e0e0',
               }}
             >
-              <IconButton size="small">
+              <IconButton 
+                size="small"
+                sx={{ 
+                  color: '#666',
+                  '&:hover': { bgcolor: '#f5f5f5' }
+                }}
+              >
                 <AttachFileIcon />
               </IconButton>
               <TextField
@@ -550,28 +743,62 @@ const CustomerChat = () => {
                 value={newMessage}
                 onChange={handleTyping}
                 onKeyPress={handleKeyPress}
-                disabled={!isConnected}
+                disabled={!selectedUser}
+                variant="outlined"
+                size="small"
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 3,
+                    borderRadius: 6,
+                    bgcolor: '#f9f9f9',
+                    border: '1px solid #e0e0e0',
+                    '&:hover': {
+                      border: '1px solid #4CAF50',
+                    },
+                    '&.Mui-focused': {
+                      border: '2px solid #4CAF50',
+                      bgcolor: 'white',
+                    },
+                    '& fieldset': {
+                      border: 'none',
+                    },
+                  },
+                  '& .MuiInputBase-input': {
+                    py: 1.5,
+                    px: 2,
                   },
                 }}
               />
-              <IconButton size="small">
+              <IconButton 
+                size="small"
+                sx={{ 
+                  color: '#666',
+                  '&:hover': { bgcolor: '#f5f5f5' }
+                }}
+              >
                 <EmojiIcon />
               </IconButton>
               <IconButton
-                size="small"
+                size="medium"
                 onClick={handleSendMessage}
-                disabled={!newMessage.trim() || !isConnected}
+                disabled={!newMessage.trim() || !selectedUser}
                 sx={{
-                  bgcolor: '#2196F3',
+                  bgcolor: newMessage.trim() && selectedUser ? '#4CAF50' : '#ccc',
                   color: 'white',
-                  '&:hover': { bgcolor: '#1976D2' },
-                  '&:disabled': { bgcolor: '#ccc' },
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  '&:hover': { 
+                    bgcolor: newMessage.trim() && selectedUser ? '#45a049' : '#ccc',
+                    transform: 'scale(1.05)',
+                  },
+                  '&:disabled': { 
+                    bgcolor: '#ccc',
+                    transform: 'none',
+                  },
+                  transition: 'all 0.2s ease-in-out',
                 }}
               >
-                <SendIcon />
+                <SendIcon fontSize="small" />
               </IconButton>
             </Paper>
           </>
@@ -632,7 +859,7 @@ const CustomerChat = () => {
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
-                  primary={user.name}
+                  primary={user.name || 'Unknown User'}
                   secondary={
                     <Box>
                       <Typography variant="caption" sx={{ display: 'block' }}>
@@ -671,6 +898,7 @@ const CustomerChat = () => {
         </Alert>
       )}
     </Box>
+      </Box>
   );
 };
 

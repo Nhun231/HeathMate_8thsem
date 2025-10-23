@@ -42,6 +42,12 @@ export class User {
     default: UserStatus.Active,
   })
   status: string;
+
+  @Prop({
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    default: [],
+  })
+  clients: Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

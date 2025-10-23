@@ -39,7 +39,7 @@ const AuthProvider = ({ children }) => {
             setAuth({ accessToken: storedToken, user: userInfo.data });
           } catch (e) {
           console.error("Invalid stored token", e);
-          localStorage.removeItem("accessToken");
+          //localStorage.removeItem("accessToken");
         }
       }
       setLoading(false); 

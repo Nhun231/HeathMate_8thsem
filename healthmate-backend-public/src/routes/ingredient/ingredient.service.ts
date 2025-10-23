@@ -273,4 +273,14 @@ export class IngredientService {
             throw new Error('Failed to delete ingredient');
         }
     }
+
+    async getDistinctTypes(): Promise<string[]> {
+        try {
+            const types = await this.ingredientRepo.distinct('type');
+            return types.filter(type => type && type.trim() !== '').sort();
+        } catch (error) {
+            console.error('[IngredientService.getDistinctTypes] Unexpected error:', error);
+            throw new Error('Failed to fetch ingredient types');
+        }
+    }
 }
