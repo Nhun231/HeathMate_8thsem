@@ -10,12 +10,19 @@ import { CatchEverythingFilter } from './shared/filters/catch-everything.filter'
 import { AuthModule } from './routes/auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CalculationModule } from './routes/calculation/calculation.module';
-import { UserModule } from './routes/user/user.module';
 import envConfig from './shared/utils/config';
-import { IngredientModule } from "./routes/ingredient/ingredient.module";
+import { IngredientModule } from './routes/ingredient/ingredient.module';
 import { DietPlanModule } from './routes/dietplan/dietplan.module';
 import { DishModule } from './routes/dish/dish.module';
 import { MealModule } from './routes/meal/meal.module';
+import { WaterModule } from './routes/water/water.module';
+import { PermissionModule } from './routes/permission/permission.module';
+import { UserModule } from './routes/user/user.module';
+import { MediaModule } from './routes/media/media.module';
+import { ExpertCertificateModule } from './routes/expert-certificate/expert-certificate.module';
+import { AiModule } from './routes/ai/ai.module';
+import { RoleModule } from './routes/role/role.module';
+import { ProfileModule } from './routes/profile/profile.module';
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -32,6 +39,13 @@ import { MealModule } from './routes/meal/meal.module';
     DietPlanModule,
     DishModule,
     MealModule,
+    AiModule,
+    PermissionModule,
+    MediaModule,
+    ExpertCertificateModule,
+    RoleModule,
+    ProfileModule,
+    WaterModule,
   ],
   controllers: [AppController],
   providers: [
@@ -54,4 +68,4 @@ import { MealModule } from './routes/meal/meal.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

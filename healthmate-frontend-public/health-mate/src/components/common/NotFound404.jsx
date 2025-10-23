@@ -134,12 +134,12 @@ export default function NotFoundPage() {
 
                             {/* Main heading */}
                             <Typography variant="h2" color="text.primary" gutterBottom sx={{ mb: 2 }}>
-                                Page Not Found
+                                Không Tìm Thấy Trang
                             </Typography>
 
                             {/* Description */}
                             <Typography variant="h4" color="text.secondary" sx={{ mb: 4, fontWeight: 400 }}>
-                                Oops! The page you're looking for doesn't exist.
+                                Oops! Trang bạn đang tìm kiếm không tồn tại.
                             </Typography>
 
                             <Typography
@@ -147,7 +147,7 @@ export default function NotFoundPage() {
                                 color="text.secondary"
                                 sx={{ mb: 4, maxWidth: 500, mx: "auto", lineHeight: 1.6 }}
                             >
-                                It might have been moved, deleted, or you entered the wrong URL. Let's get you back on track!
+                                Trang có thể đã được di chuyển, xóa hoặc bạn đã nhập sai URL. Hãy để chúng tôi đưa bạn quay lại đúng đường!
                             </Typography>
                         </Box>
 
@@ -166,7 +166,7 @@ export default function NotFoundPage() {
                                     },
                                 }}
                             >
-                                Go Home
+                                Về Trang Chủ
                             </Button>
 
                             <Button
@@ -184,7 +184,7 @@ export default function NotFoundPage() {
                                     },
                                 }}
                             >
-                                Go Back
+                                Quay Lại
                             </Button>
                         </Stack>
 
