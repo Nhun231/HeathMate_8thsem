@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { SharedModule } from './shared/shared.module';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import CustomMyZodValidationPipe from './shared/pipes/custom-zod-validation.pipe';
 import { ZodSerializerInterceptor } from 'nestjs-zod';
@@ -23,49 +22,50 @@ import { ExpertCertificateModule } from './routes/expert-certificate/expert-cert
 import { AiModule } from './routes/ai/ai.module';
 import { RoleModule } from './routes/role/role.module';
 import { ProfileModule } from './routes/profile/profile.module';
+import { SharedModule } from './shared/shared.module';
 @Module({
-  imports: [
-    MongooseModule.forRoot(
-      envConfig.MONGODB_URI.replace(
-        '<db_user>',
-        envConfig.MONGODB_USER,
-      ).replace('<db_password>', envConfig.MONGODB_PASSWORD),
-    ),
-    SharedModule,
-    AuthModule,
-    CalculationModule,
-    UserModule,
-    IngredientModule,
-    DietPlanModule,
-    DishModule,
-    MealModule,
-    AiModule,
-    PermissionModule,
-    MediaModule,
-    ExpertCertificateModule,
-    RoleModule,
-    ProfileModule,
-    WaterModule,
-  ],
-  controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_PIPE,
-      useClass: CustomMyZodValidationPipe,
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: ZodSerializerInterceptor,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: HttpExceptionFilter,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: CatchEverythingFilter,
-    },
-  ],
+    imports: [
+        MongooseModule.forRoot(
+            envConfig.MONGODB_URI.replace(
+                '<db_user>',
+                envConfig.MONGODB_USER,
+            ).replace('<db_password>', envConfig.MONGODB_PASSWORD),
+        ),
+        SharedModule,
+        AuthModule,
+        CalculationModule,
+        UserModule,
+        IngredientModule,
+        DietPlanModule,
+        DishModule,
+        MealModule,
+        AiModule,
+        PermissionModule,
+        MediaModule,
+        ExpertCertificateModule,
+        RoleModule,
+        ProfileModule,
+        WaterModule,
+    ],
+    controllers: [AppController],
+    providers: [
+        AppService,
+        {
+            provide: APP_PIPE,
+            useClass: CustomMyZodValidationPipe,
+        },
+        {
+            provide: APP_INTERCEPTOR,
+            useClass: ZodSerializerInterceptor,
+        },
+        {
+            provide: APP_FILTER,
+            useClass: HttpExceptionFilter,
+        },
+        {
+            provide: APP_FILTER,
+            useClass: CatchEverythingFilter,
+        },
+    ],
 })
-export class AppModule {}
+export class AppModule { }

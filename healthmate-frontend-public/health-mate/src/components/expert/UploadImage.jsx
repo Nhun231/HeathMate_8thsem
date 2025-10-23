@@ -28,10 +28,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { useNavigate } from "react-router-dom";
 import CustomAlert from "../../components/common/Alert.jsx";
-import {
-    register,
-    sendOTP,
-} from "../../services/authService/RegisterService.js";
+import { register, sendOTP } from "../../services/authService/RegisterService.js";
 import {
     getPresignedUploadUrl,
     uploadFileToS3,
@@ -175,11 +172,19 @@ const RegisterExpert = () => {
 
         setLoading(true);
         try {
+            // Dữ liệu gửi lên backend — KHÔNG bao gồm role hoặc otp
             const registerData = {
-                ...formData,
-                role: "expert",
-                otp: formData.code,
+                email: formData.email,
+                password: formData.password,
+                confirmPassword: formData.confirmPassword,
+                fullname: formData.fullname,
+                gender: formData.gender, // "Male" hoặc "Female"
+                dob: formData.dob,
+                phoneNumber: formData.phoneNumber,
+                code: formData.code,
+                isExpert: true, // nếu backend hỗ trợ đăng ký chuyên gia
             };
+
             await register(registerData);
 
             if (certificateId && viewUrl) {
@@ -263,7 +268,7 @@ const RegisterExpert = () => {
 
                     <form onSubmit={handleSubmit}>
                         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            {/* Fullname */}
+                            {/* Họ và tên */}
                             <TextField
                                 name="fullname"
                                 placeholder="Họ và tên"
@@ -279,6 +284,7 @@ const RegisterExpert = () => {
                                     ),
                                 }}
                             />
+
                             {/* Email */}
                             <TextField
                                 name="email"
@@ -365,12 +371,12 @@ const RegisterExpert = () => {
                                 onChange={handleChange}
                             >
                                 <FormControlLabel
-                                    value="male"
+                                    value="Male"
                                     control={<Radio color="success" />}
                                     label="Nam"
                                 />
                                 <FormControlLabel
-                                    value="female"
+                                    value="Female"
                                     control={<Radio color="success" />}
                                     label="Nữ"
                                 />

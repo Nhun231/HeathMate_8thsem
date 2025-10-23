@@ -25,7 +25,10 @@ import WaterInformation from "../components/water/WaterInformation.jsx";
 import UpdateNutrient from "../components/nutrients/UpdateNutrients.jsx"
 import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
 import RequireRole from "../components/common/RequireRole.jsx";
-import ExpertUpload from "../components/expert/UploadImage.jsx";
+import ExpertUpload from "../components/expert/UploadCertificate.jsx";
+import RegisterExpert from "../components/expert/ExpertRegister.jsx";
+
+
 class AuthLayout extends Component {
   render() {
     return (
@@ -58,9 +61,17 @@ const router = createBrowserRouter([
     element: <GuestHomePage />,
   },
   {
-    path: "/expert-register",
-    element: <ExpertUpload />,
+    path: "/register-expert",
+    element: (
+      <AuthProvider>
+        <RegisterExpert />
+      </AuthProvider>
+    ),
   },
+  // {
+  //   path: "/expert-register",
+  //   element: <ExpertUpload />,
+  // },
 
   // {
   //     path: "/login",
@@ -83,10 +94,12 @@ const router = createBrowserRouter([
           //     element: <OAuthCallback />,
           // },
 
+
           {
             path: "/",
             element: <DefaultRedirect />,
           },
+
           {
             path: "/calculate",
             element: <Calculate />,
@@ -149,10 +162,10 @@ const router = createBrowserRouter([
             path: "/update-nutrient",
             element: <UpdateNutrient />,
           },
-          // {
-          //   path: "/expert-register",
-          //   element: <ExpertUpload />,
-          // },
+          {
+            path: "/upload-certificate",
+            element: <ExpertUpload />,
+          },
         ],
       },
     ],

@@ -22,7 +22,7 @@ import { QuerySchema } from 'src/shared/schemas/request/request.schema';
 export class ExpertCertificateController {
   constructor(
     private readonly expertCertificateService: ExpertCertificateService,
-  ) {}
+  ) { }
 
   @Post()
   async create(
