@@ -89,18 +89,17 @@ const ExpertChat = () => {
     }
   }, []);
 
-  // Load messages for selected customer
+  // Load messages for selected customer (Pure WebSocket - no DB loading)
   const loadMessages = async (roomId) => {
     try {
-      setLoading(true);
-      const response = await chatService.getMessages(roomId, 1, 50);
-      setMessages(response?.messages || []);
-      scrollToBottom();
+      console.log('📨 Socket: Loading messages for room:', roomId);
+      // In Pure WebSocket approach, we don't load from DB
+      // Messages will come through socket events
+      setMessages([]); // Clear existing messages
+      console.log('📨 Socket: Messages cleared, waiting for socket events');
     } catch (err) {
       console.error('❌ Error loading messages:', err);
       setError('Không thể tải tin nhắn');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -156,22 +155,10 @@ const ExpertChat = () => {
       socketService.onMessage((message) => {
         console.log('📨 Socket: Received message:', message.roomId, 'sender:', message.senderId, 'current user:', currentUser._id);
         
-        // Only add message if it's not from current user (to avoid duplicates)
-        if (message.senderId !== currentUser._id) {
-          console.log('📨 Socket: Adding message from other user');
-          
-          // If we have a selected customer and this message is for that room, add it
-          if (selectedCustomer && message.roomId === selectedCustomer.roomId) {
-            console.log('📨 Socket: Adding to current chat room');
-            setMessages(prev => [...prev, message]);
-            scrollToBottom();
-          } else {
-            console.log('📨 Socket: Message not for current room, but keeping for potential future display');
-            // You could add logic here to show notification or update room list
-          }
-        } else {
-          console.log('📨 Socket: Ignoring own message');
-        }
+        // Add all messages (no filtering by sender for Pure WebSocket)
+        console.log('📨 Socket: Adding message to chat');
+        setMessages(prev => [...prev, message]);
+
       });
 
     // Listen for typing indicators
@@ -221,7 +208,7 @@ const ExpertChat = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Handle sending message
+  // Handle sending message (Pure WebSocket)
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedCustomer || !currentUser) return;
 
@@ -248,16 +235,9 @@ const ExpertChat = () => {
     setNewMessage('');
 
     try {
-      // Always try socket first
-      console.log('📤 Socket: Attempting to send message to room:', roomId);
-      console.log('📤 Socket: Connection status:', isConnected);
-      console.log('📤 Socket: Message data:', {
-        roomId: roomId,
-        senderId: currentUser._id,
-        receiverId: selectedCustomer._id,
-        content: newMessage.trim(),
-        messageType: 'text',
-      });
+      // Send via WebSocket only (no API fallback)
+      console.log('📤 Socket: Sending message via WebSocket to room:', roomId);
+      console.log('📤 Socket: Message data:', messageData);
       
       socketService.sendMessage({
         roomId: roomId,
@@ -271,6 +251,8 @@ const ExpertChat = () => {
       if (isConnected) {
         socketService.sendStopTyping(currentUser._id, selectedCustomer._id);
       }
+      
+      console.log('✅ Socket: Message sent successfully');
     } catch (err) {
       console.error('❌ Error sending message:', err);
       setError('Không thể gửi tin nhắn: ' + (err.response?.data?.message || err.message));
@@ -446,29 +428,8 @@ const ExpertChat = () => {
                 size="small" 
                 onClick={() => {
                   console.log('🧪 Testing socket connection...');
-                  console.log('🧪 Socket service:', socketService);
-                  console.log('🧪 Connection status:', socketService.getConnectionStatus());
-                  console.log('🧪 Socket instance:', socketService.socket);
-                  
-                  // Force reconnect
-                  console.log('🧪 Force reconnecting...');
-                  socketService.disconnect();
-                  setTimeout(() => {
-                    const newSocket = socketService.connect();
-                    console.log('🧪 New socket:', newSocket);
-                    console.log('🧪 New connection status:', socketService.getConnectionStatus());
-                  }, 1000);
-                  
-                  // Test sending a message
-                  if (selectedCustomer) {
-                    socketService.sendMessage({
-                      roomId: selectedCustomer.roomId,
-                      senderId: currentUser._id,
-                      receiverId: selectedCustomer._id,
-                      content: 'Test message from debug button',
-                      messageType: 'text',
-                    });
-                  }
+                  socketService.debugSocketState();
+                  socketService.testConnection();
                 }}
                 sx={{ color: 'white' }}
               >

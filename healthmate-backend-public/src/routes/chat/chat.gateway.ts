@@ -6,6 +6,7 @@ import {
   ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
@@ -16,35 +17,43 @@ import { Logger } from '@nestjs/common';
     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
     credentials: true,
   },
-  namespace: '/chat',
+  namespace: '/v1/chat',
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway {
   @WebSocketServer()
   server: Server;
 
   private logger: Logger = new Logger('ChatGateway');
   private connectedUsers = new Map<string, string>(); // userId -> socketId
 
-  constructor(private readonly chatService: ChatService) {}
-
-  handleConnection(client: Socket) {
-    console.log('🔌 Socket: Client connected:', client.id);
-    this.logger.log(`Client connected: ${client.id}`);
+  constructor(private readonly chatService: ChatService) {
+    console.log('🚀 ChatGateway: Constructor called - Gateway initialized');
+    this.logger.log('ChatGateway initialized');
   }
 
+  // Connection handler
+  handleConnection(client: Socket) {
+    console.log('🔌 Gateway: Client connected:', client.id);
+    console.log('🔌 Gateway: Total connected clients:', this.server.sockets.sockets.size);
+  }
+
+  // Disconnection handler
   handleDisconnect(client: Socket) {
-    console.log('🔌 Socket: Client disconnected:', client.id);
-    this.logger.log(`Client disconnected: ${client.id}`);
+    console.log('🔌 Gateway: Client disconnected:', client.id);
     
     // Remove user from connected users map
     for (const [userId, socketId] of this.connectedUsers.entries()) {
       if (socketId === client.id) {
-        console.log('🔌 Socket: Removing user from connected users:', userId);
         this.connectedUsers.delete(userId);
+        console.log('🔌 Gateway: Removed user from map:', userId);
         break;
       }
     }
+    
+    console.log('🔌 Gateway: Remaining connected users:', this.connectedUsers.size);
   }
+
+
 
   @SubscribeMessage('join_user_room')
   async handleJoinUserRoom(
@@ -112,6 +121,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.logger.log(`Customer ${customerId} joined room`);
   }
 
+  @SubscribeMessage('test_connection')
+  async handleTestConnection(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: any
+  ) {
+    console.log('🧪 Gateway: Received test_connection event');
+    console.log('🧪 Gateway: Client ID:', client.id);
+    console.log('🧪 Gateway: Data:', data);
+    console.log('🧪 Gateway: Server instance:', !!this.server);
+    console.log('🧪 Gateway: Server namespaces:', this.server?._nsps ? Array.from(this.server._nsps.keys()) : 'Not available');
+    
+    client.emit('test_response', {
+      message: 'Connection test successful',
+      clientId: client.id,
+      timestamp: new Date().toISOString()
+    });
+    
+    console.log('🧪 Gateway: Sent test response to client');
+  }
+
   @SubscribeMessage('send_message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
@@ -128,31 +157,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       console.log('📤 Gateway: Client ID:', client.id);
       console.log('📤 Gateway: Message data:', data);
       
-      // Save message to database
-      const message = await this.chatService.saveMessage({
-        roomId: data.roomId,
-        senderId: data.senderId,
-        receiverId: data.receiverId,
-        senderType: 'NutrientExpert', // Assume expert for now, can be improved
-        content: data.content,
-        messageType: data.messageType || 'text',
-      });
-
-      console.log('💾 Gateway: Message saved to database:', message);
-
-      // Emit message to the specific room
+      // Create message object for broadcasting (no DB save)
       const messageData = {
-        id: message._id?.toString() || message.id,
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         roomId: data.roomId,
         senderId: data.senderId,
         receiverId: data.receiverId,
         content: data.content,
         messageType: data.messageType || 'text',
-        timestamp: message.timestamp || new Date().toISOString(),
+        timestamp: new Date().toISOString(),
         isRead: false,
       };
 
-      console.log('📡 Socket: Broadcasting to room:', `room_${data.roomId}`);
+      console.log('📡 Gateway: Broadcasting message to room:', `room_${data.roomId}`);
       
       // Broadcast to all users in the room
       this.server.to(`room_${data.roomId}`).emit('new_message', messageData);
@@ -161,25 +178,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const senderSocketId = this.connectedUsers.get(data.senderId);
       const receiverSocketId = this.connectedUsers.get(data.receiverId);
       
-      console.log('📡 Socket: Sender socket:', senderSocketId, 'Receiver socket:', receiverSocketId);
+      console.log('📡 Gateway: Sender socket:', senderSocketId, 'Receiver socket:', receiverSocketId);
       
       // Send to receiver directly if they're connected
       if (receiverSocketId && receiverSocketId !== client.id) {
-        console.log('📡 Socket: Sending directly to receiver');
+        console.log('📡 Gateway: Sending directly to receiver');
         this.server.to(receiverSocketId).emit('new_message', messageData);
       }
       
       // Send to sender for confirmation (if different from current client)
       if (senderSocketId && senderSocketId !== client.id) {
-        console.log('📡 Socket: Sending confirmation to sender');
+        console.log('📡 Gateway: Sending confirmation to sender');
         this.server.to(senderSocketId).emit('new_message', messageData);
       }
 
-      this.logger.log(`Message sent from ${data.senderId} to room ${data.roomId}`);
+      console.log('✅ Gateway: Message broadcasted successfully');
     } catch (error) {
       console.error('❌ Gateway: Error in handleSendMessage:', error);
       console.error('❌ Gateway: Error details:', error.message);
-      console.error('❌ Gateway: Error stack:', error.stack);
       this.logger.error('Error sending message:', error);
       client.emit('message_error', { error: 'Failed to send message' });
     }
@@ -253,15 +269,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log('🔌 Gateway: Received join_room event');
     console.log('🔌 Gateway: Client ID:', client.id);
     console.log('🔌 Gateway: Room ID:', roomId, 'User ID:', userId);
+    console.log('🔌 Gateway: Total connected users:', this.connectedUsers.size);
     
     // Store user connection
     this.connectedUsers.set(userId, client.id);
     
     // Join the specific chat room
     await client.join(`room_${roomId}`);
+    console.log('🔌 Gateway: Client joined room:', `room_${roomId}`);
     
     // Also join user-specific room for notifications
     await client.join(`user_${userId}`);
+    console.log('🔌 Gateway: Client joined user room:', `user_${userId}`);
+    
+    console.log('🔌 Gateway: Connected users map:', Array.from(this.connectedUsers.entries()));
+    
+    // Check how many users are in this room
+    const roomClients = await this.server.in(`room_${roomId}`).fetchSockets();
+    console.log('🔌 Gateway: Users in room', `room_${roomId}:`, roomClients.length);
+    roomClients.forEach(socket => {
+      console.log('🔌 Gateway: Socket in room:', socket.id);
+    });
     
     this.logger.log(`User ${userId} (${client.id}) joined room ${roomId}`);
     
@@ -271,6 +299,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId,
       timestamp: new Date().toISOString(),
     });
+    console.log('🔌 Gateway: Emitted user_joined event to room:', `room_${roomId}`);
   }
 
   @SubscribeMessage('leave_room')

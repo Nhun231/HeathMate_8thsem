@@ -16,7 +16,7 @@ class SocketService {
         this.socket = io(backendUrl, {
           transports: ['websocket', 'polling'],
           autoConnect: true,
-          namespace: '/chat'
+          namespace: '/v1/chat'
         });
 
       this.socket.on('connect', () => {
@@ -82,6 +82,7 @@ class SocketService {
       console.log('🔌 Socket: Joining room:', roomId, 'for user:', userId);
       console.log('🔌 Socket: Socket connected:', this.socket.connected);
       console.log('🔌 Socket: Socket ID:', this.socket.id);
+      console.log('🔌 Socket: Current namespace:', this.socket.nsp?.name);
       this.socket.emit('join_room', { roomId, userId });
     } else {
       console.error('🔌 Socket: Cannot join room - not connected');
@@ -102,7 +103,15 @@ class SocketService {
       console.log('📤 Socket: Sending message:', messageData);
       console.log('📤 Socket: Socket connected:', this.socket.connected);
       console.log('📤 Socket: Socket ID:', this.socket.id);
+      console.log('📤 Socket: Socket ready state:', this.socket.readyState);
+      
+      // Add listener for message confirmation
+      this.socket.once('message_sent', (data) => {
+        console.log('✅ Socket: Message sent confirmation:', data);
+      });
+      
       this.socket.emit('send_message', messageData);
+      console.log('📤 Socket: Message emit completed');
     } else {
       console.error('📤 Socket: Not connected, cannot send message');
     }
@@ -114,6 +123,19 @@ class SocketService {
       console.log('📨 Socket: Setting up message listener');
       this.socket.on('new_message', (message) => {
         console.log('📨 Socket: Received message from server:', message);
+        console.log('📨 Socket: Message details:', {
+          id: message.id,
+          roomId: message.roomId,
+          senderId: message.senderId,
+          content: message.content,
+          timestamp: message.timestamp
+        });
+        callback(message);
+      });
+      
+      // Also listen for any other message events
+      this.socket.on('message', (message) => {
+        console.log('📨 Socket: Received generic message event:', message);
         callback(message);
       });
     }
@@ -156,13 +178,47 @@ class SocketService {
 
   // Get connection status
   getConnectionStatus() {
-    console.log('🔌 Socket: Getting connection status:', this.isConnected);
-    console.log('🔌 Socket: Socket instance:', this.socket);
+    const status = this.isConnected && this.socket && this.socket.connected;
+    console.log('🔌 Socket: Connection status check:', {
+      isConnected: this.isConnected,
+      socketExists: !!this.socket,
+      socketConnected: this.socket?.connected,
+      socketId: this.socket?.id,
+      finalStatus: status
+    });
+    return status;
+  }
+
+  // Debug method to check socket state
+  debugSocketState() {
+    console.log('🔍 Socket Debug State:', {
+      socket: this.socket,
+      isConnected: this.isConnected,
+      socketConnected: this.socket?.connected,
+      socketId: this.socket?.id,
+      socketReadyState: this.socket?.readyState,
+      socketTransport: this.socket?.io?.engine?.transport?.name,
+      socketUrl: this.socket?.io?.uri,
+      socketNamespace: this.socket?.nsp?.name
+    });
+  }
+
+  // Test connection to backend
+  testConnection() {
     if (this.socket) {
-      console.log('🔌 Socket: Socket connected:', this.socket.connected);
-      console.log('🔌 Socket: Socket ID:', this.socket.id);
+      console.log('🧪 Socket: Testing connection to backend...');
+      this.socket.emit('test_connection', {
+        message: 'Hello from frontend',
+        timestamp: new Date().toISOString()
+      });
+      
+      // Listen for test response
+      this.socket.once('test_response', (data) => {
+        console.log('🧪 Socket: Received test response from backend:', data);
+      });
+    } else {
+      console.error('🧪 Socket: Cannot test - not connected');
     }
-    return this.isConnected;
   }
 
   // Remove all listeners

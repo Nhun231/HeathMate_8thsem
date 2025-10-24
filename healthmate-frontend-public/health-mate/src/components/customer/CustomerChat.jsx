@@ -61,6 +61,7 @@ const CustomerChat = () => {
   // Refs
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const connectionIntervalRef = useRef(null);
 
   // Current user data from auth
   const currentUser = user ? {
@@ -78,14 +79,10 @@ const CustomerChat = () => {
   // Load available users (experts)
   const loadAvailableUsers = async () => {
     try {
-      console.log('🔍 Loading available users...');
       setLoading(true);
       const response = await chatService.getAvailableUsers();
-      console.log('📡 Available users response:', response);
       setAvailableUsers(response?.users || []);
-      console.log('✅ Available users loaded:', response?.users || []);
     } catch (err) {
-      console.error('❌ Error loading available users:', err);
       setError('Không thể tải danh sách chuyên gia');
       setAvailableUsers([]); // Set empty array on error
     } finally {
@@ -97,51 +94,50 @@ const CustomerChat = () => {
   const loadChatRooms = async () => {
     try {
       const userType = currentUser?.role === 'Customer' ? 'Customer' : 'NutrientExpert';
-      console.log('🔍 Loading chat rooms for user type:', userType);
       const response = await chatService.getChatRooms(userType);
-      console.log('📡 Chat rooms response:', response);
       setChatRooms(response?.rooms || []);
-      console.log('✅ Chat rooms loaded:', response?.rooms || []);
     } catch (err) {
-      console.error('❌ Error loading chat rooms:', err);
       setError('Không thể tải danh sách cuộc trò chuyện');
       setChatRooms([]); // Set empty array on error
     }
   };
 
-  // Load messages for selected user
+  // Load messages for selected user (Pure WebSocket - no DB loading)
   const loadMessages = async (roomId) => {
     try {
-      console.log('🔍 Loading messages for roomId:', roomId);
-      setLoading(true);
-      const response = await chatService.getMessages(roomId, 1, 50);
-      console.log('📡 Messages response:', response);
-      setMessages(response?.messages || []);
-      console.log('✅ Messages loaded:', response?.messages || []);
-      scrollToBottom();
+      console.log('📨 Socket: Loading messages for room:', roomId);
+      // In Pure WebSocket approach, we don't load from DB
+      // Messages will come through socket events
+      setMessages([]); // Clear existing messages
+      console.log('📨 Socket: Messages cleared, waiting for socket events');
     } catch (err) {
       console.error('❌ Error loading messages:', err);
       setError('Không thể tải tin nhắn');
-      setMessages([]); // Set empty array on error
-    } finally {
-      setLoading(false);
     }
   };
 
   // Initialize socket connection
   useEffect(() => {
-    console.log('🚀 useEffect triggered with currentUser:', currentUser);
     // Only initialize if we have a valid user
     if (!currentUser || !currentUser._id) {
-      console.log('❌ No valid user, skipping initialization');
       return;
     }
 
-    console.log('✅ Valid user found, initializing...');
-    socketService.connect();
+    const socket = socketService.connect();
     
-    // Set connection status
-    setIsConnected(socketService.getConnectionStatus());
+    // Set connection status with delay to ensure connection is established
+    setTimeout(() => {
+      const status = socketService.getConnectionStatus();
+      console.log('🔌 Customer: Connection status after delay:', status);
+      setIsConnected(status);
+      
+      // Start periodic connection check
+      connectionIntervalRef.current = setInterval(() => {
+        const currentStatus = socketService.getConnectionStatus();
+        console.log('🔌 Customer: Periodic connection check:', currentStatus);
+        setIsConnected(currentStatus);
+      }, 2000);
+    }, 1000);
 
     // Join customer room
     socketService.joinCustomerRoom(currentUser._id);
@@ -150,45 +146,34 @@ const CustomerChat = () => {
     socketService.onMessage((message) => {
       console.log('📨 Socket: Customer received message:', message.roomId, 'sender:', message.senderId, 'current user:', currentUser._id);
       
-      // Only add message if it's not from current user (to avoid duplicates)
-      if (message.senderId !== currentUser._id) {
-        console.log('📨 Socket: Adding message from other user');
-        
-        // If we have a selected user and this message is for that room, add it
-        if (selectedUser && message.roomId === selectedUser.roomId) {
-          console.log('📨 Socket: Adding to current chat room');
-          setMessages(prev => [...prev, message]);
-          scrollToBottom();
-        } else {
-          console.log('📨 Socket: Message not for current room, but keeping for potential future display');
-        }
-      } else {
-        console.log('📨 Socket: Ignoring own message');
-      }
+      // Add all messages (no filtering by sender for Pure WebSocket)
+      console.log('📨 Socket: Adding message to chat');
+      setMessages(prev => [...prev, message]);
+      scrollToBottom();
     });
 
-    // Listen for typing indicators
-    socketService.onTyping((data) => {
-      if (data.userId !== currentUser._id) {
-        setTypingUsers(prev => {
-          if (!prev.includes(data.userId)) {
-            return [...prev, data.userId];
-          }
-          return prev;
-        });
-        setIsTyping(true);
-      }
-    });
-
-    socketService.onStopTyping((data) => {
-      if (data.userId !== currentUser._id) {
-        setTypingUsers(prev => {
-          const filtered = prev.filter(id => id !== data.userId);
-          setIsTyping(filtered.length > 0);
-          return filtered;
-        });
-      }
-    });
+    // // Listen for typing indicators
+    // socketService.onTyping((data) => {
+    //   if (data.userId !== currentUser._id) {
+    //     setTypingUsers(prev => {
+    //       if (!prev.includes(data.userId)) {
+    //         return [...prev, data.userId];
+    //       }
+    //       return prev;
+    //     });
+    //     setIsTyping(true);
+    //   }
+    // });
+    //
+    // socketService.onStopTyping((data) => {
+    //   if (data.userId !== currentUser._id) {
+    //     setTypingUsers(prev => {
+    //       const filtered = prev.filter(id => id !== data.userId);
+    //       setIsTyping(filtered.length > 0);
+    //       return filtered;
+    //     });
+    //   }
+    // });
 
     // Load initial data
     loadAvailableUsers();
@@ -196,6 +181,9 @@ const CustomerChat = () => {
 
     // Cleanup on unmount
     return () => {
+      if (connectionIntervalRef.current) {
+        clearInterval(connectionIntervalRef.current);
+      }
       socketService.removeAllListeners();
       socketService.disconnect();
     };
@@ -233,10 +221,7 @@ const CustomerChat = () => {
     setNewMessage('');
 
     try {
-      // Always try socket first
       console.log('📤 Socket: Customer attempting to send message to room:', roomId);
-      console.log('📤 Socket: Connection status:', isConnected);
-      
       socketService.sendMessage({
         roomId: roomId,
         senderId: currentUser._id,
@@ -258,11 +243,9 @@ const CustomerChat = () => {
 
   // Handle typing indicator
   const handleTyping = (e) => {
-    console.log('⌨️ Typing detected:', e.target.value);
     setNewMessage(e.target.value);
 
     if (!selectedUser || !currentUser) {
-      console.log('❌ No selectedUser or currentUser, skipping typing indicator');
       return;
     }
 
@@ -286,7 +269,6 @@ const CustomerChat = () => {
 
   // Handle user selection
   const handleSelectUser = async (user) => {
-    console.log('👤 User selected:', user);
     setSelectedUser(user);
     setMessages([]);
     
@@ -294,11 +276,6 @@ const CustomerChat = () => {
     const existingRoom = (chatRooms || []).find(room => 
       room?.expertId?._id === user._id || room?.customerId?._id === user._id
     );
-    
-    console.log('🔍 All chat rooms:', chatRooms);
-    console.log('🔍 Looking for user._id:', user._id);
-    console.log('🔍 Existing room found:', existingRoom);
-    console.log('🔍 RoomId from existing room:', existingRoom?.roomId);
     
     if (existingRoom) {
       // Set the selected user with the correct roomId
@@ -318,7 +295,6 @@ const CustomerChat = () => {
       try {
         const response = await chatService.createChatRoom(user._id);
         const newRoom = response.room;
-        console.log('✅ New room created:', newRoom);
         setChatRooms(prev => [...prev, newRoom]);
         
         // Set the selected user with the correct roomId
@@ -327,13 +303,11 @@ const CustomerChat = () => {
         
         // Join the room via socket
         if (isConnected) {
-          console.log('🔌 Socket: Customer joining new room:', newRoom.roomId);
           socketService.joinRoom(newRoom.roomId, currentUser._id);
         }
         
         await loadMessages(newRoom.roomId);
       } catch (err) {
-        console.error('❌ Error creating chat room:', err);
         setError('Không thể tạo cuộc trò chuyện');
       }
     }
@@ -446,6 +420,19 @@ const CustomerChat = () => {
             </Typography>
           </Box>
           <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title="Test Socket Connection">
+              <IconButton 
+                size="small" 
+                onClick={() => {
+                  console.log('🧪 Customer: Testing socket connection...');
+                  socketService.debugSocketState();
+                  socketService.testConnection();
+                }}
+                sx={{ color: 'white' }}
+              >
+                <Typography variant="caption">TEST</Typography>
+              </IconButton>
+            </Tooltip>
             <Chip
               label={isConnected ? 'Online' : 'Offline'}
               color={isConnected ? 'success' : 'default'}

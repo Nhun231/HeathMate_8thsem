@@ -18,14 +18,26 @@ export class ChatService {
     // Generate a normal ObjectId for roomId
     const roomId = new Types.ObjectId();
     
-    // Check if room already exists between these users
+    // Check if room already exists between these users (both directions)
     const existingRoom = await this.chatRoomModel.findOne({ 
-      customerId: new Types.ObjectId(customerId),
-      expertId: new Types.ObjectId(expertId)
+      $or: [
+        { 
+          customerId: new Types.ObjectId(customerId),
+          expertId: new Types.ObjectId(expertId)
+        },
+        { 
+          customerId: new Types.ObjectId(expertId),
+          expertId: new Types.ObjectId(customerId)
+        }
+      ]
     }).exec();
+    
     if (existingRoom) {
+      console.log('🔄 ChatService: Found existing room:', existingRoom.roomId);
       return existingRoom;
     }
+    
+    console.log('🆕 ChatService: Creating new room for customer:', customerId, 'expert:', expertId);
 
     const chatRoom = new this.chatRoomModel({
       roomId,
