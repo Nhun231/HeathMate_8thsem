@@ -32,10 +32,13 @@ export class ExpertCertificateService {
     userId,
     data,
   }: {
-    userId: Types.ObjectId;
+    userId: string;
     data: CreateCertificateBodyType;
   }) {
-    return this.expertCertificateRepo.create({ userId, data });
+    return this.expertCertificateRepo.create({
+      userId: new Types.ObjectId(userId),
+      data,
+    });
   }
 
   async update({ id, data }: { id: string; data: UpdateCertificateBodyType }) {

@@ -36,21 +36,17 @@ const ExpertCertificateList = () => {
     const [page, setPage] = useState(1);
     const [alert, setAlert] = useState(null);
 
-    const rowsPerPage = 5;
+    const rowsPerPage = 10;
 
+    // Lấy tất cả chứng chỉ
     const fetchCertificates = async () => {
         try {
             setLoading(true);
-            const res = await listExpertCertificates();
-            const data = Array.isArray(res)
-                ? res
-                : Array.isArray(res?.data)
-                    ? res.data
-                    : Array.isArray(res?.certificates)
-                        ? res.certificates
-                        : [];
+            const res = await listExpertCertificates({ page: 1, limit: 1000 }); // limit lớn
+            const data = res?.data || [];
             setCertificates(data);
 
+            // Lấy presigned URL cho tất cả
             const urls = {};
             await Promise.all(
                 data.map(async (cert) => {
@@ -282,7 +278,6 @@ const ExpertCertificateList = () => {
                 />
             </Box>
 
-            {/* Dialog chi tiết */}
             {/* Dialog chi tiết */}
             <Dialog open={openDialog} onClose={handleClose} maxWidth="md" fullWidth>
                 <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.25rem" }}>

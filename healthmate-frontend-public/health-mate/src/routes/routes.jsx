@@ -162,10 +162,10 @@ const router = createBrowserRouter([
             path: "/update-nutrient",
             element: <UpdateNutrient />,
           },
-          {
-            path: "/upload-certificate",
-            element: <ExpertUpload />,
-          },
+          // {
+          //   path: "/upload-certificate",
+          //   element: <ExpertUpload />,
+          // },
         ],
       },
     ],

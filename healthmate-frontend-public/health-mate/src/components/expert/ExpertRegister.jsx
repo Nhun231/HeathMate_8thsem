@@ -10,7 +10,6 @@ const RegisterExpert = () => {
     const handleRegistered = (id, userEmail) => {
         setUserId(id);
         setEmail(userEmail);
-        setToken(userToken); s
     };
 
     return (

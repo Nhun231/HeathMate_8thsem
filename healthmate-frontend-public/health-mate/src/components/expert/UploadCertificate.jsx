@@ -1,29 +1,41 @@
 import React, { useState } from "react";
-import { Box, Card, CardContent, Typography, Button, CircularProgress } from "@mui/material";
+import {
+    Box,
+    Card,
+    CardContent,
+    Typography,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+} from "@mui/material";
 import { CloudUpload } from "@mui/icons-material";
 import CustomAlert from "../../components/common/Alert.jsx";
 import { getPresignedUploadUrl, uploadFileToS3 } from "../../services/MediaService.js";
 import { createExpertCertificate, updateExpertCertificate } from "../../services/ExpertCertificateService.js";
 
-const UploadCertificate = ({ email }) => {
+const UploadCertificate = ({ userId, email }) => {
     const [file, setFile] = useState(null);
     const [viewUrl, setViewUrl] = useState("");
     const [certificateId, setCertificateId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [alert, setAlert] = useState({ show: false, message: "", severity: "" });
+    const [openDialog, setOpenDialog] = useState(false);
 
     const handleFileUpload = async (file) => {
         setLoading(true);
         try {
-            // 1️⃣ Lấy presigned URL từ server
             const { presignedUrl, key } = await getPresignedUploadUrl(file);
-            // 2️⃣ Upload lên S3
             await uploadFileToS3(presignedUrl, file);
-            // 3️⃣ Tạo chứng chỉ trên server
-            const cert = await createExpertCertificate({ certificateURLKey: key, email });
+
+            const cert = await createExpertCertificate({ userId, certificateURLKey: key, email });
             setCertificateId(cert._id);
             setViewUrl(cert.url);
+
             setAlert({ show: true, message: "Tải chứng chỉ thành công!", severity: "success" });
+            setOpenDialog(true); // mở dialog chờ nhận kết quả
         } catch (err) {
             console.error(err);
             setAlert({ show: true, message: "Lỗi khi tải chứng chỉ. Vui lòng thử lại.", severity: "error" });
@@ -47,20 +59,40 @@ const UploadCertificate = ({ email }) => {
     };
 
     return (
-        <Box sx={{ minHeight: "100vh", width: "100vw", display: "flex", justifyContent: "center", alignItems: "center", p: 2 }}>
+        <Box
+            sx={{
+                minHeight: "100vh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                background: "linear-gradient(135deg, #E3F2FD 0%, #FFFFFF 100%)",
+                p: 2,
+            }}
+        >
             {alert.show && (
-                <CustomAlert message={alert.message} variant={alert.severity} onClose={() => setAlert({ ...alert, show: false })} />
+                <CustomAlert
+                    message={alert.message}
+                    variant={alert.severity}
+                    onClose={() => setAlert({ ...alert, show: false })}
+                />
             )}
-            <Card sx={{ maxWidth: 520, width: "100%", borderRadius: 3, backgroundColor: "rgba(255,255,255,0.95)", boxShadow: "0 8px 20px rgba(0,0,0,0.15)", backdropFilter: "blur(10px)" }}>
-                <CardContent sx={{ p: 4 }}>
-                    <Typography variant="h5" textAlign="center" fontWeight={600} gutterBottom>🌿 Upload Chứng Chỉ Chuyên Gia</Typography>
+
+            <Card sx={{ maxWidth: 480, width: "100%", borderRadius: 4, p: 4, boxShadow: 3 }}>
+                <CardContent sx={{ textAlign: "center" }}>
+                    <Typography variant="h5" fontWeight={700} gutterBottom>
+                        Gửi Chứng Chỉ Chuyên Gia
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        Vui lòng chọn file chứng chỉ của bạn. Sau khi tải lên, hệ thống sẽ thông báo kết quả phê duyệt.
+                    </Typography>
 
                     <Button
                         variant="outlined"
                         component="label"
-                        color="success"
+                        color="primary"
                         startIcon={<CloudUpload />}
-                        sx={{ textTransform: "none", py: 1.2, width: "100%" }}
+                        sx={{ textTransform: "none", py: 1.5, width: "100%", mb: 2 }}
+                        disabled={loading}
                     >
                         {file ? file.name : "Chọn chứng chỉ để tải lên"}
                         <input
@@ -68,33 +100,33 @@ const UploadCertificate = ({ email }) => {
                             hidden
                             onChange={(e) => {
                                 const f = e.target.files[0];
-                                setFile(f);
-                                handleFileUpload(f);
+                                if (f) {
+                                    setFile(f);
+                                    handleFileUpload(f);
+                                }
                             }}
                         />
                     </Button>
 
-                    {loading && <CircularProgress size={24} sx={{ mt: 2 }} />}
+                    {loading && <CircularProgress sx={{ mt: 2 }} />}
 
-                    {viewUrl && (
-                        <Typography variant="body2" color="success.main" sx={{ mt: 2 }}>
-                            Chứng chỉ đã được tải lên thành công!
-                        </Typography>
-                    )}
-
-                    {certificateId && (
-                        <Button
-                            variant="contained"
-                            color="success"
-                            sx={{ mt: 2, width: "100%", textTransform: "none", py: 1.2 }}
-                            onClick={handleUpdateCertificate}
-                            disabled={loading}
-                        >
-                            Cập nhật chứng chỉ
-                        </Button>
-                    )}
                 </CardContent>
             </Card>
+
+            {/* Dialog chờ kết quả */}
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="xs" fullWidth>
+                <DialogTitle>Chờ nhận kết quả</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1">
+                        Chứng chỉ của bạn đã được tải lên thành công. Vui lòng chờ hệ thống phê duyệt và thông báo kết quả qua email.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenDialog(false)} variant="contained" color="primary" sx={{ textTransform: "none" }}>
+                        Đóng
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
