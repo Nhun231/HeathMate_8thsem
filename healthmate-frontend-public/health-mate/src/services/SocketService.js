@@ -8,21 +8,39 @@ class SocketService {
 
   connect() {
       if (!this.socket) {
-        // Connect to backend Socket.IO server
-        // Backend has /v1 prefix for REST APIs, but socket runs on root with /chat namespace
-        const backendUrl = 'http://localhost:9999';
+        // Connect to backend Socket.IO server with namespace in URL
+        const backendUrl = 'http://localhost:9999/v1/chat';
         console.log('🔌 Socket: Connecting to:', backendUrl);
+        console.log('🔌 Socket: This includes namespace /v1/chat in the URL');
         
         this.socket = io(backendUrl, {
           transports: ['websocket', 'polling'],
           autoConnect: true,
-          namespace: '/v1/chat'
         });
 
       this.socket.on('connect', () => {
         console.log('🔌 Socket: Connected to server');
         console.log('🔌 Socket: Socket ID:', this.socket.id);
+        console.log('🔌 Socket: Namespace:', this.socket.nsp);
+        console.log('🔌 Socket: Socket.io path:', this.socket.io.uri);
         this.isConnected = true;
+        
+        // Test connection immediately after connecting
+        console.log('🧪 Socket: Testing connection with server...');
+        this.socket.emit('test_connection', { 
+          message: 'Test from frontend',
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      // Listen for server connection confirmation
+      this.socket.on('connection_confirmed', (data) => {
+        console.log('✅ Socket: Server connection confirmed:', data);
+      });
+
+      // Listen for test connection response
+      this.socket.on('test_response', (data) => {
+        console.log('🧪 Socket: Test response from server:', data);
       });
 
       this.socket.on('disconnect', () => {
@@ -99,6 +117,11 @@ class SocketService {
 
   // Send message
   sendMessage(messageData) {
+    console.log('🔍 SocketService: sendMessage called with data:', messageData);
+    console.log('🔍 SocketService: Socket exists:', !!this.socket);
+    console.log('🔍 SocketService: Socket connected:', this.socket?.connected);
+    console.log('🔍 SocketService: Is connected flag:', this.isConnected);
+    
     if (this.socket) {
       console.log('📤 Socket: Sending message:', messageData);
       console.log('📤 Socket: Socket connected:', this.socket.connected);

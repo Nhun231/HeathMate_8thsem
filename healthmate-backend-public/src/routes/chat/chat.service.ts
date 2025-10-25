@@ -1,9 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import {ChatRoom, ChatRoomDocument, Message, MessageDocument} from "../../shared/schemas/chat.schema";
-import { User, UserDocument } from "../../shared/schemas/user.schema";
-
+import { ChatRoom, ChatRoomDocument, Message, MessageDocument } from '../../shared/schemas/chat.schema';
+import { User, UserDocument } from '../../shared/schemas/user.schema';
+import {
+  NotFoundChatRoomException,
+  NotFoundMessageException,
+  NotFoundUserException,
+  UnauthorizedChatAccessException,
+  InvalidMessageContentException,
+  ChatRoomCreationFailedException,
+  MessageSendFailedException,
+} from './chat.error';
 
 @Injectable()
 export class ChatService {
@@ -15,93 +23,99 @@ export class ChatService {
 
   // Create a new chat room
   async createChatRoom(customerId: string, expertId: string): Promise<ChatRoomDocument> {
-    // Generate a normal ObjectId for roomId
-    const roomId = new Types.ObjectId();
+    const customerObjectId = new Types.ObjectId(customerId);
+    const expertObjectId = new Types.ObjectId(expertId);
     
-    // Check if room already exists between these users (both directions)
+    // Check if room already exists between these users
     const existingRoom = await this.chatRoomModel.findOne({ 
       $or: [
         { 
-          customerId: new Types.ObjectId(customerId),
-          expertId: new Types.ObjectId(expertId)
+          customerId: customerObjectId,
+          expertId: expertObjectId
         },
         { 
-          customerId: new Types.ObjectId(expertId),
-          expertId: new Types.ObjectId(customerId)
+          customerId: expertObjectId,
+          expertId: customerObjectId
         }
       ]
     }).exec();
     
     if (existingRoom) {
-      console.log('🔄 ChatService: Found existing room:', existingRoom.roomId);
       return existingRoom;
     }
     
-    console.log('🆕 ChatService: Creating new room for customer:', customerId, 'expert:', expertId);
-
     const chatRoom = new this.chatRoomModel({
-      roomId,
-      customerId: new Types.ObjectId(customerId),
-      expertId: new Types.ObjectId(expertId),
+      customerId: customerObjectId,
+      expertId: expertObjectId,
       status: 'active',
       lastMessageAt: new Date(),
-      lastMessage: 'Hello! How can I help you today?',
+      lastMessage: 'Chat started',
       unreadCount: 0,
     });
 
-    const savedRoom = await chatRoom.save();
-
-    // Add a welcome message from the expert
-    const welcomeMessage = new this.messageModel({
-      roomId: savedRoom.roomId,
-      senderId: new Types.ObjectId(expertId),
-      receiverId: new Types.ObjectId(customerId),
-      senderType: 'NutrientExpert',
-      content: 'Hello! How can I help you today?',
-      messageType: 'text',
-      timestamp: new Date(),
-      isRead: false,
-    });
-
-    await welcomeMessage.save();
-
-    return savedRoom;
+    return chatRoom.save();
   }
 
   // Get chat rooms for a user
-  async getChatRooms(userId: string, userType: 'Customer' | 'NutrientExpert'): Promise<ChatRoomDocument[]> {
-    const query = userType === 'Customer' 
-      ? { customerId: new Types.ObjectId(userId) }
-      : { expertId: new Types.ObjectId(userId) };
+  async getChatRooms(userId: Types.ObjectId, userType: 'Customer' | 'NutritionExpert'): Promise<any[]> {
+    try {
+      // Ensure userId is properly converted to ObjectId for MongoDB query
+      const userObjectId = new Types.ObjectId(userId);
+      const query = userType === 'Customer' 
+        ? { customerId: userObjectId }
+        : { expertId: userObjectId };
+      const rooms = await this.chatRoomModel
+        .find(query)
+        .populate('customerId', 'fullname email')
+        .populate('expertId', 'fullname email')
+        .sort({ lastMessageAt: -1 })
+        .exec();
 
-    const rooms = await this.chatRoomModel
-      .find(query)
-      .populate('customerId', 'fullname email')
-      .populate('expertId', 'fullname email')
-      .populate('lastMessageSender', 'fullname')
-      .sort({ lastMessageAt: -1 })
-      .exec();
-
-    return rooms;
+      // Transform the response to include roomId field
+      return rooms.map(room => {
+        const roomObj = room.toObject();
+        return {
+          ...roomObj,
+          roomId: (room._id as Types.ObjectId).toString(),
+          customerId: room.customerId,
+          expertId: room.expertId,
+        };
+      });
+    } catch (error) {
+      console.error('Error loading chat rooms:', error);
+      throw new Error('Failed to load chat rooms');
+    }
   }
 
   // Get messages for a chat room
   async getMessages(roomId: string, page: number = 1, limit: number = 50): Promise<MessageDocument[]> {
-    const skip = (page - 1) * limit;
-    
-    // Convert string roomId to ObjectId for proper querying
-    const query = { roomId: new Types.ObjectId(roomId) };
-    
-    const messages = await this.messageModel
-      .find(query)
-      .populate('senderId', 'fullname email')
-      .populate('receiverId', 'fullname email')
-      .sort({ timestamp: 1 }) // Sort by oldest first for proper chat display
-      .skip(skip)
-      .limit(limit)
-      .exec();
-    
-    return messages;
+    try {
+      const skip = (page - 1) * limit;
+      const roomObjectId = new Types.ObjectId(roomId);
+      
+      // First check if chat room exists
+      const room = await this.chatRoomModel.findById(roomObjectId).exec();
+      if (!room) {
+        throw NotFoundChatRoomException;
+      }
+      
+      const messages = await this.messageModel
+        .find({ roomId: roomObjectId })
+        .populate('senderId', 'fullname email')
+        .populate('receiverId', 'fullname email')
+        .sort({ timestamp: 1 })
+        .skip(skip)
+        .limit(limit)
+        .exec();
+      
+      return messages;
+    } catch (error) {
+      if (error === NotFoundChatRoomException) {
+        throw error;
+      }
+      console.error('Error loading messages:', error);
+      throw new Error('Failed to load messages');
+    }
   }
 
   // Save a message
@@ -109,47 +123,109 @@ export class ChatService {
     roomId: string;
     senderId: string;
     receiverId: string;
-    senderType: 'Customer' | 'NutrientExpert';
     content: string;
     messageType?: string;
-  }): Promise<MessageDocument> {
+  }  ): Promise<MessageDocument> {
     try {
+      console.log('💾 Service: Starting saveMessage process...');
+      console.log('💾 Service: Message data received:', messageData);
+      
+      // Validate content
+      if (!messageData.content || messageData.content.trim().length === 0) {
+        console.error('❌ Service: Invalid message content');
+        throw InvalidMessageContentException;
+      }
+
+      const roomObjectId = new Types.ObjectId(messageData.roomId);
+      const senderObjectId = new Types.ObjectId(messageData.senderId);
+      const receiverObjectId = new Types.ObjectId(messageData.receiverId);
+      
+      console.log('💾 Service: Converted to ObjectIds:', {
+        roomId: roomObjectId.toString(),
+        senderId: senderObjectId.toString(),
+        receiverId: receiverObjectId.toString()
+      });
+
+      // Check if chat room exists
+      console.log('💾 Service: Checking if chat room exists...');
+      const room = await this.chatRoomModel.findById(roomObjectId).exec();
+      if (!room) {
+        console.error('❌ Service: Chat room not found:', roomObjectId.toString());
+        throw NotFoundChatRoomException;
+      }
+      console.log('✅ Service: Chat room found:', room._id?.toString() || 'unknown');
+
+      // Verify sender is part of the chat room
+      console.log('💾 Service: Verifying sender authorization...');
+      console.log('💾 Service: Room customerId:', room.customerId.toString());
+      console.log('💾 Service: Room expertId:', room.expertId.toString());
+      console.log('💾 Service: Sender ID:', senderObjectId.toString());
+      
+      if (!room.customerId.equals(senderObjectId) && !room.expertId.equals(senderObjectId)) {
+        console.error('❌ Service: Sender not authorized for this room');
+        throw UnauthorizedChatAccessException;
+      }
+      console.log('✅ Service: Sender authorized');
+
+      console.log('💾 Service: Creating message document...');
       const message = new this.messageModel({
         ...messageData,
-        roomId: new Types.ObjectId(messageData.roomId),
-        senderId: new Types.ObjectId(messageData.senderId),
-        receiverId: new Types.ObjectId(messageData.receiverId),
+        roomId: roomObjectId,
+        senderId: senderObjectId,
+        receiverId: receiverObjectId,
         timestamp: new Date(),
       });
 
+      console.log('💾 Service: Saving message to database...');
       const savedMessage = await message.save();
+      console.log('✅ Service: Message saved with ID:', savedMessage._id?.toString() || 'unknown');
 
       // Update chat room with last message info
-      const updateResult = await this.chatRoomModel.findOneAndUpdate(
-        { roomId: messageData.roomId },
+      console.log('💾 Service: Updating chat room with last message info...');
+      await this.chatRoomModel.findOneAndUpdate(
+        { _id: roomObjectId },
         {
           lastMessage: messageData.content,
           lastMessageAt: savedMessage.timestamp,
-          lastMessageSender: new Types.ObjectId(messageData.senderId),
           $inc: { unreadCount: 1 }
         }
       ).exec();
+      console.log('✅ Service: Chat room updated');
 
+      console.log('💾 Service: Populating sender info...');
       const populatedMessage = await savedMessage.populate('senderId', 'fullname email');
+      console.log('✅ Service: Message save process completed successfully');
       
       return populatedMessage;
     } catch (error) {
-      console.error('❌ Error in saveMessage:', error);
-      throw error;
+      console.error('❌ Service: Error in saveMessage:', error);
+      console.error('❌ Service: Error message:', error.message);
+      console.error('❌ Service: Error stack:', error.stack);
+      
+      if (error === InvalidMessageContentException || 
+          error === NotFoundChatRoomException || 
+          error === UnauthorizedChatAccessException) {
+        throw error;
+      }
+      
+      if (error.name === 'ValidationError') {
+        console.error('❌ Service: Mongoose validation error:', error.errors);
+      }
+      
+      console.error('❌ Service: Throwing generic error');
+      throw new Error('Failed to save message: ' + error.message);
     }
   }
 
   // Mark messages as read
   async markAsRead(roomId: string, userId: string): Promise<void> {
+    const roomObjectId = new Types.ObjectId(roomId);
+    const userObjectId = new Types.ObjectId(userId);
+    
     await this.messageModel.updateMany(
       { 
-        roomId, 
-        receiverId: new Types.ObjectId(userId),
+        roomId: roomObjectId, 
+        receiverId: userObjectId,
         isRead: false 
       },
       { 
@@ -160,201 +236,113 @@ export class ChatService {
 
     // Reset unread count for the room
     await this.chatRoomModel.findOneAndUpdate(
-      { roomId },
+      { _id: roomObjectId },
       { unreadCount: 0 }
     ).exec();
-  }
-
-  // Get unread message count for a user
-  async getUnreadCount(userId: string): Promise<number> {
-    const result = await this.messageModel.aggregate([
-      {
-        $match: {
-          receiverId: new Types.ObjectId(userId),
-          isRead: false
-        }
-      },
-      {
-        $count: 'count'
-      }
-    ]).exec();
-
-    return result.length > 0 ? result[0].count : 0;
   }
 
   // Get available experts for a specific customer
   async getAvailableExperts(customerId: string): Promise<any[]> {
     try {
-      console.log('🔍 Getting available experts for customerId:', customerId);
+      console.log('🔍 Getting all active experts for customer:', customerId);
       
-      // Query experts who have this customer in their clients array
+      // Find all users with NutritionExpert role
       const experts = await this.userModel
         .find({
-          clients: new Types.ObjectId(customerId),
           status: 'Active'
         })
         .populate('roleId', 'name')
-        .select('_id fullname email roleId status avatar')
+        .select('_id fullname email roleId status')
         .exec();
 
-      console.log('🔍 Found experts:', experts.length);
+      // Filter users who have NutritionExpert role
+      const expertUsers = experts.filter(user => {
+        const role = user.roleId as any;
+        return role?.name === 'NutritionExpert';
+      });
 
-      // Transform the data to match frontend expectations
-      return experts.map(expert => ({
+      console.log('🔍 Found experts:', expertUsers.length);
+
+      return expertUsers.map(expert => ({
         _id: expert._id,
         fullname: expert.fullname,
         email: expert.email,
         roleId: expert.roleId,
         status: expert.status,
-        isOnline: true // You can implement real online status logic here
       }));
     } catch (error) {
-      console.error('Error fetching available experts:', error);
+      console.error('❌ Error in getAvailableExperts:', error);
       return [];
     }
   }
 
-  // Get available customers for a specific expert
+  // Get available customers for a specific expert (from existing chat rooms)
   async getAvailableCustomers(expertId: string): Promise<any[]> {
     try {
-      // First get the expert to find their clients
-      const expert = await this.userModel
-        .findById(expertId)
-        .populate('clients', '_id fullname email roleId status avatar')
+      const expertObjectId = new Types.ObjectId(expertId);
+      console.log('🔍 Getting customers from existing chat rooms for expert:', expertId);
+      
+      // Find all chat rooms where this expert is involved
+      const chatRooms = await this.chatRoomModel
+        .find({ expertId: expertObjectId })
+        .populate('customerId', '_id fullname email roleId status')
+        .select('customerId')
         .exec();
 
-      if (!expert || !expert.clients) {
-        return [];
-      }
+      console.log('🔍 Found', chatRooms.length, 'chat rooms for expert');
 
-      // Transform the data to match frontend expectations
-      return expert.clients.map((customer: any) => ({
+      // Extract unique customers from chat rooms
+      const customers = chatRooms
+        .map(room => room.customerId)
+        .filter((customer, index, self) => 
+          customer && // Filter out null customers
+          self.findIndex(c => c._id.toString() === customer._id.toString()) === index // Remove duplicates
+        );
+
+      console.log('🔍 Found', customers.length, 'unique customers from chat rooms');
+      
+      return customers.map((customer: any) => ({
         _id: customer._id,
         fullname: customer.fullname,
         email: customer.email,
         roleId: customer.roleId,
         status: customer.status,
-        isOnline: true // You can implement real online status logic here
       }));
     } catch (error) {
-      console.error('Error fetching available customers:', error);
+      console.error('❌ Error in getAvailableCustomers:', error);
       return [];
     }
   }
 
-  // Get expert availability status
-  async getExpertStatus(expertId: string): Promise<{ isOnline: boolean; lastSeen: Date }> {
-    // This would check if expert is currently online
-    // For now, return mock data
-    return {
-      isOnline: true,
-      lastSeen: new Date()
-    };
-  }
-
-  // Get chat room statistics
-  async getChatRoomStats(roomId: string): Promise<{
-    totalMessages: number;
-    unreadMessages: number;
-    lastActivity: Date;
-    participants: any[];
-  } | null> {
-    const room = await this.getChatRoomById(roomId);
-    
-    if (!room) {
-      return null;
-    }
-    
-    const messageCount = await this.messageModel.countDocuments({ roomId }).exec();
-    const unreadCount = await this.messageModel.countDocuments({ 
-      roomId, 
-      isRead: false 
-    }).exec();
-    
-    const lastMessage = await this.messageModel
-      .findOne({ roomId })
-      .sort({ timestamp: -1 })
-      .exec();
-
-    return {
-      totalMessages: messageCount,
-      unreadMessages: unreadCount,
-      lastActivity: lastMessage?.timestamp || room.lastMessageAt,
-      participants: [room.customerId, room.expertId]
-    };
-  }
-
-  // Search messages in a room
-  async searchMessages(roomId: string, query: string, page: number = 1, limit: number = 20): Promise<MessageDocument[]> {
-    const skip = (page - 1) * limit;
-    
-    return this.messageModel
-      .find({
-        roomId,
-        content: { $regex: query, $options: 'i' },
-        isDeleted: false
-      })
-      .populate('senderId', 'fullname email')
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limit)
-      .exec();
-  }
-
-  // Get chat room history for admin
-  async getChatRoomHistory(limit: number = 50): Promise<ChatRoomDocument[]> {
-    return this.chatRoomModel
-      .find()
-      .populate('customerId', 'fullname email')
-      .populate('expertId', 'fullname email')
-      .populate('lastMessageSender', 'fullname')
-      .sort({ lastMessageAt: -1 })
-      .limit(limit)
-      .exec();
-  }
-
-  // Archive chat room
-  async archiveChatRoom(roomId: string): Promise<void> {
-    await this.chatRoomModel.findOneAndUpdate(
-      { roomId },
-      { status: 'closed' }
-    ).exec();
-  }
-
-  // Get active chat rooms count
-  async getActiveChatRoomsCount(): Promise<number> {
-    return this.chatRoomModel.countDocuments({ status: 'active' }).exec();
-  }
-
-  // Delete a message
-  async deleteMessage(messageId: string, userId: string): Promise<boolean> {
-    const message = await this.messageModel.findById(messageId).exec();
-    if (!message || message.senderId.toString() !== userId) {
-      return false;
-    }
-
-    await this.messageModel.findByIdAndUpdate(messageId, {
-      isDeleted: true,
-      deletedAt: new Date()
-    }).exec();
-
-    return true;
-  }
-
   // Get chat room by ID
-  async getChatRoomById(roomId: string): Promise<ChatRoomDocument | null> {
-    return this.chatRoomModel
-      .findOne({ roomId })
-      .populate('customerId', 'fullname email')
-      .populate('expertId', 'fullname email')
-      .exec();
-  }
-
-  // Update chat room status
-  async updateChatRoomStatus(roomId: string, status: 'active' | 'closed' | 'waiting'): Promise<void> {
-    await this.chatRoomModel.findOneAndUpdate(
-      { roomId },
-      { status }
-    ).exec();
+  async getChatRoomById(roomId: string): Promise<any> {
+    try {
+      const roomObjectId = new Types.ObjectId(roomId);
+      
+      const room = await this.chatRoomModel
+        .findOne({ _id: roomObjectId })
+        .populate('customerId', 'fullname email')
+        .populate('expertId', 'fullname email')
+        .exec();
+      
+      if (!room) {
+        throw NotFoundChatRoomException;
+      }
+      
+      // Transform response to include roomId field
+      const roomObj = room.toObject();
+      return {
+        ...roomObj,
+        roomId: (room._id as Types.ObjectId).toString(),
+        customerId: room.customerId,
+        expertId: room.expertId,
+      };
+    } catch (error) {
+      if (error === NotFoundChatRoomException) {
+        throw error;
+      }
+      console.error('Error loading chat room:', error);
+      throw new Error('Failed to load chat room');
+    }
   }
 }

@@ -9,6 +9,7 @@ import {
   OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Types } from 'mongoose';
 import { ChatService } from './chat.service';
 import { Logger } from '@nestjs/common';
 
@@ -19,7 +20,7 @@ import { Logger } from '@nestjs/common';
   },
   namespace: '/v1/chat',
 })
-export class ChatGateway {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
   @WebSocketServer()
   server: Server;
 
@@ -31,10 +32,45 @@ export class ChatGateway {
     this.logger.log('ChatGateway initialized');
   }
 
+  // Gateway lifecycle method
+  afterInit(server: Server) {
+    console.log('\n🚀 ===== WEBSOCKET GATEWAY INITIALIZED =====');
+    console.log('🚀 Gateway: WebSocket server initialized');
+    console.log('🚀 Gateway: Namespace: /v1/chat');
+    console.log('🚀 Gateway: CORS origins:', ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173']);
+    console.log('🚀 Gateway: Server listening on port 9999');
+    
+    // Test namespace existence (defensive coding)
+    try {
+      const namespace = server.of('/v1/chat');
+      console.log('🚀 Gateway: /v1/chat namespace exists:', !!namespace);
+      console.log('🚀 Gateway: Namespace name:', namespace.name);
+    } catch (error) {
+      console.log('🚀 Gateway: Could not access namespace info:', error.message);
+    }
+  }
+
   // Connection handler
   handleConnection(client: Socket) {
-    console.log('🔌 Gateway: Client connected:', client.id);
-    console.log('🔌 Gateway: Total connected clients:', this.server.sockets.sockets.size);
+    console.log('\n🟢 ===== GATEWAY: CLIENT CONNECTED =====');
+    console.log('🔌 Gateway: Client ID:', client.id);
+    console.log('🔌 Gateway: Namespace:', client.nsp?.name);
+    console.log('🔌 Gateway: Client IP:', client.handshake.address);
+    
+    // Safe access to connected clients count
+    try {
+      const clientCount = this.server.sockets?.sockets?.size || this.server.engine?.clientsCount || 'Unknown';
+      console.log('🔌 Gateway: Total connected clients:', clientCount);
+    } catch (error) {
+      console.log('🔌 Gateway: Could not get client count');
+    }
+    
+    // Send welcome message to test connection
+    client.emit('connection_confirmed', { 
+      message: 'Connected to chat server',
+      clientId: client.id,
+      timestamp: new Date().toISOString()
+    });
   }
 
   // Disconnection handler
@@ -152,23 +188,49 @@ export class ChatGateway {
       messageType?: string;
     }
   ) {
+    console.log('\n🎯 ===== GATEWAY: RECEIVED send_message EVENT =====');
+    console.log('📤 Gateway: Event received at:', new Date().toISOString());
+    console.log('📤 Gateway: Client ID:', client.id);
+    console.log('📤 Gateway: Client connected:', client.connected);
+    console.log('📤 Gateway: Namespace:', client.nsp?.name);
+    console.log('📤 Gateway: Message data received:', JSON.stringify(data, null, 2));
+    
     try {
-      console.log('📤 Gateway: Received send_message event');
-      console.log('📤 Gateway: Client ID:', client.id);
-      console.log('📤 Gateway: Message data:', data);
+      console.log('📤 Gateway: Starting message processing...');
       
-      // Create message object for broadcasting (no DB save)
-      const messageData = {
-        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      // Save message to database first
+      console.log('💾 Gateway: Saving message to database...');
+      console.log('💾 Gateway: Message payload:', {
         roomId: data.roomId,
         senderId: data.senderId,
         receiverId: data.receiverId,
         content: data.content,
         messageType: data.messageType || 'text',
-        timestamp: new Date().toISOString(),
+      });
+      
+      const savedMessage = await this.chatService.saveMessage({
+        roomId: data.roomId,
+        senderId: data.senderId,
+        receiverId: data.receiverId,
+        content: data.content,
+        messageType: data.messageType || 'text',
+      });
+      
+      console.log('✅ Gateway: Message saved successfully:', savedMessage._id?.toString());
+
+      // Create message object for broadcasting using saved message data
+      const messageData = {
+        id: savedMessage._id?.toString() || `msg_${Date.now()}`,
+        roomId: data.roomId,
+        senderId: data.senderId,
+        receiverId: data.receiverId,
+        content: data.content,
+        messageType: data.messageType || 'text',
+        timestamp: savedMessage.timestamp.toISOString(),
         isRead: false,
       };
 
+      console.log('💾 Gateway: Message saved to DB with ID:', savedMessage._id?.toString());
       console.log('📡 Gateway: Broadcasting message to room:', `room_${data.roomId}`);
       
       // Broadcast to all users in the room
@@ -195,9 +257,19 @@ export class ChatGateway {
       console.log('✅ Gateway: Message broadcasted successfully');
     } catch (error) {
       console.error('❌ Gateway: Error in handleSendMessage:', error);
-      console.error('❌ Gateway: Error details:', error.message);
+      console.error('❌ Gateway: Error message:', error.message);
+      console.error('❌ Gateway: Error stack:', error.stack);
+      
+      if (error.name === 'ValidationError') {
+        console.error('❌ Gateway: Mongoose validation error:', error.errors);
+      }
+      
       this.logger.error('Error sending message:', error);
-      client.emit('message_error', { error: 'Failed to send message' });
+      client.emit('message_error', { 
+        error: 'Failed to send message', 
+        details: error.message,
+        type: error.name || 'Unknown'
+      });
     }
   }
 

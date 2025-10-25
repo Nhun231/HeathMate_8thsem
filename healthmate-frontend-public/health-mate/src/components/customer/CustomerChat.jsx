@@ -48,8 +48,6 @@ const CustomerChat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isConnected, setIsConnected] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingUsers, setTypingUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [chatRooms, setChatRooms] = useState([]);
@@ -60,8 +58,6 @@ const CustomerChat = () => {
 
   // Refs
   const messagesEndRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
-  const connectionIntervalRef = useRef(null);
 
   // Current user data from auth
   const currentUser = user ? {
@@ -93,7 +89,7 @@ const CustomerChat = () => {
   // Load chat rooms
   const loadChatRooms = async () => {
     try {
-      const userType = currentUser?.role === 'Customer' ? 'Customer' : 'NutrientExpert';
+      const userType = currentUser?.role === 'Customer' ? 'Customer' : 'NutritionExpert';
       const response = await chatService.getChatRooms(userType);
       setChatRooms(response?.rooms || []);
     } catch (err) {
@@ -102,17 +98,27 @@ const CustomerChat = () => {
     }
   };
 
-  // Load messages for selected user (Pure WebSocket - no DB loading)
+  // Load messages for selected user
   const loadMessages = async (roomId) => {
     try {
-      console.log('📨 Socket: Loading messages for room:', roomId);
-      // In Pure WebSocket approach, we don't load from DB
-      // Messages will come through socket events
-      setMessages([]); // Clear existing messages
-      console.log('📨 Socket: Messages cleared, waiting for socket events');
+      console.log('📨 Loading messages for room:', roomId);
+      setLoading(true);
+      
+      // Load existing messages from database
+      const response = await chatService.getMessages(roomId);
+      const loadedMessages = response?.messages || [];
+      
+      console.log('📨 Loaded', loadedMessages.length, 'messages from database');
+      setMessages(loadedMessages);
+      
+      // Scroll to bottom to show latest messages
+      setTimeout(() => scrollToBottom(), 100);
     } catch (err) {
       console.error('❌ Error loading messages:', err);
       setError('Không thể tải tin nhắn');
+      setMessages([]); // Only clear on error
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -124,20 +130,7 @@ const CustomerChat = () => {
     }
 
     const socket = socketService.connect();
-    
-    // Set connection status with delay to ensure connection is established
-    setTimeout(() => {
-      const status = socketService.getConnectionStatus();
-      console.log('🔌 Customer: Connection status after delay:', status);
-      setIsConnected(status);
-      
-      // Start periodic connection check
-      connectionIntervalRef.current = setInterval(() => {
-        const currentStatus = socketService.getConnectionStatus();
-        console.log('🔌 Customer: Periodic connection check:', currentStatus);
-        setIsConnected(currentStatus);
-      }, 2000);
-    }, 1000);
+    setIsConnected(true);
 
     // Join customer room
     socketService.joinCustomerRoom(currentUser._id);
@@ -146,34 +139,36 @@ const CustomerChat = () => {
     socketService.onMessage((message) => {
       console.log('📨 Socket: Customer received message:', message.roomId, 'sender:', message.senderId, 'current user:', currentUser._id);
       
-      // Add all messages (no filtering by sender for Pure WebSocket)
-      console.log('📨 Socket: Adding message to chat');
-      setMessages(prev => [...prev, message]);
+      // Handle both object and string senderId formats
+      const messageSenderId = typeof message.senderId === 'object' 
+        ? message.senderId?._id 
+        : message.senderId;
+        
+      console.log('📨 Socket: SenderId extracted:', messageSenderId, 'CurrentUser._id:', currentUser._id);
+      console.log('📨 Socket: Are they equal?', messageSenderId === currentUser._id);
+      console.log('📨 Socket: String comparison:', messageSenderId?.toString() === currentUser._id?.toString());
+      
+      // Add message to state, avoiding duplicates
+      setMessages(prev => {
+        // Check if message already exists (by id or timestamp + content)
+        const exists = prev.some(msg => {
+          const existingMsgSenderId = typeof msg.senderId === 'object' ? msg.senderId?._id : msg.senderId;
+          return msg.id === message.id || 
+            (msg.timestamp === message.timestamp && 
+             msg.content === message.content && 
+             existingMsgSenderId === messageSenderId);
+        });
+        
+        if (exists) {
+          console.log('📨 Socket: Message already exists, skipping duplicate');
+          return prev;
+        }
+        
+        return [...prev, message];
+      });
+      
       scrollToBottom();
     });
-
-    // // Listen for typing indicators
-    // socketService.onTyping((data) => {
-    //   if (data.userId !== currentUser._id) {
-    //     setTypingUsers(prev => {
-    //       if (!prev.includes(data.userId)) {
-    //         return [...prev, data.userId];
-    //       }
-    //       return prev;
-    //     });
-    //     setIsTyping(true);
-    //   }
-    // });
-    //
-    // socketService.onStopTyping((data) => {
-    //   if (data.userId !== currentUser._id) {
-    //     setTypingUsers(prev => {
-    //       const filtered = prev.filter(id => id !== data.userId);
-    //       setIsTyping(filtered.length > 0);
-    //       return filtered;
-    //     });
-    //   }
-    // });
 
     // Load initial data
     loadAvailableUsers();
@@ -181,9 +176,6 @@ const CustomerChat = () => {
 
     // Cleanup on unmount
     return () => {
-      if (connectionIntervalRef.current) {
-        clearInterval(connectionIntervalRef.current);
-      }
       socketService.removeAllListeners();
       socketService.disconnect();
     };
@@ -196,7 +188,15 @@ const CustomerChat = () => {
 
   // Handle sending message
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedUser || !currentUser) return;
+    console.log('🔍 Customer: handleSendMessage called');
+    console.log('🔍 Customer: newMessage:', newMessage.trim());
+    console.log('🔍 Customer: selectedUser:', selectedUser);
+    console.log('🔍 Customer: currentUser:', currentUser);
+    
+    if (!newMessage.trim() || !selectedUser || !currentUser) {
+      console.log('❌ Customer: Validation failed - cannot send message');
+      return;
+    }
 
     // Use the roomId from selectedUser
     const roomId = selectedUser.roomId;
@@ -230,10 +230,6 @@ const CustomerChat = () => {
         messageType: 'text',
       });
 
-      // Stop typing indicator
-      if (isConnected) {
-        socketService.sendStopTyping(currentUser._id, selectedUser._id);
-      }
     } catch (err) {
       setError('Không thể gửi tin nhắn: ' + (err.response?.data?.message || err.message));
       // Remove the temp message if sending failed
@@ -241,30 +237,9 @@ const CustomerChat = () => {
     }
   };
 
-  // Handle typing indicator
+  // Handle message input
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
-
-    if (!selectedUser || !currentUser) {
-      return;
-    }
-
-    // Send typing indicator only if connected
-    if (isConnected) {
-      socketService.sendTyping(currentUser._id, selectedUser._id);
-    }
-
-    // Clear previous timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Set timeout to stop typing indicator
-    typingTimeoutRef.current = setTimeout(() => {
-      if (currentUser && selectedUser && isConnected) {
-        socketService.sendStopTyping(currentUser._id, selectedUser._id);
-      }
-    }, 1000);
   };
 
   // Handle user selection
@@ -346,8 +321,8 @@ const CustomerChat = () => {
 
   // Filter users based on search
   const filteredUsers = (availableUsers || []).filter(user =>
-    user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user?.specialty?.toLowerCase().includes(searchTerm.toLowerCase())
+    user?.fullname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Show loading while auth is loading
@@ -420,25 +395,6 @@ const CustomerChat = () => {
             </Typography>
           </Box>
           <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title="Test Socket Connection">
-              <IconButton 
-                size="small" 
-                onClick={() => {
-                  console.log('🧪 Customer: Testing socket connection...');
-                  socketService.debugSocketState();
-                  socketService.testConnection();
-                }}
-                sx={{ color: 'white' }}
-              >
-                <Typography variant="caption">TEST</Typography>
-              </IconButton>
-            </Tooltip>
-            <Chip
-              label={isConnected ? 'Online' : 'Offline'}
-              color={isConnected ? 'success' : 'default'}
-              size="small"
-              icon={isConnected ? <OnlineIcon /> : <OfflineIcon />}
-            />
           </Box>
         </Box>
 
@@ -489,19 +445,9 @@ const CustomerChat = () => {
                   }}
                 >
                   <ListItemAvatar>
-                    <Badge
-                      overlap="circular"
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                      badgeContent={
-                        otherUser?.isOnline ? (
-                          <OnlineIcon sx={{ color: '#4CAF50', fontSize: 12 }} />
-                        ) : null
-                      }
-                    >
-                      <Avatar sx={{ bgcolor: '#4CAF50' }}>
-                        {otherUser?.fullname?.charAt(0) || 'U'}
-                      </Avatar>
-                    </Badge>
+                    <Avatar sx={{ bgcolor: '#4CAF50' }}>
+                      {otherUser?.fullname?.charAt(0) || 'U'}
+                    </Avatar>
                   </ListItemAvatar>
                   <ListItemText
                     primary={otherUser?.fullname || 'Unknown User'}
@@ -516,13 +462,6 @@ const CustomerChat = () => {
                       </Box>
                     }
                   />
-                  {room.unreadCount > 0 && (
-                    <ListItemSecondaryAction>
-                      <Badge badgeContent={room.unreadCount} color="error">
-                        <ChatIcon />
-                      </Badge>
-                    </ListItemSecondaryAction>
-                  )}
                 </ListItem>
               );
             })}
@@ -545,25 +484,15 @@ const CustomerChat = () => {
                 borderRadius: 0,
               }}
             >
-              <Badge
-                overlap="circular"
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                badgeContent={
-                  selectedUser.isOnline ? (
-                    <OnlineIcon sx={{ color: '#4CAF50', fontSize: 12 }} />
-                  ) : null
-                }
-              >
-                <Avatar sx={{ bgcolor: '#2196F3' }}>
-                  {selectedUser.name?.charAt(0) || 'U'}
-                </Avatar>
-              </Badge>
+              <Avatar sx={{ bgcolor: '#2196F3' }}>
+                {selectedUser.fullname?.charAt(0) || 'U'}
+              </Avatar>
               <Box>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  {selectedUser.name}
+                  {selectedUser.fullname}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#666' }}>
-                  {selectedUser.specialty || 'Chuyên gia dinh dưỡng'}
+                  Chuyên gia dinh dưỡng
                 </Typography>
               </Box>
               <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
@@ -611,12 +540,26 @@ const CustomerChat = () => {
                   </Typography>
                 </Box>
               ) : (
-                (messages || []).map((message) => (
+                (messages || []).map((message) => {
+                  // Handle both object and string senderId formats
+                  const messageSenderId = typeof message.senderId === 'object' 
+                    ? message.senderId?._id 
+                    : message.senderId;
+                  const isOwnMessage = messageSenderId?.toString() === currentUser?._id?.toString();
+                  
+                  console.log('🔍 Message display check:', {
+                    messageSenderId,
+                    currentUserId: currentUser?._id,
+                    isOwnMessage,
+                    messageContent: message.content
+                  });
+                  
+                  return (
                   <Fade key={message.id || message._id} in={true} timeout={300}>
                     <Box
                       sx={{
                         display: 'flex',
-                        justifyContent: message.senderId === currentUser?._id ? 'flex-end' : 'flex-start',
+                        justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
                         mb: 2,
                         px: 1,
                       }}
@@ -626,22 +569,22 @@ const CustomerChat = () => {
                           maxWidth: '75%',
                           display: 'flex',
                           flexDirection: 'column',
-                          alignItems: message.senderId === currentUser?._id ? 'flex-end' : 'flex-start',
+                          alignItems: isOwnMessage ? 'flex-end' : 'flex-start',
                         }}
                       >
                         <Paper
                           elevation={2}
                           sx={{
                             p: 2,
-                            bgcolor: message.senderId === currentUser?._id ? '#4CAF50' : '#f5f5f5',
-                            color: message.senderId === currentUser?._id ? 'white' : 'text.primary',
+                            bgcolor: isOwnMessage ? '#4CAF50' : '#f5f5f5',
+                            color: isOwnMessage ? 'white' : 'text.primary',
                             borderRadius: 4,
-                            border: message.senderId === currentUser?._id ? 'none' : '1px solid #e0e0e0',
-                            boxShadow: message.senderId === currentUser?._id 
+                            border: isOwnMessage ? 'none' : '1px solid #e0e0e0',
+                            boxShadow: isOwnMessage 
                               ? '0 2px 8px rgba(76, 175, 80, 0.3)' 
                               : '0 2px 8px rgba(0, 0, 0, 0.1)',
                             position: 'relative',
-                            '&::before': message.senderId === currentUser?._id ? {
+                            '&::before': isOwnMessage ? {
                               content: '""',
                               position: 'absolute',
                               right: -8,
@@ -684,18 +627,10 @@ const CustomerChat = () => {
                       </Box>
                     </Box>
                   </Fade>
-                ))
+                );
+                })
               )}
 
-              {/* Typing Indicator */}
-              {isTyping && typingUsers.length > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <CircularProgress size={16} />
-                  <Typography variant="caption" sx={{ color: '#666' }}>
-                    {selectedUser.name} đang nhập...
-                  </Typography>
-                </Box>
-              )}
 
               <div ref={messagesEndRef} />
             </Box>
@@ -819,11 +754,6 @@ const CustomerChat = () => {
             >
               Bắt đầu cuộc trò chuyện mới
             </Button>
-            <Chip
-              label={isConnected ? 'Đã kết nối' : 'Đang kết nối...'}
-              color={isConnected ? 'success' : 'default'}
-              icon={isConnected ? <OnlineIcon /> : <CircularProgress size={16} />}
-            />
           </Box>
         )}
       </Box>
@@ -835,36 +765,29 @@ const CustomerChat = () => {
           <List>
             {filteredUsers.map((user) => (
               <ListItem
-                key={user.id}
+                key={user._id}
                 button
                 onClick={() => handleStartNewChat(user)}
                 sx={{ '&:hover': { bgcolor: '#F5F5F5' } }}
               >
                 <ListItemAvatar>
                   <Avatar sx={{ bgcolor: '#2196F3' }}>
-                    {user.name?.charAt(0) || 'U'}
+                    {user.fullname?.charAt(0) || 'U'}
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
-                  primary={user.name || 'Unknown User'}
+                  primary={user.fullname || 'Unknown User'}
                   secondary={
                     <Box>
                       <Typography variant="caption" sx={{ display: 'block' }}>
-                        {user.specialty || 'Chuyên gia dinh dưỡng'}
+                        {user.roleId?.name || 'Chuyên gia dinh dưỡng'}
                       </Typography>
                       <Typography variant="caption" sx={{ color: '#999' }}>
-                        {user.experience ? `${user.experience} năm kinh nghiệm` : ''}
+                        {user.email}
                       </Typography>
                     </Box>
                   }
                 />
-                <ListItemSecondaryAction>
-                  <Chip
-                    label={user.isOnline ? 'Online' : 'Offline'}
-                    color={user.isOnline ? 'success' : 'default'}
-                    size="small"
-                  />
-                </ListItemSecondaryAction>
               </ListItem>
             ))}
           </List>

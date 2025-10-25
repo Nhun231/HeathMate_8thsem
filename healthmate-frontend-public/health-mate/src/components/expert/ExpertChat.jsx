@@ -38,19 +38,13 @@ const ExpertChat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingUsers, setTypingUsers] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [customers, setCustomers] = useState([]);
   const [chatRooms, setChatRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Refs
   const messagesEndRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
-  const connectionIntervalRef = useRef(null);
 
   // Get current user from auth context
   const { user: currentUser, loading: authLoading } = useAuth();
@@ -69,8 +63,11 @@ const ExpertChat = () => {
   // Load chat rooms
   const loadChatRooms = useCallback(async () => {
     try {
-      const userType = currentUser?.role === 'Customer' ? 'Customer' : 'NutrientExpert';
+      const userType = currentUser?.role === 'Customer' ? 'Customer' : 'NutritionExpert';
+      console.log('🔍 Expert: Loading chat rooms for userType:', userType);
+      console.log('🔍 Expert: Current user role:', currentUser?.role);
       const response = await chatService.getChatRooms(userType);
+      console.log('🔍 Expert: Chat rooms response:', response);
       setChatRooms(response?.rooms || []);
     } catch (err) {
       console.error('❌ Error loading chat rooms:', err);
@@ -78,28 +75,29 @@ const ExpertChat = () => {
     }
   }, [currentUser?.role]);
 
-  // Load available customers
-  const loadAvailableCustomers = useCallback(async () => {
-    try {
-      const response = await chatService.getAvailableUsers();
-      setCustomers(response?.users || []);
-    } catch (err) {
-      console.error('❌ Error loading available customers:', err);
-      setError('Không thể tải danh sách khách hàng');
-    }
-  }, []);
+  // Remove loadAvailableCustomers - we only need chat rooms now
 
-  // Load messages for selected customer (Pure WebSocket - no DB loading)
+  // Load messages for selected customer
   const loadMessages = async (roomId) => {
     try {
-      console.log('📨 Socket: Loading messages for room:', roomId);
-      // In Pure WebSocket approach, we don't load from DB
-      // Messages will come through socket events
-      setMessages([]); // Clear existing messages
-      console.log('📨 Socket: Messages cleared, waiting for socket events');
+      console.log('📨 Loading messages for room:', roomId);
+      setLoading(true);
+      
+      // Load existing messages from database
+      const response = await chatService.getMessages(roomId);
+      const loadedMessages = response?.messages || [];
+      
+      console.log('📨 Loaded', loadedMessages.length, 'messages from database');
+      setMessages(loadedMessages);
+      
+      // Scroll to bottom to show latest messages
+      setTimeout(() => scrollToBottom(), 100);
     } catch (err) {
       console.error('❌ Error loading messages:', err);
       setError('Không thể tải tin nhắn');
+      setMessages([]); // Only clear on error
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,10 +108,7 @@ const ExpertChat = () => {
       if (!authLoading && currentUser && currentUser._id) {
         setLoading(true);
         try {
-          await Promise.all([
-            loadChatRooms(),
-            loadAvailableCustomers()
-          ]);
+          await loadChatRooms();
         } catch (err) {
           console.error('❌ Error loading initial data:', err);
           setError('Không thể tải dữ liệu ban đầu');
@@ -126,7 +121,7 @@ const ExpertChat = () => {
     };
 
     loadInitialData();
-  }, [authLoading, currentUser?._id, currentUser?.role, loadChatRooms, loadAvailableCustomers]);
+  }, [authLoading, currentUser?._id, currentUser?.role, loadChatRooms]);
 
   // Initialize socket connection
   useEffect(() => {
@@ -134,70 +129,47 @@ const ExpertChat = () => {
       console.log('🔌 Socket: Initializing connection for user:', currentUser._id);
       
       const socket = socketService.connect();
-      
-      // Set connection status immediately
-      setIsConnected(socketService.getConnectionStatus());
-      
-      // Also listen for connection status changes
-      const checkConnection = () => {
-        const status = socketService.getConnectionStatus();
-        console.log('🔌 Socket: Connection status check:', status);
-        setIsConnected(status);
-      };
-      
-      // Check connection status periodically
-      connectionIntervalRef.current = setInterval(checkConnection, 1000);
+      setIsConnected(true);
 
       // Join expert room
       socketService.joinExpertRoom(currentUser._id);
 
       // Listen for messages
       socketService.onMessage((message) => {
-        console.log('📨 Socket: Received message:', message.roomId, 'sender:', message.senderId, 'current user:', currentUser._id);
+      console.log('📨 Socket: Expert received message:', message.roomId, 'sender:', message.senderId, 'current user:', currentUser._id);
+      
+      // Handle both object and string senderId formats
+      const messageSenderId = typeof message.senderId === 'object' 
+        ? message.senderId?._id 
+        : message.senderId;
         
-        // Add all messages (no filtering by sender for Pure WebSocket)
-        console.log('📨 Socket: Adding message to chat');
-        setMessages(prev => [...prev, message]);
-
-      });
-
-    // Listen for typing indicators
-    socketService.onTyping((data) => {
-      if (data.userId !== currentUser._id) {
-        setTypingUsers(prev => {
-          if (!prev.includes(data.userId)) {
-            return [...prev, data.userId];
-          }
-          return prev;
+      console.log('📨 Socket: SenderId extracted:', messageSenderId, 'CurrentUser._id:', currentUser._id);
+      console.log('📨 Socket: Are they equal?', messageSenderId === currentUser._id);
+      console.log('📨 Socket: String comparison:', messageSenderId?.toString() === currentUser._id?.toString());
+        
+        // Add message to state, avoiding duplicates
+        setMessages(prev => {
+        // Check if message already exists (by id or timestamp + content)
+        const exists = prev.some(msg => {
+          const existingMsgSenderId = typeof msg.senderId === 'object' ? msg.senderId?._id : msg.senderId;
+          return msg.id === message.id || 
+            (msg.timestamp === message.timestamp && 
+             msg.content === message.content && 
+             existingMsgSenderId === messageSenderId);
         });
-        setIsTyping(true);
-      }
-    });
-
-    socketService.onStopTyping((data) => {
-      if (data.userId !== currentUser._id) {
-        setTypingUsers(prev => prev.filter(id => id !== data.userId));
-        setIsTyping(typingUsers.length > 1);
-      }
-    });
-
-    // Listen for user status changes
-    socketService.onUserStatus((data) => {
-      setOnlineUsers(prev => {
-        if (data.isOnline) {
-          return [...prev.filter(id => id !== data.userId), data.userId];
-        } else {
-          return prev.filter(id => id !== data.userId);
-        }
+          
+          if (exists) {
+            console.log('📨 Socket: Message already exists, skipping duplicate');
+            return prev;
+          }
+          
+          return [...prev, message];
+        });
       });
-    });
     }
 
     // Cleanup on unmount
     return () => {
-      if (connectionIntervalRef.current) {
-        clearInterval(connectionIntervalRef.current);
-      }
       socketService.removeAllListeners();
       socketService.disconnect();
     };
@@ -210,7 +182,15 @@ const ExpertChat = () => {
 
   // Handle sending message (Pure WebSocket)
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedCustomer || !currentUser) return;
+    console.log('🔍 Expert: handleSendMessage called');
+    console.log('🔍 Expert: newMessage:', newMessage.trim());
+    console.log('🔍 Expert: selectedCustomer:', selectedCustomer);
+    console.log('🔍 Expert: currentUser:', currentUser);
+    
+    if (!newMessage.trim() || !selectedCustomer || !currentUser) {
+      console.log('❌ Expert: Validation failed - cannot send message');
+      return;
+    }
 
     // Use the roomId from selectedCustomer
     const roomId = selectedCustomer.roomId;
@@ -247,10 +227,6 @@ const ExpertChat = () => {
         messageType: 'text',
       });
 
-      // Stop typing indicator
-      if (isConnected) {
-        socketService.sendStopTyping(currentUser._id, selectedCustomer._id);
-      }
       
       console.log('✅ Socket: Message sent successfully');
     } catch (err) {
@@ -261,72 +237,27 @@ const ExpertChat = () => {
     }
   };
 
-  // Handle typing indicator
+  // Handle message input
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
-
-    if (!selectedCustomer || !isConnected) return;
-
-    // Send typing indicator
-    socketService.sendTyping(currentUser._id, selectedCustomer._id);
-
-    // Clear previous timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Set timeout to stop typing indicator
-    typingTimeoutRef.current = setTimeout(() => {
-      socketService.sendStopTyping(currentUser._id, selectedCustomer._id);
-    }, 1000);
   };
 
-  // Handle customer selection
-  const handleSelectCustomer = async (customer) => {
-    setSelectedCustomer(customer);
+  // Handle customer selection from chat room
+  const handleSelectCustomer = async (customerWithRoom) => {
+    setSelectedCustomer(customerWithRoom);
     setMessages([]);
     
-    // Try to find existing room or create new one
-    const existingRoom = (chatRooms || []).find(room => 
-      room?.expertId?._id === currentUser._id && room?.customerId?._id === customer._id
-    );
+    const roomId = customerWithRoom.roomId;
+    console.log('🔌 Expert: Selecting chat room:', roomId);
     
-    if (existingRoom) {
-      // Set the selected customer with the correct roomId
-      const roomId = existingRoom.roomId;
-      const customerWithRoomId = { ...customer, roomId: roomId };
-      setSelectedCustomer(customerWithRoomId);
-      
-      // Join the room via socket
-      if (isConnected) {
-        console.log('🔌 Socket: Joining room:', roomId);
-        socketService.joinRoom(roomId, currentUser._id);
-      }
-      
-      await loadMessages(roomId);
-    } else {
-      // Create new room
-      try {
-        const response = await chatService.createChatRoom(customer._id);
-        const newRoom = response.room;
-        setChatRooms(prev => [...prev, newRoom]);
-        
-        // Set the selected customer with the correct roomId
-        const customerWithRoomId = { ...customer, roomId: newRoom.roomId };
-        setSelectedCustomer(customerWithRoomId);
-        
-        // Join the room via socket
-        if (isConnected) {
-          console.log('🔌 Socket: Joining new room:', newRoom.roomId);
-          socketService.joinRoom(newRoom.roomId, currentUser._id);
-        }
-        
-        await loadMessages(newRoom.roomId);
-      } catch (err) {
-        console.error('❌ Error creating chat room:', err);
-        setError('Không thể tạo cuộc trò chuyện');
-      }
+    // Join the room via socket
+    if (isConnected) {
+      console.log('🔌 Socket: Expert joining room:', roomId);
+      socketService.joinRoom(roomId, currentUser._id);
     }
+    
+    // Load messages for the room
+    await loadMessages(roomId);
   };
 
   // Handle key press
@@ -341,12 +272,9 @@ const ExpertChat = () => {
   const handleRefresh = async () => {
     if (currentUser && currentUser._id) {
       setLoading(true);
-      try {
-        await Promise.all([
-          loadChatRooms(),
-          loadAvailableCustomers()
-        ]);
-      } catch (err) {
+        try {
+          await loadChatRooms();
+        } catch (err) {
         console.error('❌ Error during manual refresh:', err);
         setError('Không thể làm mới dữ liệu');
       } finally {
@@ -423,32 +351,13 @@ const ExpertChat = () => {
                 <RefreshIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Test Socket Connection">
-              <IconButton 
-                size="small" 
-                onClick={() => {
-                  console.log('🧪 Testing socket connection...');
-                  socketService.debugSocketState();
-                  socketService.testConnection();
-                }}
-                sx={{ color: 'white' }}
-              >
-                <Typography variant="caption">TEST</Typography>
-              </IconButton>
-            </Tooltip>
-            <Chip
-              label={isConnected ? 'Online' : 'Offline'}
-              color={isConnected ? 'success' : 'default'}
-              size="small"
-              icon={isConnected ? <OnlineIcon /> : <OfflineIcon />}
-            />
           </Box>
         </Box>
 
-        {/* Customer List */}
+        {/* Chat Rooms List */}
         <Box sx={{ flex: 1, overflow: 'auto' }}>
           <Typography variant="subtitle2" sx={{ p: 2, color: '#666', fontWeight: 'bold' }}>
-            Khách hàng ({customers.length})
+            Cuộc trò chuyện ({(chatRooms || []).length})
             {loading && (
               <CircularProgress size={16} sx={{ ml: 1 }} />
             )}
@@ -468,51 +377,40 @@ const ExpertChat = () => {
             </Box>
           ) : (
             <List>
-              {customers.map((customer) => (
-              <ListItem
-                key={customer._id}
-                button
-                onClick={() => handleSelectCustomer(customer)}
-                sx={{
-                  bgcolor: selectedCustomer?._id === customer._id ? '#E8F5E9' : 'transparent',
-                  '&:hover': { bgcolor: '#F1F8E9' },
-                }}
-              >
-                <ListItemAvatar>
-                  <Badge
-                    overlap="circular"
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    badgeContent={
-                      customer.isOnline ? (
-                        <OnlineIcon sx={{ color: '#4CAF50', fontSize: 12 }} />
-                      ) : null
-                    }
-                  >
+              {(chatRooms || []).map((room) => {
+                // Get customer info from chat room
+                const customer = room?.customerId;
+                return (
+                <ListItem
+                  key={room.roomId}
+                  button
+                  onClick={() => handleSelectCustomer({ ...customer, roomId: room.roomId })}
+                  sx={{
+                    bgcolor: selectedCustomer?.roomId === room.roomId ? '#E8F5E9' : 'transparent',
+                    '&:hover': { bgcolor: '#F1F8E9' },
+                  }}
+                >
+                  <ListItemAvatar>
                     <Avatar sx={{ bgcolor: '#4CAF50' }}>
-                      {customer.fullname?.charAt(0) || customer.email?.charAt(0) || 'C'}
+                      {customer?.fullname?.charAt(0) || customer?.email?.charAt(0) || 'C'}
                     </Avatar>
-                  </Badge>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={customer.fullname || customer.email}
-                  secondary={
-                    <Box>
-                      <Typography variant="caption" sx={{ display: 'block', color: '#666' }}>
-                        {customer.email}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: '#999' }}>
-                        Available for consultation
-                      </Typography>
-                    </Box>
-                  }
-                />
-                {customer.isOnline && (
-                  <ListItemSecondaryAction>
-                    <Chip label="Online" color="success" size="small" />
-                  </ListItemSecondaryAction>
-                )}
-              </ListItem>
-            ))}
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={customer?.fullname || customer?.email || 'Unknown Customer'}
+                    secondary={
+                      <Box>
+                        <Typography variant="caption" sx={{ display: 'block', color: '#666' }}>
+                          {room.lastMessage || 'Chưa có tin nhắn'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#999' }}>
+                          {room.lastMessageAt ? new Date(room.lastMessageAt).toLocaleString('vi-VN') : ''}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              );
+              })}
             </List>
           )}
         </Box>
@@ -533,25 +431,15 @@ const ExpertChat = () => {
                 borderRadius: 0,
               }}
             >
-              <Badge
-                overlap="circular"
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                badgeContent={
-                  selectedCustomer.isOnline ? (
-                    <OnlineIcon sx={{ color: '#4CAF50', fontSize: 12 }} />
-                  ) : null
-                }
-              >
-                <Avatar sx={{ bgcolor: '#4CAF50' }}>
-                  {selectedCustomer.fullname?.charAt(0) || selectedCustomer.email?.charAt(0) || 'C'}
-                </Avatar>
-              </Badge>
+              <Avatar sx={{ bgcolor: '#4CAF50' }}>
+                {selectedCustomer.fullname?.charAt(0) || selectedCustomer.email?.charAt(0) || 'C'}
+              </Avatar>
               <Box>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                   {selectedCustomer.fullname || selectedCustomer.email}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#666' }}>
-                  {selectedCustomer.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
+                  Nutrition Expert
                 </Typography>
               </Box>
               <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
@@ -574,7 +462,18 @@ const ExpertChat = () => {
               }}
             >
               {messages.map((message) => {
-                const isOwnMessage = message.senderId === currentUser?._id;
+                // Handle both object and string senderId formats
+                const messageSenderId = typeof message.senderId === 'object' 
+                  ? message.senderId?._id 
+                  : message.senderId;
+                const isOwnMessage = messageSenderId?.toString() === currentUser?._id?.toString();
+                
+                console.log('🔍 Expert message display check:', {
+                  messageSenderId,
+                  currentUserId: currentUser?._id,
+                  isOwnMessage,
+                  messageContent: message.content
+                });
                 return (
                   <Fade key={message.id} in={true} timeout={300}>
                     <Box
@@ -633,15 +532,6 @@ const ExpertChat = () => {
                 );
               })}
 
-              {/* Typing Indicator */}
-              {isTyping && typingUsers.length > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <CircularProgress size={16} />
-                  <Typography variant="caption" sx={{ color: '#666' }}>
-                    {selectedCustomer.fullname || selectedCustomer.email} đang nhập...
-                  </Typography>
-                </Box>
-              )}
 
               <div ref={messagesEndRef} />
             </Box>
@@ -759,11 +649,6 @@ const ExpertChat = () => {
             <Typography variant="body1" sx={{ color: '#999', textAlign: 'center' }}>
               Chọn một khách hàng từ danh sách bên trái để bắt đầu cuộc trò chuyện
             </Typography>
-            <Chip
-              label={isConnected ? 'Đã kết nối' : 'Đang kết nối...'}
-              color={isConnected ? 'success' : 'default'}
-              icon={isConnected ? <OnlineIcon /> : <CircularProgress size={16} />}
-            />
           </Box>
         )}
       </Box>
