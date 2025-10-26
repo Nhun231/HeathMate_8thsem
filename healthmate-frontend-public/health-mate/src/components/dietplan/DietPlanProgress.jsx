@@ -67,13 +67,15 @@ const DietPlanProgress = () => {
 
         setTargetWeight(plan.targetWeightChange ?? 0);
         const startDate = new Date(plan.startDate);
+        startDate.setHours(0, 0, 0, 0);
         const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
         let totalCaloriesSum = 0;
         let daysWithData = 0;
 
         for (
-          let d = new Date(startDate);
+          let d = new Date(startDate.getTime());
           d <= today;
           d.setDate(d.getDate() + 1)
         ) {
@@ -94,15 +96,11 @@ const DietPlanProgress = () => {
         let totalConsumed = 0;
         let daysWithWaterData = 0;
 
-        const start = new Date(plan.startDate);
-        const end = new Date(); // today
-
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        for (let d = new Date(startDate.getTime()); d <= today; d.setDate(d.getDate() + 1)) {
           try {
-            const dateString = d.toISOString().split("T")[0];
+            const dateString = d.toLocaleDateString("en-CA");
             const response = await getWaterData(dateString);
             const waterData = response?.data;
-
             if (waterData && waterData.consumed > 0) {
               totalConsumed += waterData.consumed;
               daysWithWaterData++;
