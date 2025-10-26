@@ -31,7 +31,9 @@ export class UserService {
   }
 
   async getUserById(id: string) {
-    return this.userRepo.findOne(id);
+    const user = await this.userRepo.findOne(id);
+    if (!user) throw UserNotFoundException;
+    return user;
   }
 
   async createUser(data: CreateUserType, activeUserId: string) {
