@@ -5,7 +5,6 @@ import { PAYMENT_QUEUE_NAME } from 'src/shared/constants/queue.constant';
 import { BullModule } from '@nestjs/bullmq';
 import { PaymentRepo } from './payment.repo';
 import { PaymentProducer } from './payment.producer';
-import { PaymentSchema, Payment } from 'src/shared/schemas/payment.schema';
 import {
   PaymentTransaction,
   PaymentTransactionSchema,
@@ -21,7 +20,6 @@ import { User, UserSchema } from 'src/shared/schemas/user.schema';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
-    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
     MongooseModule.forFeature([
       { name: PaymentTransaction.name, schema: PaymentTransactionSchema },
     ]),

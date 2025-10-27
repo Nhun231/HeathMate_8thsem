@@ -3,7 +3,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, Connection } from 'mongoose';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Order, OrderDocument } from 'src/shared/schemas/order.schema';
-import { Payment, PaymentDocument } from 'src/shared/schemas/payment.schema';
 import {
   NotFoundOrderException,
   NotFoundSubscriptionException,
@@ -28,7 +27,6 @@ import { User, UserDocument } from 'src/shared/schemas/user.schema';
 @Injectable()
 export class PaymentRepo {
   constructor(
-    @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
     @InjectModel(PaymentTransaction.name)
     private paymentTransactionModel: Model<PaymentTransactionDocument>,
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
@@ -66,23 +64,26 @@ export class PaymentRepo {
     });
     if (existingTx) throw PaymentTransactionAlreadyExistsException;
 
-    const paymentId = body.code
-      ? Number(body.code.split(PREFIX_PAYMENT_CODE)[1])
-      : Number(body.content?.split(PREFIX_PAYMENT_CODE)[1]);
-    if (isNaN(paymentId)) {
+    // const paymentId = body.code
+    //   ? Number(body.code.split(PREFIX_PAYMENT_CODE)[1])
+    //   : Number(body.content?.split(PREFIX_PAYMENT_CODE)[1]);
+    const orderId = body.code
+      ? body.code.split(PREFIX_PAYMENT_CODE)[1]
+      : body.content?.split(PREFIX_PAYMENT_CODE)[1];
+
+    if (!orderId) {
       throw new BadRequestException('Cannot get payment id from content');
     }
 
-    const payment = await this.paymentModel.findOne({ _id: paymentId });
-    if (!payment) {
-      throw new BadRequestException(`Cannot find payment with id ${paymentId}`);
+    if (!Types.ObjectId.isValid(orderId)) {
+      throw new BadRequestException('Invalid payment ID format');
     }
 
-    const order = await this.orderModel.findOne({ _id: payment.order });
+    const order = await this.orderModel.findById(orderId);
     if (!order) throw NotFoundOrderException;
 
     const price = await this.getPrice(order._id);
-    if (price !== body.transferAmount) {
+    if (Number(price) !== Number(body.transferAmount)) {
       throw new BadRequestException(
         `Price not match, expected ${price} but got ${body.transferAmount}`,
       );
@@ -113,12 +114,6 @@ export class PaymentRepo {
             description: body.description,
           },
         ],
-        { session },
-      );
-
-      await this.paymentModel.updateOne(
-        { _id: paymentId },
-        { status: PaymentStatus.SUCCESS },
         { session },
       );
 

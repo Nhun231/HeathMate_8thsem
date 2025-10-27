@@ -31,10 +31,6 @@ export class OrderRepo {
           path: 'user',
           select: '_id email fullname phoneNumber gender avatar',
         },
-        {
-          path: 'role',
-          select: '_id name',
-        },
       ],
     });
 

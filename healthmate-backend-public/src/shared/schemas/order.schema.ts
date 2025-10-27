@@ -27,6 +27,7 @@ export class Order {
       OrderStatus.ACTIVE,
       OrderStatus.EXPIRES,
       OrderStatus.CANCELLED,
+      OrderStatus.FAILED,
     ],
     default: OrderStatus.PENDING,
   })
@@ -36,13 +37,13 @@ export class Order {
     type: Date,
     required: false,
   })
-  startDate?: Date;
+  startDate: Date;
 
   @Prop({
     type: Date,
     required: false,
   })
-  endDate?: Date;
+  endDate: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
