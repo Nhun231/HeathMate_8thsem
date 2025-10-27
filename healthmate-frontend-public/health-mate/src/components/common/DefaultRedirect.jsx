@@ -16,7 +16,9 @@ const DefaultRedirect = () => {
     if (user.roleId.name === "Customer") {
         return <Navigate to="/customer-homepage" replace />;
     }
-
+    if (user.roleId.name === "NutritionExpert") {
+        return <Navigate to="/expert-chat" replace />;
+    }
     // Optional fallback
     return <Navigate to="/unauthorized" replace />;
 };

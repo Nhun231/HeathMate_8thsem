@@ -12,7 +12,7 @@ import {
 } from '../decorators/auth.decorator';
 import { AccessTokenGuard } from './access-token.guard';
 import { AuthType, ConditionGuard } from '../constants/auth.constant';
-import { APIKeyGuard } from './api-key.guard';
+import { PaymentAPIKeyGuard } from './api-key.guard';
 
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
@@ -21,11 +21,11 @@ export class AuthenticationGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly accessTokenGuard: AccessTokenGuard,
-    private readonly apiKeyGuard: APIKeyGuard,
+    private readonly paymentApiKeyGuard: PaymentAPIKeyGuard,
   ) {
     this.authTypeGuardMap = {
       [AuthType.Bearer]: this.accessTokenGuard,
-      [AuthType.APIKey]: this.apiKeyGuard,
+      [AuthType.PaymentAPIKey]: this.paymentApiKeyGuard,
       [AuthType.None]: { canActivate: () => true },
     };
   }

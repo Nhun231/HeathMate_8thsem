@@ -22,7 +22,7 @@ const configSchema = z.object({
   REFRESH_TOKEN_SECRET: z.string(),
   REFRESH_TOKEN_EXPIRES_IN: z.string(),
   ACCESS_TOKEN_EXPIRES_IN: z.string(),
-  SECRET_API_KEY: z.string(),
+  PAYMENT_API_KEY: z.string(),
   ADMIN_FULLNAME: z.string(),
   ADMIN_EMAIL: z.email(),
   ADMIN_PASSWORD: z.string().min(6),
@@ -33,12 +33,13 @@ const configSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string(),
   GOOGLE_REDIRECT_URI: z.url(),
   GOOGLE_CLIENT_REDIRECT_URI: z.url(),
+  GOOGLE_API_KEY: z.string(),
   S3_REGION: z.string(),
   S3_ACCESS_KEY: z.string(),
   S3_SECRET_KEY: z.string(),
   S3_BUCKET_NAME: z.string(),
   PREFIX_STATIC_ENDPOINT: z.string(),
-  GOOGLE_API_KEY: z.string(),
+  REDIS_URI: z.string(),
 });
 
 const configServer = configSchema.safeParse(process.env);

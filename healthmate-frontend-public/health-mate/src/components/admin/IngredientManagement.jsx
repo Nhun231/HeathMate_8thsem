@@ -35,7 +35,7 @@ import {
   Search,
   FilterList
 } from '@mui/icons-material';
-import {createIngredient, listCustomAndPublicIngredients, updateIngredient, deleteIngredient} from "../../services/Ingredient.js";
+import {createIngredient, listCustomAndPublicIngredients, updateIngredient, deleteIngredient, getIngredientTypes} from "../../services/Ingredient.js";
 
 const IngredientManagement = () => {
   const [ingredients, setIngredients] = useState([]);
@@ -48,6 +48,9 @@ const IngredientManagement = () => {
   const [editingIngredient, setEditingIngredient] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedIngredient, setSelectedIngredient] = useState(null);
+  const [ingredientTypes, setIngredientTypes] = useState([]);
+  const [newTypeDialogOpen, setNewTypeDialogOpen] = useState(false);
+  const [newTypeName, setNewTypeName] = useState('');
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,6 +72,7 @@ const IngredientManagement = () => {
 
   useEffect(() => {
     fetchIngredients();
+    fetchIngredientTypes();
   }, [currentPage, itemsPerPage, searchQuery]);
 
   // Use ingredients directly since pagination is handled server-side
@@ -122,6 +126,35 @@ const IngredientManagement = () => {
     }
   };
 
+  const fetchIngredientTypes = async () => {
+    try {
+      // Lấy danh sách loại nguyên liệu có sẵn để hiển thị trong dropdown
+      // Không cần tạo bảng riêng cho ingredient types
+      const types = await getIngredientTypes();
+      setIngredientTypes(types || []);
+    } catch (error) {
+      console.error('Lỗi khi tải danh sách loại nguyên liệu:', error);
+    }
+  };
+
+  const handleAddNewType = () => {
+    if (newTypeName.trim()) {
+      const newType = newTypeName.trim();
+      
+      // Chỉ lưu vào local state, không lưu vào database
+      if (!ingredientTypes.includes(newType)) {
+        setIngredientTypes([...ingredientTypes, newType].sort());
+      }
+      
+      // Tự động chọn loại mới vừa tạo trong form
+      setFormData({ ...formData, type: newType });
+      
+      // Reset và đóng dialog
+      setNewTypeName('');
+      setNewTypeDialogOpen(false);
+    }
+  };
+
 
   const handleOpenDialog = (ingredient = null) => {
     if (ingredient) {
@@ -141,13 +174,14 @@ const IngredientManagement = () => {
       setEditingIngredient(null);
       setFormData({
         name: '',
-        caloriesPer100g: '',
+        caloPer100g: '',
         proteinPer100g: '',
         carbsPer100g: '',
         fatPer100g: '',
         fiberPer100g: '',
-        category: '',
-        description: '',
+        sugarPer100g: '',
+        type: '',
+        isPublic: false
       });
     }
     setDialogOpen(true);
@@ -175,6 +209,7 @@ const IngredientManagement = () => {
       setSuccess('');
 
       // Convert string values to numbers for nutrition fields
+      // Loại nguyên liệu (bao gồm loại mới từ local state) sẽ được lưu vào database cùng với nguyên liệu
       const dataToSend = {
         ...formData,
         caloPer100g: parseFloat(formData.caloPer100g) || 0,
@@ -433,13 +468,32 @@ const IngredientManagement = () => {
               fullWidth
               required
             />
-            <TextField
-              label="Loại"
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              fullWidth
-              required
-            />
+            <FormControl fullWidth required>
+              <InputLabel>Loại</InputLabel>
+              <Select
+                value={formData.type}
+                onChange={(e) => {
+                  if (e.target.value === '__add_new__') {
+                    setNewTypeDialogOpen(true);
+                  } else {
+                    setFormData({ ...formData, type: e.target.value });
+                  }
+                }}
+                label="Loại"
+              >
+                {ingredientTypes.map((type) => (
+                  <SelectMenuItem key={type} value={type}>
+                    {type}
+                  </SelectMenuItem>
+                ))}
+                <SelectMenuItem 
+                  value="__add_new__"
+                  sx={{ fontStyle: 'italic', color: 'primary.main' }}
+                >
+                  + Thêm loại mới
+                </SelectMenuItem>
+              </Select>
+            </FormControl>
             <TextField
               label="Calories (kcal)"
               type="number"
@@ -504,6 +558,38 @@ const IngredientManagement = () => {
             sx={{ backgroundColor: '#4CAF50', '&:hover': { backgroundColor: '#2E7D32' } }}
           >
             {editingIngredient ? 'Cập nhật' : 'Tạo mới'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add New Type Dialog */}
+      <Dialog open={newTypeDialogOpen} onClose={() => setNewTypeDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Thêm loại nguyên liệu mới</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Tên loại nguyên liệu"
+            value={newTypeName}
+            onChange={(e) => setNewTypeName(e.target.value)}
+            fullWidth
+            sx={{ mt: 2 }}
+            placeholder="Nhập tên loại nguyên liệu mới..."
+            helperText="Loại mới sẽ hiển thị trong dropdown và được chọn tự động"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleAddNewType();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNewTypeDialogOpen(false)}>Hủy</Button>
+          <Button 
+            onClick={handleAddNewType} 
+            variant="contained"
+            disabled={!newTypeName.trim()}
+            sx={{ backgroundColor: '#4CAF50', '&:hover': { backgroundColor: '#2E7D32' } }}
+          >
+            Thêm
           </Button>
         </DialogActions>
       </Dialog>

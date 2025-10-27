@@ -18,6 +18,12 @@ export const createDish = async (dishData) => {
   return res.data;
 };
 
+// Create a custom copy of a dish (for editing public dishes)
+export const createCustomDishCopy = async (dishData) => {
+  const res = await axios.post('/dishes/copy', dishData);
+  return res.data;
+};
+
 // Update an existing dish
 export const updateDish = async (dishId, dishData) => {
   const res = await axios.patch(`/dishes/${dishId}`, dishData);

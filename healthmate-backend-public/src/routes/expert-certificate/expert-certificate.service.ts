@@ -10,7 +10,7 @@ import {
 
 @Injectable()
 export class ExpertCertificateService {
-  constructor(private readonly expertCertificateRepo: ExpertCertificateRepo) {}
+  constructor(private readonly expertCertificateRepo: ExpertCertificateRepo) { }
 
   async list(query: QueryType) {
     return this.expertCertificateRepo.findAll(query);
@@ -32,10 +32,13 @@ export class ExpertCertificateService {
     userId,
     data,
   }: {
-    userId: Types.ObjectId;
+    userId: string;
     data: CreateCertificateBodyType;
   }) {
-    return this.expertCertificateRepo.create({ userId, data });
+    return this.expertCertificateRepo.create({
+      userId: new Types.ObjectId(userId),
+      data,
+    });
   }
 
   async update({ id, data }: { id: string; data: UpdateCertificateBodyType }) {
@@ -49,4 +52,5 @@ export class ExpertCertificateService {
 
     return this.expertCertificateRepo.delete(certificate._id);
   }
+
 }
