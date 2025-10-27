@@ -29,7 +29,11 @@ export class PermissionService {
   }
 
   async create(permission: CreatePermissionBodyType) {
-    return this.permissionRepo.create(permission);
+    if (!permission.role)
+      return this.permissionRepo.create({ ...permission, role: [] });
+
+    const roles = permission.role.map((r) => new Types.ObjectId(r));
+    return this.permissionRepo.create({ ...permission, role: roles });
   }
 
   async update(id: string, permission: UpdatePermissionBodyType) {

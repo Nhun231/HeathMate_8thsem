@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
 import { Gender, UserStatus } from 'src/shared/constants/auth.constant';
 import { Role, RoleDocument } from './role.schema';
+import { Subscription } from './subscription.schema';
 
 @Schema({ timestamps: true })
 export class User {
@@ -42,6 +43,13 @@ export class User {
     default: UserStatus.Active,
   })
   status: string;
+
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: Subscription.name,
+    required: false,
+  })
+  subscription?: Types.ObjectId;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

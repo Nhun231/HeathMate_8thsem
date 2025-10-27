@@ -31,6 +31,18 @@ export class Order {
     default: OrderStatus.PENDING,
   })
   status: string;
+
+  @Prop({
+    type: Date,
+    required: false,
+  })
+  startDate?: Date;
+
+  @Prop({
+    type: Date,
+    required: false,
+  })
+  endDate?: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

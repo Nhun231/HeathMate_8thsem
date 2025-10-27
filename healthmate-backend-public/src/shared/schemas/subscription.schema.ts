@@ -15,7 +15,7 @@ export class Subscription {
   type: string;
 
   @Prop({ type: Number, required: true })
-  duration: number;
+  durationDays: number;
 
   @Prop({ type: Number, required: true })
   price: number;

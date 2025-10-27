@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const PaymentTransactionSchema = z.object({
+export const PaymentTransactionBodySchema = z.object({
   id: z.number(),
   gateway: z.string(),
   transactionDate: z.date(),
@@ -12,7 +12,7 @@ export const PaymentTransactionSchema = z.object({
   code: z.string().nullable(),
   transactionContent: z.string().nullable(),
   referenceNumber: z.string().nullable(),
-  body: z.string().nullable(),
+  description: z.string().nullable(),
   createdAt: z.date(),
 });
 
@@ -33,6 +33,8 @@ export const WebhookPaymentBodySchema = z.object({
   description: z.string(), // Toàn bộ nội dung tin nhắn sms
 });
 
-export type PaymentTransactionType = z.infer<typeof PaymentTransactionSchema>;
+export type PaymentTransactionType = z.infer<
+  typeof PaymentTransactionBodySchema
+>;
 
 export type WebhookPaymentBodyType = z.infer<typeof WebhookPaymentBodySchema>;

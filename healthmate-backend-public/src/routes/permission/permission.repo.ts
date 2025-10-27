@@ -8,10 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Role, RoleDocument } from 'src/shared/schemas/role.schema';
 import { DeleteResult, Model, Types } from 'mongoose';
 import { QueryType } from 'src/shared/schemas/request/request.schema';
-import {
-  CreatePermissionBodyType,
-  UpdatePermissionBodyType,
-} from './schema/request/permission.request.schema';
+import { UpdatePermissionBodyType } from './schema/request/permission.request.schema';
 
 @Injectable()
 export class PermissionRepo {
@@ -49,7 +46,7 @@ export class PermissionRepo {
     });
   }
 
-  create(data: CreatePermissionBodyType) {
+  create(data: Partial<Permission>) {
     return this.permissionModel.create(data);
   }
 

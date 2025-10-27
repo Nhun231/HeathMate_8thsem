@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { HTTPMethod } from 'src/shared/constants/role.constant';
 import z from 'zod';
 
@@ -23,7 +22,7 @@ export const CreatePermissionBodySchema = z
       HTTPMethod.OPTIONS,
       HTTPMethod.HEAD,
     ]),
-    role: z.array(z.instanceof(Types.ObjectId)).optional(),
+    role: z.array(z.string()).optional(),
   })
   .strict();
 

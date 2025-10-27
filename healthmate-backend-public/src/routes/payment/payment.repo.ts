@@ -23,6 +23,7 @@ import {
   PaymentStatus,
   PREFIX_PAYMENT_CODE,
 } from 'src/shared/constants/payment.constant';
+import { User, UserDocument } from 'src/shared/schemas/user.schema';
 
 @Injectable()
 export class PaymentRepo {
@@ -33,6 +34,7 @@ export class PaymentRepo {
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(Subscription.name)
     private subscriptionModel: Model<SubscriptionDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
@@ -120,10 +122,27 @@ export class PaymentRepo {
         { session },
       );
 
+      const subscription = await this.subscriptionModel.findOne({
+        _id: order.subscription,
+      });
+      if (!subscription) throw NotFoundSubscriptionException;
+
       await this.orderModel.updateOne(
         { _id: order._id },
-        { status: PaymentStatus.SUCCESS },
+        {
+          status: PaymentStatus.SUCCESS,
+          // get today date
+          startDate: new Date(Date.now()).getDate(),
+          endDate: new Date(Date.now()).setDate(
+            new Date(Date.now()).getDate() + subscription.durationDays,
+          ),
+        },
         { session },
+      );
+
+      await this.userModel.updateOne(
+        { _id: order.user },
+        { subscription: order.subscription },
       );
 
       await session.commitTransaction();

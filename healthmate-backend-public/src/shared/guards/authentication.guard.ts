@@ -12,7 +12,7 @@ import {
 } from '../decorators/auth.decorator';
 import { AccessTokenGuard } from './access-token.guard';
 import { AuthType, ConditionGuard } from '../constants/auth.constant';
-import { PaymentAPIKeyGuard } from './api-key.guard';
+import { PaymentAPIKeyGuard } from './payment-api-key.guard';
 
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
