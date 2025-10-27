@@ -131,7 +131,6 @@ export class PaymentRepo {
         { _id: order._id },
         {
           status: PaymentStatus.SUCCESS,
-          // get today date
           startDate: new Date(Date.now()).getDate(),
           endDate: new Date(Date.now()).setDate(
             new Date(Date.now()).getDate() + subscription.durationDays,
@@ -144,7 +143,6 @@ export class PaymentRepo {
         { _id: order.user },
         { subscription: order.subscription },
       );
-
       await session.commitTransaction();
 
       return { message: 'Payment success!' };
