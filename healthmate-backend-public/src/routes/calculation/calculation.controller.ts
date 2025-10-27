@@ -8,6 +8,8 @@ import {
 } from './calculation.dto';
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
 import { DeleteResult, Types } from 'mongoose';
+import {IsPublic} from "../../shared/decorators/auth.decorator";
+
 
 @Controller('v1/calculation')
 export class CalculationController {
@@ -52,5 +54,17 @@ export class CalculationController {
   ) {
     return this.calculationService.updateNutrient(userId, dto);
   }
+  @Get('user/latest/:userId')
+  @IsPublic()
+  async findLatestByUserIdPublic(@Param('userId') userId: string) {
+    const objectId = new Types.ObjectId(userId);
+    return this.calculationService.findLatestByUserId(objectId);
+  }
 
+  @Get('user/list/:userId')
+  @IsPublic()
+  async findAllCalculationByUserId(@Param('userId') userId: string) {
+    const objectId = new Types.ObjectId(userId);
+    return this.calculationService.findByUserId(objectId);
+  }
 }

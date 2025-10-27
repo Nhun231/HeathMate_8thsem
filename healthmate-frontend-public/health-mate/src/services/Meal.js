@@ -57,6 +57,15 @@ export const getMealSummary = async (date) => {
   });
   return res.data;
 };
+// Get meal summary by user ID and date
+export const getMealSummaryByUserId = async (userId, date) => {
+  const isoDate = new Date(date).toISOString();
+
+  const res = await axios.get(`/meals/summary/${userId}`, {
+    params: { date: isoDate },
+  });
+  return res.data;
+};
 
 // Update meal quantity
 export const updateMeal = async (mealId, quantity) => {
