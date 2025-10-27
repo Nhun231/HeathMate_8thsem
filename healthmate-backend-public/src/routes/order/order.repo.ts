@@ -58,7 +58,7 @@ export class OrderRepo {
   create(userId: Types.ObjectId, data: CreateOrderBodyType) {
     return this.orderModel.create({
       user: userId,
-      subscription: data.subscriptionId,
+      subscription: new Types.ObjectId(data.subscriptionId),
       status: OrderStatus.PENDING,
     });
   }

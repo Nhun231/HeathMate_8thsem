@@ -117,9 +117,9 @@ export class PaymentRepo {
         { session },
       );
 
-      const subscription = await this.subscriptionModel.findOne({
-        _id: order.subscription,
-      });
+      const subscription = await this.subscriptionModel.findById(
+        order.subscription,
+      );
       if (!subscription) throw NotFoundSubscriptionException;
 
       await this.orderModel.updateOne(
