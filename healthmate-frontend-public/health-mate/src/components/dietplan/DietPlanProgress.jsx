@@ -275,16 +275,7 @@ const DietPlanProgress = () => {
       </Typography>
 
       {/* Pie chart + Info */}
-      <Paper
-        sx={{
-          p: 4,
-          mb: 4,
-          borderRadius: 3,
-          bgcolor: "#f5f5f5",
-          mx: "auto",
-          maxWidth: 1100,
-        }}
-      >
+      <Paper sx={{ p: 3, borderRadius: 3 }} className="my-card">
         <Grid container spacing={4} alignItems="center" justifyContent="center">
           {/* Pie Chart */}
           <Grid
@@ -346,15 +337,7 @@ const DietPlanProgress = () => {
       </Paper>
 
       {/* Line chart + Placeholder */}
-      <Paper
-        sx={{
-          p: 4,
-          borderRadius: 3,
-          bgcolor: "#f5f5f5",
-          mx: "auto",
-          maxWidth: 1100,
-        }}
-      >
+      <Paper sx={{ p: 3, borderRadius: 3 }} className="my-card">
         <Grid container spacing={3} alignItems="stretch">
           {/* Line chart */}
           <Grid item xs={12} md={6} sx={{ display: "flex" }}>

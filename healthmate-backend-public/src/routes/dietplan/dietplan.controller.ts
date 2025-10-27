@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Put,
-  Query
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Query,Param } from '@nestjs/common';
 import { DietPlanService } from './dietplan.service';
 import {
   CreateDietPlanBodyDTO,
@@ -13,6 +6,8 @@ import {
   GetDietPlanByDateQueryDTO,
 } from './dietplan.dto';
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
+import {IsPublic} from "../../shared/decorators/auth.decorator";
+
 
 @Controller('v1/diet-plan')
 export class DietPlanController {
@@ -45,5 +40,11 @@ export class DietPlanController {
     @Query() query: GetDietPlanByDateQueryDTO,
   ) {
     return this.dietPlanService.getDietPlanByDate(userId, query.date);
+  }
+
+  @Get(':userId')
+  @IsPublic()
+  async getDietPlanByUserId(@Param('userId') userId: string) {
+    return this.dietPlanService.getCurrentDietPlan(userId);
   }
 }

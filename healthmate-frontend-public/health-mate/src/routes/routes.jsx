@@ -14,7 +14,7 @@ import CustomerHomePage from "../components/homepage/CustomerHomePage.jsx";
 import SetGoal from "../components/dietplan/SetGoal.jsx";
 import DietPlan from "../components/dietplan/DietPlan.jsx";
 import DietPlanProgress from "../components/dietplan/DietPlanProgress.jsx";
-
+import CustomerProgress from "../components/customerprogress/CustomerProgress.jsx";
 import FoodDiary from "../components/diary/FoodDiary.jsx";
 import { DiaryProvider } from "../context/DiaryContext.jsx";
 import CustomerPage from "../components/homepage/CustomerPage.jsx";
@@ -143,6 +143,10 @@ const router = createBrowserRouter([
           {
             path: "/update-nutrient",
             element: <UpdateNutrient />,
+          },
+          {
+            path: "/customer-progress/:userId",
+            element: <CustomerProgress />,
           },
         ],
       },

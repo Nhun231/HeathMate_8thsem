@@ -13,6 +13,7 @@ export const getWaterData = async (date) => {
     }
 };
 
+
 // Thêm một lần uống nước mới
 export const addWaterIntake = async (amount) => {
     try {
@@ -54,3 +55,15 @@ export const deleteWaterHistory = async (recordId, date) => {
         return e;
     }
 };
+
+export const getWaterDataByUserId = async (userId, params = {}) => {
+  try {
+    const response = await baseAxios.get(`/water/${userId}`, { params });
+    return response;
+  } catch (e) {
+    alert("Lỗi khi lấy dữ liệu nước theo userId");
+    console.error(e);
+    return e;
+  }
+};
+

@@ -11,6 +11,17 @@ export const getLatestCalculation = async () => {
     }
 };
 
+export const getLatestCalculationByUserId = async (userId) => {
+    try {
+        const response = await baseAxios.get(`/calculation/user/latest/${userId}`);
+        return response;
+    } catch (e) {
+        alert("Lỗi khi lấy dữ liệu calculation mới nhất của user");
+        console.error(e);
+        return e;
+    }
+};
+
 export const createCalculation = async (data) => {
     try {
         const response = await baseAxios.post("/calculation", data);
