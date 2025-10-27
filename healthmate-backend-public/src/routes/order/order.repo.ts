@@ -49,10 +49,6 @@ export class OrderRepo {
         select: '_id email fullname phoneNumber gender avatar',
       })
       .populate({
-        path: 'role',
-        select: '_id name',
-      })
-      .populate({
         path: 'subscription',
       });
 

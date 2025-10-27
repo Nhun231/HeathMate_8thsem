@@ -9,8 +9,8 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [
-	'http://localhost:5173',
-	'https://yourhealthmate.io.vn'
+        'http://localhost:5173',
+        'https://yourhealthmate.io.vn',
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
