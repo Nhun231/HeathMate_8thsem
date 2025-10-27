@@ -47,7 +47,7 @@ export class ChatService {
     const chatRoom = new this.chatRoomModel({
       customerId: customerObjectId,
       expertId: expertObjectId,
-      status: 'active',
+      status: 'Active',
       lastMessageAt: new Date(),
       lastMessage: 'Chat started',
       unreadCount: 0,
