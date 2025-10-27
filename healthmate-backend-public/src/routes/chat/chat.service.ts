@@ -82,7 +82,6 @@ export class ChatService {
         };
       });
     } catch (error) {
-      console.error('Error loading chat rooms:', error);
       throw new Error('Failed to load chat rooms');
     }
   }
@@ -113,7 +112,6 @@ export class ChatService {
       if (error === NotFoundChatRoomException) {
         throw error;
       }
-      console.error('Error loading messages:', error);
       throw new Error('Failed to load messages');
     }
   }
@@ -127,12 +125,9 @@ export class ChatService {
     messageType?: string;
   }  ): Promise<MessageDocument> {
     try {
-      console.log('💾 Service: Starting saveMessage process...');
-      console.log('💾 Service: Message data received:', messageData);
       
       // Validate content
       if (!messageData.content || messageData.content.trim().length === 0) {
-        console.error('❌ Service: Invalid message content');
         throw InvalidMessageContentException;
       }
 
@@ -140,34 +135,19 @@ export class ChatService {
       const senderObjectId = new Types.ObjectId(messageData.senderId);
       const receiverObjectId = new Types.ObjectId(messageData.receiverId);
       
-      console.log('💾 Service: Converted to ObjectIds:', {
-        roomId: roomObjectId.toString(),
-        senderId: senderObjectId.toString(),
-        receiverId: receiverObjectId.toString()
-      });
 
       // Check if chat room exists
-      console.log('💾 Service: Checking if chat room exists...');
       const room = await this.chatRoomModel.findById(roomObjectId).exec();
       if (!room) {
-        console.error('❌ Service: Chat room not found:', roomObjectId.toString());
         throw NotFoundChatRoomException;
       }
-      console.log('✅ Service: Chat room found:', room._id?.toString() || 'unknown');
 
       // Verify sender is part of the chat room
-      console.log('💾 Service: Verifying sender authorization...');
-      console.log('💾 Service: Room customerId:', room.customerId.toString());
-      console.log('💾 Service: Room expertId:', room.expertId.toString());
-      console.log('💾 Service: Sender ID:', senderObjectId.toString());
       
       if (!room.customerId.equals(senderObjectId) && !room.expertId.equals(senderObjectId)) {
-        console.error('❌ Service: Sender not authorized for this room');
         throw UnauthorizedChatAccessException;
       }
-      console.log('✅ Service: Sender authorized');
 
-      console.log('💾 Service: Creating message document...');
       const message = new this.messageModel({
         ...messageData,
         roomId: roomObjectId,
@@ -176,12 +156,9 @@ export class ChatService {
         timestamp: new Date(),
       });
 
-      console.log('💾 Service: Saving message to database...');
       const savedMessage = await message.save();
-      console.log('✅ Service: Message saved with ID:', savedMessage._id?.toString() || 'unknown');
 
       // Update chat room with last message info
-      console.log('💾 Service: Updating chat room with last message info...');
       await this.chatRoomModel.findOneAndUpdate(
         { _id: roomObjectId },
         {
@@ -190,29 +167,16 @@ export class ChatService {
           $inc: { unreadCount: 1 }
         }
       ).exec();
-      console.log('✅ Service: Chat room updated');
 
-      console.log('💾 Service: Populating sender info...');
       const populatedMessage = await savedMessage.populate('senderId', 'fullname email');
-      console.log('✅ Service: Message save process completed successfully');
       
       return populatedMessage;
     } catch (error) {
-      console.error('❌ Service: Error in saveMessage:', error);
-      console.error('❌ Service: Error message:', error.message);
-      console.error('❌ Service: Error stack:', error.stack);
-      
       if (error === InvalidMessageContentException || 
           error === NotFoundChatRoomException || 
           error === UnauthorizedChatAccessException) {
         throw error;
       }
-      
-      if (error.name === 'ValidationError') {
-        console.error('❌ Service: Mongoose validation error:', error.errors);
-      }
-      
-      console.error('❌ Service: Throwing generic error');
       throw new Error('Failed to save message: ' + error.message);
     }
   }
@@ -244,7 +208,6 @@ export class ChatService {
   // Get available experts for a specific customer
   async getAvailableExperts(customerId: string): Promise<any[]> {
     try {
-      console.log('🔍 Getting all active experts for customer:', customerId);
       
       // Find all users with NutritionExpert role
       const experts = await this.userModel
@@ -261,7 +224,6 @@ export class ChatService {
         return role?.name === 'NutritionExpert';
       });
 
-      console.log('🔍 Found experts:', expertUsers.length);
 
       return expertUsers.map(expert => ({
         _id: expert._id,
@@ -271,7 +233,6 @@ export class ChatService {
         status: expert.status,
       }));
     } catch (error) {
-      console.error('❌ Error in getAvailableExperts:', error);
       return [];
     }
   }
@@ -280,7 +241,6 @@ export class ChatService {
   async getAvailableCustomers(expertId: string): Promise<any[]> {
     try {
       const expertObjectId = new Types.ObjectId(expertId);
-      console.log('🔍 Getting customers from existing chat rooms for expert:', expertId);
       
       // Find all chat rooms where this expert is involved
       const chatRooms = await this.chatRoomModel
@@ -289,7 +249,6 @@ export class ChatService {
         .select('customerId')
         .exec();
 
-      console.log('🔍 Found', chatRooms.length, 'chat rooms for expert');
 
       // Extract unique customers from chat rooms
       const customers = chatRooms
@@ -299,7 +258,6 @@ export class ChatService {
           self.findIndex(c => c._id.toString() === customer._id.toString()) === index // Remove duplicates
         );
 
-      console.log('🔍 Found', customers.length, 'unique customers from chat rooms');
       
       return customers.map((customer: any) => ({
         _id: customer._id,
@@ -309,7 +267,6 @@ export class ChatService {
         status: customer.status,
       }));
     } catch (error) {
-      console.error('❌ Error in getAvailableCustomers:', error);
       return [];
     }
   }
@@ -341,7 +298,6 @@ export class ChatService {
       if (error === NotFoundChatRoomException) {
         throw error;
       }
-      console.error('Error loading chat room:', error);
       throw new Error('Failed to load chat room');
     }
   }

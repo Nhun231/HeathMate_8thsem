@@ -28,44 +28,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   private connectedUsers = new Map<string, string>(); // userId -> socketId
 
   constructor(private readonly chatService: ChatService) {
-    console.log('🚀 ChatGateway: Constructor called - Gateway initialized');
     this.logger.log('ChatGateway initialized');
   }
 
   // Gateway lifecycle method
   afterInit(server: Server) {
-    console.log('\n🚀 ===== WEBSOCKET GATEWAY INITIALIZED =====');
-    console.log('🚀 Gateway: WebSocket server initialized');
-    console.log('🚀 Gateway: Namespace: /v1/chat');
-    console.log('🚀 Gateway: CORS origins:', ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173']);
-    console.log('🚀 Gateway: Server listening on port 9999');
-    
-    // Test namespace existence (defensive coding)
-    try {
-      const namespace = server.of('/v1/chat');
-      console.log('🚀 Gateway: /v1/chat namespace exists:', !!namespace);
-      console.log('🚀 Gateway: Namespace name:', namespace.name);
-    } catch (error) {
-      console.log('🚀 Gateway: Could not access namespace info:', error.message);
-    }
+    this.logger.log('WebSocket Gateway initialized on namespace /v1/chat');
   }
 
   // Connection handler
   handleConnection(client: Socket) {
-    console.log('\n🟢 ===== GATEWAY: CLIENT CONNECTED =====');
-    console.log('🔌 Gateway: Client ID:', client.id);
-    console.log('🔌 Gateway: Namespace:', client.nsp?.name);
-    console.log('🔌 Gateway: Client IP:', client.handshake.address);
-    
-    // Safe access to connected clients count
-    try {
-      const clientCount = this.server.sockets?.sockets?.size || this.server.engine?.clientsCount || 'Unknown';
-      console.log('🔌 Gateway: Total connected clients:', clientCount);
-    } catch (error) {
-      console.log('🔌 Gateway: Could not get client count');
-    }
-    
-    // Send welcome message to test connection
     client.emit('connection_confirmed', { 
       message: 'Connected to chat server',
       clientId: client.id,
@@ -75,18 +47,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
   // Disconnection handler
   handleDisconnect(client: Socket) {
-    console.log('🔌 Gateway: Client disconnected:', client.id);
-    
     // Remove user from connected users map
     for (const [userId, socketId] of this.connectedUsers.entries()) {
       if (socketId === client.id) {
         this.connectedUsers.delete(userId);
-        console.log('🔌 Gateway: Removed user from map:', userId);
         break;
       }
     }
-    
-    console.log('🔌 Gateway: Remaining connected users:', this.connectedUsers.size);
   }
 
 
@@ -162,19 +129,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     @ConnectedSocket() client: Socket,
     @MessageBody() data: any
   ) {
-    console.log('🧪 Gateway: Received test_connection event');
-    console.log('🧪 Gateway: Client ID:', client.id);
-    console.log('🧪 Gateway: Data:', data);
-    console.log('🧪 Gateway: Server instance:', !!this.server);
-    console.log('🧪 Gateway: Server namespaces:', this.server?._nsps ? Array.from(this.server._nsps.keys()) : 'Not available');
-    
+
     client.emit('test_response', {
       message: 'Connection test successful',
       clientId: client.id,
       timestamp: new Date().toISOString()
     });
-    
-    console.log('🧪 Gateway: Sent test response to client');
   }
 
   @SubscribeMessage('send_message')
@@ -188,25 +148,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       messageType?: string;
     }
   ) {
-    console.log('\n🎯 ===== GATEWAY: RECEIVED send_message EVENT =====');
-    console.log('📤 Gateway: Event received at:', new Date().toISOString());
-    console.log('📤 Gateway: Client ID:', client.id);
-    console.log('📤 Gateway: Client connected:', client.connected);
-    console.log('📤 Gateway: Namespace:', client.nsp?.name);
-    console.log('📤 Gateway: Message data received:', JSON.stringify(data, null, 2));
     
     try {
-      console.log('📤 Gateway: Starting message processing...');
-      
       // Save message to database first
-      console.log('💾 Gateway: Saving message to database...');
-      console.log('💾 Gateway: Message payload:', {
-        roomId: data.roomId,
-        senderId: data.senderId,
-        receiverId: data.receiverId,
-        content: data.content,
-        messageType: data.messageType || 'text',
-      });
       
       const savedMessage = await this.chatService.saveMessage({
         roomId: data.roomId,
@@ -216,8 +160,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         messageType: data.messageType || 'text',
       });
       
-      console.log('✅ Gateway: Message saved successfully:', savedMessage._id?.toString());
-
       // Create message object for broadcasting using saved message data
       const messageData = {
         id: savedMessage._id?.toString() || `msg_${Date.now()}`,
@@ -230,9 +172,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         isRead: false,
       };
 
-      console.log('💾 Gateway: Message saved to DB with ID:', savedMessage._id?.toString());
-      console.log('📡 Gateway: Broadcasting message to room:', `room_${data.roomId}`);
-      
       // Broadcast to all users in the room
       this.server.to(`room_${data.roomId}`).emit('new_message', messageData);
       
@@ -240,29 +179,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       const senderSocketId = this.connectedUsers.get(data.senderId);
       const receiverSocketId = this.connectedUsers.get(data.receiverId);
       
-      console.log('📡 Gateway: Sender socket:', senderSocketId, 'Receiver socket:', receiverSocketId);
-      
       // Send to receiver directly if they're connected
       if (receiverSocketId && receiverSocketId !== client.id) {
-        console.log('📡 Gateway: Sending directly to receiver');
         this.server.to(receiverSocketId).emit('new_message', messageData);
       }
       
       // Send to sender for confirmation (if different from current client)
       if (senderSocketId && senderSocketId !== client.id) {
-        console.log('📡 Gateway: Sending confirmation to sender');
         this.server.to(senderSocketId).emit('new_message', messageData);
       }
-
-      console.log('✅ Gateway: Message broadcasted successfully');
     } catch (error) {
-      console.error('❌ Gateway: Error in handleSendMessage:', error);
-      console.error('❌ Gateway: Error message:', error.message);
-      console.error('❌ Gateway: Error stack:', error.stack);
-      
-      if (error.name === 'ValidationError') {
-        console.error('❌ Gateway: Mongoose validation error:', error.errors);
-      }
       
       this.logger.error('Error sending message:', error);
       client.emit('message_error', { 
@@ -337,30 +263,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     @MessageBody() data: { roomId: string; userId: string }
   ) {
     const { roomId, userId } = data;
-    
-    console.log('🔌 Gateway: Received join_room event');
-    console.log('🔌 Gateway: Client ID:', client.id);
-    console.log('🔌 Gateway: Room ID:', roomId, 'User ID:', userId);
-    console.log('🔌 Gateway: Total connected users:', this.connectedUsers.size);
-    
     // Store user connection
     this.connectedUsers.set(userId, client.id);
     
     // Join the specific chat room
     await client.join(`room_${roomId}`);
-    console.log('🔌 Gateway: Client joined room:', `room_${roomId}`);
-    
     // Also join user-specific room for notifications
     await client.join(`user_${userId}`);
-    console.log('🔌 Gateway: Client joined user room:', `user_${userId}`);
-    
-    console.log('🔌 Gateway: Connected users map:', Array.from(this.connectedUsers.entries()));
-    
+
     // Check how many users are in this room
     const roomClients = await this.server.in(`room_${roomId}`).fetchSockets();
-    console.log('🔌 Gateway: Users in room', `room_${roomId}:`, roomClients.length);
     roomClients.forEach(socket => {
-      console.log('🔌 Gateway: Socket in room:', socket.id);
     });
     
     this.logger.log(`User ${userId} (${client.id}) joined room ${roomId}`);
@@ -371,7 +284,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       roomId,
       timestamp: new Date().toISOString(),
     });
-    console.log('🔌 Gateway: Emitted user_joined event to room:', `room_${roomId}`);
   }
 
   @SubscribeMessage('leave_room')

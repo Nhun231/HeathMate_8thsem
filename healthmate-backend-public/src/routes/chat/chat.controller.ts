@@ -74,13 +74,6 @@ export class ChatController {
   // Get available users to chat with
   @Get('available-users')
   async getAvailableUsers(@ActiveUser('userId') userId: Types.ObjectId, @ActiveUser() user: any) {
-    console.log('🔍 Getting available users for user:', {
-      userId: userId.toString(),
-      userRole: user?.roleId?.name,
-      userEmail: user?.email,
-      fullUser: user
-    });
-    
     // Determine if user is Customer or Expert
     const userRole = user?.roleId?.name;
     

@@ -1,10 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Menu, MenuItem } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
+import { ArrowDropDown } from '@mui/icons-material';
 import baseAxios from "../../api/axios.js";
 import { getCurrentDietPlan } from '../../services/DietPlan.js';
+import { AuthContext } from '../../context/AuthProvider';
+
 const Header = () => {
   const navigate = useNavigate();
+  
+  // Use AuthContext directly with fallback - won't throw error if not within provider
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user || null;
+  const userRole = user?.roleId?.name || null;
 
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         const token = localStorage.getItem('accessToken');
@@ -78,12 +86,12 @@ const Header = () => {
           }}
         >
             {isLoggedIn ?
-          <Link
-               to='/customer-homepage'
-            style={{ color: 'inherit', textDecoration: 'none' }}
-          >
-            HealthMate
-          </Link>
+              <Link
+                to={userRole === 'Admin' ? '/admin/dashboard' : userRole === 'NutritionExpert' ? '/expert-chat' : '/customer-homepage'}
+                style={{ color: 'inherit', textDecoration: 'none' }}
+              >
+                HealthMate
+              </Link>
          :
             <Link
                 to='/guest-homepage'
@@ -98,70 +106,227 @@ const Header = () => {
                 <Box sx={{ display: "flex", gap: 2 }}>
                     {isLoggedIn ? (
                         <>
-                            <Button
-                                color="inherit"
-                                onClick={() => navigate("/calculate")}
-                                sx={{ fontWeight: "bold" }}
-                            >
-                                Công cụ tính toán
-                            </Button>
-                            <Button
-                                color="inherit"
-                                onClick={() => navigate("/diary")}
-                                sx={{ fontWeight: "bold" }}
-                            >
-                                Thực đơn hôm nay
-                            </Button>
-                            <Button
-                                color="inherit"
-                                onClick={handleClick}
-                                sx={{ fontWeight: 'bold' }}
-                            >
-                                Kế hoạch ăn uống
-                            </Button>
-                            <Menu
-                                anchorEl={anchorEl}
-                                open={Boolean(anchorEl)}
-                                onClose={handleClose}
-                            >
-                                <MenuItem
-                                onClick={() => {
-                                    navigate('/set-goal');
-                                    handleClose();
-                                }}
-                                >
-                                {hasDietPlan ? "Chỉnh sửa kế hoạch ăn uống" : "Lập kế hoạch ăn uống"}
-                                </MenuItem>
-                                <MenuItem
-                                onClick={() => {
-                                    navigate('/dietplan/progress');
-                                    handleClose();
-                                }}
-                                >
-                                Theo dõi kế hoạch ăn uống
-                                </MenuItem>
-                            </Menu>
-                            <Button
-                                color="inherit"
-                                onClick={() => navigate("/my-profile")}
-                                sx={{ fontWeight: "bold" }}
-                            >
-                                Hồ sơ
-                            </Button>
-                            <Button
-                                color="inherit"
-                                onClick={ handleLogout}
-                                sx={{ fontWeight: "bold" }}
-                            >
-                                Đăng xuất
-                            </Button>
+                            {/* Admin Role */}
+                            {userRole === 'Admin' && (
+                                <>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => navigate("/admin/dashboard")}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Dashboard
+                                    </Button>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => navigate("/my-profile")}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Hồ sơ
+                                    </Button>
+                                    <Button
+                                        color="inherit"
+                                        onClick={handleLogout}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Đăng xuất
+                                    </Button>
+                                </>
+                            )}
+                            
+                            {/* Expert Role */}
+                            {userRole === 'NutritionExpert' && (
+                                <>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => navigate("/expert-chat")}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Tư vấn cho khách hàng
+                                    </Button>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => navigate("/my-profile")}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Hồ sơ
+                                    </Button>
+                                    <Button
+                                        color="inherit"
+                                        onClick={handleLogout}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Đăng xuất
+                                    </Button>
+                                </>
+                            )}
+                            
+                            {/* Customer Role */}
+                            {userRole === 'Customer' && (
+                                <>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => navigate("/calculate")}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Công cụ tính toán
+                                    </Button>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => navigate("/diary")}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Thực đơn hôm nay
+                                    </Button>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => navigate("/customer-chat")}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Tư vấn cùng chuyên gia
+                                    </Button>
+                                    <Button
+                                        color="inherit"
+                                        onClick={handleClick}
+                                        endIcon={<ArrowDropDown />}
+                                        sx={{ 
+                                            fontWeight: 'bold',
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Kế hoạch ăn uống
+                                    </Button>
+                                    <Menu
+                                        anchorEl={anchorEl}
+                                        open={Boolean(anchorEl)}
+                                        onClose={handleClose}
+                                        PaperProps={{
+                                            sx: {
+                                                mt: 1,
+                                                borderRadius: 2,
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                                '& .MuiMenuItem-root': {
+                                                    '&:hover': {
+                                                        bgcolor: '#f5f5f5',
+                                                    },
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        <MenuItem
+                                        onClick={() => {
+                                            navigate('/set-goal');
+                                            handleClose();
+                                        }}
+                                        >
+                                        {hasDietPlan ? "Chỉnh sửa kế hoạch ăn uống" : "Lập kế hoạch ăn uống"}
+                                        </MenuItem>
+                                        <MenuItem
+                                        onClick={() => {
+                                            navigate('/dietplan/progress');
+                                            handleClose();
+                                        }}
+                                        >
+                                        Theo dõi kế hoạch ăn uống
+                                        </MenuItem>
+                                    </Menu>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => navigate("/my-profile")}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Hồ sơ
+                                    </Button>
+                                    <Button
+                                        color="inherit"
+                                        onClick={handleLogout}
+                                        sx={{ 
+                                            fontWeight: "bold",
+                                            color: 'white',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                            },
+                                        }}
+                                    >
+                                        Đăng xuất
+                                    </Button>
+                                </>
+                            )}
                         </>
                     ) : (
                         <>
                             <Button
                                 color="inherit"
                                 onClick={() => navigate("/login")}
-                                sx={{ fontWeight: "bold" }}
+                                sx={{ 
+                                    fontWeight: "bold",
+                                    color: 'white',
+                                    '&:hover': {
+                                        bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                    },
+                                }}
                             >
                                 Đăng nhập
                             </Button>

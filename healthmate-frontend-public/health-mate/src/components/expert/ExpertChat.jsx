@@ -45,55 +45,45 @@ const ExpertChat = () => {
 
   // Refs
   const messagesEndRef = useRef(null);
-
+  const messagesContainerRef = useRef(null);
   // Get current user from auth context
   const { user: currentUser, loading: authLoading } = useAuth();
 
-  // Debug log when component mounts
-  useEffect(() => {
-    console.log('🚀 ExpertChat component mounted');
-    console.log('👤 Current user:', currentUser);
-  }, []);
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   // Load chat rooms
   const loadChatRooms = useCallback(async () => {
     try {
       const userType = currentUser?.role === 'Customer' ? 'Customer' : 'NutritionExpert';
-      console.log('🔍 Expert: Loading chat rooms for userType:', userType);
-      console.log('🔍 Expert: Current user role:', currentUser?.role);
       const response = await chatService.getChatRooms(userType);
-      console.log('🔍 Expert: Chat rooms response:', response);
       setChatRooms(response?.rooms || []);
     } catch (err) {
-      console.error('❌ Error loading chat rooms:', err);
       setError('Không thể tải danh sách cuộc trò chuyện');
     }
   }, [currentUser?.role]);
 
-  // Remove loadAvailableCustomers - we only need chat rooms now
-
   // Load messages for selected customer
   const loadMessages = async (roomId) => {
     try {
-      console.log('📨 Loading messages for room:', roomId);
+      console.log('Loading messages for room:', roomId);
       setLoading(true);
       
       // Load existing messages from database
       const response = await chatService.getMessages(roomId);
       const loadedMessages = response?.messages || [];
       
-      console.log('📨 Loaded', loadedMessages.length, 'messages from database');
       setMessages(loadedMessages);
       
       // Scroll to bottom to show latest messages
       setTimeout(() => scrollToBottom(), 100);
     } catch (err) {
-      console.error('❌ Error loading messages:', err);
+      console.error(' Error loading messages:', err);
       setError('Không thể tải tin nhắn');
       setMessages([]); // Only clear on error
     } finally {
@@ -110,7 +100,6 @@ const ExpertChat = () => {
         try {
           await loadChatRooms();
         } catch (err) {
-          console.error('❌ Error loading initial data:', err);
           setError('Không thể tải dữ liệu ban đầu');
         } finally {
           setLoading(false);
@@ -126,8 +115,6 @@ const ExpertChat = () => {
   // Initialize socket connection
   useEffect(() => {
     if (!authLoading && currentUser && currentUser._id) {
-      console.log('🔌 Socket: Initializing connection for user:', currentUser._id);
-      
       const socket = socketService.connect();
       setIsConnected(true);
 
@@ -136,35 +123,38 @@ const ExpertChat = () => {
 
       // Listen for messages
       socketService.onMessage((message) => {
-      console.log('📨 Socket: Expert received message:', message.roomId, 'sender:', message.senderId, 'current user:', currentUser._id);
-      
-      // Handle both object and string senderId formats
-      const messageSenderId = typeof message.senderId === 'object' 
-        ? message.senderId?._id 
-        : message.senderId;
-        
-      console.log('📨 Socket: SenderId extracted:', messageSenderId, 'CurrentUser._id:', currentUser._id);
-      console.log('📨 Socket: Are they equal?', messageSenderId === currentUser._id);
-      console.log('📨 Socket: String comparison:', messageSenderId?.toString() === currentUser._id?.toString());
-        
-        // Add message to state, avoiding duplicates
+        // Add message to state, replacing temp message if exists
         setMessages(prev => {
-        // Check if message already exists (by id or timestamp + content)
-        const exists = prev.some(msg => {
-          const existingMsgSenderId = typeof msg.senderId === 'object' ? msg.senderId?._id : msg.senderId;
-          return msg.id === message.id || 
+          // Check if this is updating a temp message (same content and recent timestamp)
+          const existingIndex = prev.findIndex(msg => 
+            msg.id?.startsWith('temp_') && 
+            msg.content === message.content &&
+            msg.senderId === message.senderId
+          );
+          
+          if (existingIndex >= 0) {
+            // Replace temp message with real one
+            const updated = [...prev];
+            updated[existingIndex] = message;
+            return updated;
+          }
+          
+          // Check if message already exists (by actual ID or timestamp + content + sender)
+          const exists = prev.some(msg => 
+            msg.id === message.id || msg._id === message._id ||
             (msg.timestamp === message.timestamp && 
              msg.content === message.content && 
-             existingMsgSenderId === messageSenderId);
-        });
+             msg.senderId === message.senderId)
+          );
           
           if (exists) {
-            console.log('📨 Socket: Message already exists, skipping duplicate');
             return prev;
           }
           
           return [...prev, message];
         });
+        
+        scrollToBottom();
       });
     }
 
@@ -182,13 +172,9 @@ const ExpertChat = () => {
 
   // Handle sending message (Pure WebSocket)
   const handleSendMessage = async () => {
-    console.log('🔍 Expert: handleSendMessage called');
-    console.log('🔍 Expert: newMessage:', newMessage.trim());
-    console.log('🔍 Expert: selectedCustomer:', selectedCustomer);
-    console.log('🔍 Expert: currentUser:', currentUser);
     
     if (!newMessage.trim() || !selectedCustomer || !currentUser) {
-      console.log('❌ Expert: Validation failed - cannot send message');
+      console.log('Expert: Validation failed - cannot send message');
       return;
     }
 
@@ -215,10 +201,6 @@ const ExpertChat = () => {
     setNewMessage('');
 
     try {
-      // Send via WebSocket only (no API fallback)
-      console.log('📤 Socket: Sending message via WebSocket to room:', roomId);
-      console.log('📤 Socket: Message data:', messageData);
-      
       socketService.sendMessage({
         roomId: roomId,
         senderId: currentUser._id,
@@ -228,9 +210,9 @@ const ExpertChat = () => {
       });
 
       
-      console.log('✅ Socket: Message sent successfully');
+      console.log('Socket: Message sent successfully');
     } catch (err) {
-      console.error('❌ Error sending message:', err);
+      console.error('Error sending message:', err);
       setError('Không thể gửi tin nhắn: ' + (err.response?.data?.message || err.message));
       // Remove the temp message if sending failed
       setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
@@ -252,7 +234,7 @@ const ExpertChat = () => {
     
     // Join the room via socket
     if (isConnected) {
-      console.log('🔌 Socket: Expert joining room:', roomId);
+      console.log('Socket: Expert joining room:', roomId);
       socketService.joinRoom(roomId, currentUser._id);
     }
     
@@ -275,7 +257,7 @@ const ExpertChat = () => {
         try {
           await loadChatRooms();
         } catch (err) {
-        console.error('❌ Error during manual refresh:', err);
+        console.error('Error during manual refresh:', err);
         setError('Không thể làm mới dữ liệu');
       } finally {
         setLoading(false);
@@ -289,6 +271,41 @@ const ExpertChat = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  // Format date header
+  const formatDateHeader = (timestamp) => {
+    const messageDate = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Reset time to 0:00:00 for comparison
+    messageDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    yesterday.setHours(0, 0, 0, 0);
+
+    if (messageDate.getTime() === today.getTime()) {
+      return 'Hôm nay';
+    } else if (messageDate.getTime() === yesterday.getTime()) {
+      return 'Hôm qua';
+    } else {
+      return messageDate.toLocaleDateString('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    }
+  };
+
+  // Check if two timestamps are on different days
+  const isDifferentDay = (timestamp1, timestamp2) => {
+    const date1 = new Date(timestamp1);
+    const date2 = new Date(timestamp2);
+    date1.setHours(0, 0, 0, 0);
+    date2.setHours(0, 0, 0, 0);
+    return date1.getTime() !== date2.getTime();
   };
 
   return (
@@ -451,6 +468,7 @@ const ExpertChat = () => {
 
             {/* Messages Area */}
             <Box
+            ref={messagesContainerRef}
               sx={{
                 flex: 1,
                 overflow: 'auto',
@@ -461,21 +479,34 @@ const ExpertChat = () => {
                 gap: 1,
               }}
             >
-              {messages.map((message) => {
+              {messages.map((message, index) => {
                 // Handle both object and string senderId formats
                 const messageSenderId = typeof message.senderId === 'object' 
                   ? message.senderId?._id 
                   : message.senderId;
                 const isOwnMessage = messageSenderId?.toString() === currentUser?._id?.toString();
                 
-                console.log('🔍 Expert message display check:', {
-                  messageSenderId,
-                  currentUserId: currentUser?._id,
-                  isOwnMessage,
-                  messageContent: message.content
-                });
+                // Check if we need to show a date header
+                const prevMessage = index > 0 ? messages[index - 1] : null;
+                const showDateHeader = !prevMessage || isDifferentDay(prevMessage.timestamp, message.timestamp);
+                
                 return (
-                  <Fade key={message.id} in={true} timeout={300}>
+                  <React.Fragment key={message.id}>
+                    {showDateHeader && (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                        <Chip 
+                          label={formatDateHeader(message.timestamp)} 
+                          size="small" 
+                          sx={{ 
+                            bgcolor: '#e8f5e9', 
+                            color: '#4CAF50',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem'
+                          }} 
+                        />
+                      </Box>
+                    )}
+                  <Fade in={true} timeout={300}>
                     <Box
                       sx={{
                         display: 'flex',
@@ -529,6 +560,7 @@ const ExpertChat = () => {
                       </Box>
                     </Box>
                   </Fade>
+                  </React.Fragment>
                 );
               })}
 
