@@ -19,6 +19,13 @@ function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, reset
     ingredientsLoading
   } = state
 
+  // Calculate total ingredient weight
+  const calculateTotalWeight = () => {
+    return selectedIngredients.reduce((total, ing) => {
+      return total + (ing.amount || 0)
+    }, 0)
+  }
+
   // Calculate nutritional values
   const calculateNutrition = () => {
     return selectedIngredients.reduce((totals, ing) => {
@@ -70,9 +77,10 @@ function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, reset
 
       // Add the created dish to the meal
       const currentDate = new Date() // Use current date object
+      const defaultQuantity = createdDish.totalIngredientWeight || 100 // Use actual total ingredient weight as default
       const mealData = await addDishToMeal(
         createdDish._id,
-        100, // Default serving size
+        defaultQuantity,
         currentDate, // Pass Date object, MealService will convert to ISO
         mealTypeMap[mealType] || 'snack'
       )
@@ -364,8 +372,11 @@ function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, reset
             p: 3,
           }}
         >
-          <Typography variant="h6" sx={{ color: "#4CAF50", fontWeight: 600, mb: 2, textAlign: "center" }}>
+          <Typography variant="h6" sx={{ color: "#4CAF50", fontWeight: 600, mb: 1, textAlign: "center" }}>
             Thông tin dinh dưỡng (tổng)
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#666", mb: 2, textAlign: "center" }}>
+            Tổng trọng lượng nguyên liệu: {calculateTotalWeight()}g
           </Typography>
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             <Box sx={{ textAlign: "center" }}>

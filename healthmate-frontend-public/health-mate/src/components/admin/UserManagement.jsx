@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import "../../style/themeStyle.css";
-import { getAllUsers, createUser, updateUser } from "../../services/AdminService";
+import {
+  getAllUsers,
+  createUser,
+  updateUser,
+} from "../../services/AdminService";
 import {
   Person as PersonIcon,
   EditOutlined as EditOutlinedIcon,
@@ -33,8 +37,10 @@ import {
   FormControl,
   Select,
 } from "@mui/material";
+import CustomAlert from "../common/Alert";
 
 const UserManagement = () => {
+  // --- State chính ---
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,6 +75,9 @@ const UserManagement = () => {
   const [adding, setAdding] = useState(false);
   const [showPasswordAdd, setShowPasswordAdd] = useState(false);
 
+  // --- Alert ---
+  const [alertInfo, setAlertInfo] = useState(null);
+
   // --- Validate ---
   const calculateAge = (dob) => {
     if (!dob) return "--";
@@ -89,7 +98,7 @@ const UserManagement = () => {
 
   const isValidPhone = (phone) => /^\d{9,12}$/.test(phone);
 
-  // --- Fetch users ---
+  // --- Fetch Users ---
   const fetchUsers = async (pageNum = 1, search = "", newLimit = limit) => {
     setLoading(true);
     try {
@@ -105,6 +114,7 @@ const UserManagement = () => {
       setTotalPages(res?.totalPages || 1);
     } catch (err) {
       console.error(err);
+      setError("Không thể tải danh sách người dùng!");
     } finally {
       setLoading(false);
     }
@@ -114,23 +124,35 @@ const UserManagement = () => {
     fetchUsers(page);
   }, [page]);
 
-  // --- Toggle status ---
+  // --- Toggle Status ---
   const handleToggleStatus = async (user) => {
     const newStatus = user.status === "Active" ? "Inactive" : "Active";
-    if (!window.confirm(`Chuyển người dùng này sang trạng thái "${newStatus === "Active" ? "Hoạt động" : "Ngừng hoạt động"}"?`)) return;
+    if (
+      !window.confirm(
+        `Chuyển người dùng này sang trạng thái "${newStatus === "Active" ? "Hoạt động" : "Ngừng hoạt động"}"?`
+      )
+    )
+      return;
+
     try {
       await updateUser(user._id, { status: newStatus });
       setUsers((prev) =>
         prev.map((u) => (u._id === user._id ? { ...u, status: newStatus } : u))
       );
-      alert("Đã cập nhật trạng thái thành công!");
+      setAlertInfo({
+        message: "Đã cập nhật trạng thái thành công!",
+        variant: "success",
+      });
     } catch (err) {
       console.error(err);
-      alert("Cập nhật trạng thái thất bại!");
+      setAlertInfo({
+        message: "Cập nhật trạng thái thất bại!",
+        variant: "error",
+      });
     }
   };
 
-  // --- Edit user ---
+  // --- Edit User ---
   const handleOpenEdit = (user) => {
     setSelectedUser({ ...user, password: "" });
     setEditOpen(true);
@@ -140,23 +162,37 @@ const UserManagement = () => {
     setSelectedUser(null);
     setShowPasswordEdit(false);
   };
+
   const handleSaveEdit = async () => {
     if (!selectedUser) return;
     const { fullname, email, role, password, phoneNumber, dob } = selectedUser;
+
     if (!fullname || !email || !role || !phoneNumber) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
+      setAlertInfo({
+        message: "Vui lòng điền đầy đủ thông tin bắt buộc!",
+        variant: "warning",
+      });
       return;
     }
     if (password && password.length < 6) {
-      alert("Mật khẩu phải có ít nhất 6 ký tự!");
+      setAlertInfo({
+        message: "Mật khẩu phải có ít nhất 6 ký tự!",
+        variant: "warning",
+      });
       return;
     }
     if (!isValidPhone(phoneNumber)) {
-      alert("Số điện thoại không hợp lệ!");
+      setAlertInfo({
+        message: "Số điện thoại không hợp lệ!",
+        variant: "error",
+      });
       return;
     }
     if (!isValidDate(dob)) {
-      alert("Ngày sinh không hợp lệ!");
+      setAlertInfo({
+        message: "Ngày sinh không hợp lệ!",
+        variant: "error",
+      });
       return;
     }
 
@@ -176,17 +212,23 @@ const UserManagement = () => {
       setUsers((prev) =>
         prev.map((u) => (u._id === selectedUser._id ? { ...u, ...payload } : u))
       );
-      alert("Cập nhật thông tin người dùng thành công!");
+      setAlertInfo({
+        message: "Cập nhật thông tin người dùng thành công!",
+        variant: "success",
+      });
       handleCloseEdit();
     } catch (err) {
       console.error(err);
-      alert("Cập nhật thất bại. Vui lòng thử lại!");
+      setAlertInfo({
+        message: "Cập nhật thất bại. Vui lòng thử lại!",
+        variant: "error",
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  // --- Add user ---
+  // --- Add User ---
   const handleOpenAdd = () => setAddOpen(true);
   const handleCloseAdd = () => {
     setAddOpen(false);
@@ -201,22 +243,35 @@ const UserManagement = () => {
     });
     setShowPasswordAdd(false);
   };
+
   const handleSaveAdd = async () => {
     const { fullname, email, role, password, gender, dob, phoneNumber } = newUser;
     if (!fullname || !email || !role || !password || !phoneNumber) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
+      setAlertInfo({
+        message: "Vui lòng điền đầy đủ thông tin bắt buộc!",
+        variant: "warning",
+      });
       return;
     }
     if (password.length < 6) {
-      alert("Mật khẩu phải có ít nhất 6 ký tự!");
+      setAlertInfo({
+        message: "Mật khẩu phải có ít nhất 6 ký tự!",
+        variant: "warning",
+      });
       return;
     }
     if (!isValidPhone(phoneNumber)) {
-      alert("Số điện thoại không hợp lệ!");
+      setAlertInfo({
+        message: "Số điện thoại không hợp lệ!",
+        variant: "error",
+      });
       return;
     }
     if (!isValidDate(dob)) {
-      alert("Ngày sinh không hợp lệ!");
+      setAlertInfo({
+        message: "Ngày sinh không hợp lệ!",
+        variant: "error",
+      });
       return;
     }
 
@@ -233,17 +288,24 @@ const UserManagement = () => {
         ...(dob && { dob: new Date(dob).toISOString().split("T")[0] }),
       };
       await createUser(payload);
-      alert("Thêm người dùng thành công!");
+      setAlertInfo({
+        message: "Thêm người dùng thành công!",
+        variant: "success",
+      });
       handleCloseAdd();
       fetchUsers(page);
     } catch (err) {
       console.error(err);
-      alert("Thêm người dùng thất bại!");
+      setAlertInfo({
+        message: "Thêm người dùng thất bại!",
+        variant: "error",
+      });
     } finally {
       setAdding(false);
     }
   };
 
+  // --- Hiển thị loading / lỗi ---
   if (loading)
     return (
       <Box display="flex" justifyContent="center" alignItems="center" py={10}>
@@ -262,6 +324,16 @@ const UserManagement = () => {
 
   return (
     <Box sx={{ p: 4 }}>
+      {/* Hiển thị thông báo */}
+      {alertInfo && (
+        <CustomAlert
+          message={alertInfo.message}
+          variant={alertInfo.variant}
+          onClose={() => setAlertInfo(null)}
+          sticky
+          autoCloseDelay={2500}
+        />
+      )}
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={4}>
         {/* Left section: Title + Search */}

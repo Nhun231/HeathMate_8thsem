@@ -26,3 +26,13 @@ export const getAllCalculations = async (token) => {
     throw e;
   }
 };
+
+export const getAllCalculationsByUserId = async (userId) => {
+  try {
+    const res = await baseAxios.get(`/calculation/user/list/${userId}`);
+    return res.data || [];
+  } catch (e) {
+    console.error(`Lỗi khi lấy tất cả calculation của user ${userId}:`, e);
+    return [];
+  }
+};

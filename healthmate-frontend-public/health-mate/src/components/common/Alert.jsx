@@ -19,7 +19,7 @@ const CustomAlert = ({ message, variant = 'info', onClose, sticky = true, autoCl
             const timer = setTimeout(() => {
                 handleClose();
             }, autoCloseDelay);
-            
+
             return () => clearTimeout(timer);
         }
     }, [autoCloseDelay, handleClose]);
@@ -79,8 +79,8 @@ const CustomAlert = ({ message, variant = 'info', onClose, sticky = true, autoCl
     };
 
     const alertContent = (
-        <Alert 
-            severity={variant} 
+        <Alert
+            severity={variant}
             onClose={sticky ? handleClose : undefined}
             sx={{
                 ...getVariantStyles(variant),

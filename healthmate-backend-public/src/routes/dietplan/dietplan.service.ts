@@ -154,13 +154,14 @@ export class DietPlanService {
     let dailyCalories = TDEE;
     let durationDays = 0;
     let endDate: Date | undefined;
-    let targetWeight = currentWeight;
+    let targetWeight = targetWeightChange;
 
     if (goal === 'MaintainWeight') {
       durationDays = 30;
       endDate = new Date();
       endDate.setDate(endDate.getDate() + 30);
       dailyCalories = Math.round(TDEE);
+      targetWeight = currentWeight;
     } else if (goal === 'LoseWeight' || goal === 'GainWeight') {
       if (!targetWeightChange || targetWeightChange <= 0) {
         throw new InvalidTargetWeightChangeException();

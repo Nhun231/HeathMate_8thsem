@@ -57,10 +57,25 @@ export const getMealSummary = async (date) => {
   });
   return res.data;
 };
+// Get meal summary by user ID and date
+export const getMealSummaryByUserId = async (userId, date) => {
+  const isoDate = new Date(date).toISOString();
+
+  const res = await axios.get(`/meals/summary/${userId}`, {
+    params: { date: isoDate },
+  });
+  return res.data;
+};
 
 // Update meal quantity
 export const updateMeal = async (mealId, quantity) => {
   const res = await axios.patch(`/meals/${mealId}`, { quantity });
+  return res.data;
+};
+
+// Update meal with new dish
+export const updateMealWithDish = async (mealId, quantity, dishId) => {
+  const res = await axios.patch(`/meals/${mealId}`, { quantity, dishId });
   return res.data;
 };
 

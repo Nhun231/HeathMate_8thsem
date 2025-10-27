@@ -4,6 +4,7 @@ import { ActiveUser } from '../../shared/decorators/active-user.decorator';
 import { Types } from 'mongoose';
 import { AddDishToMealDto, AddIngredientToMealDto, GetMealsDto, MealParamsDto, UpdateMealDto } from './meal.dto';
 import { MealType } from './schema/meal.schema';
+import {IsPublic} from "../../shared/decorators/auth.decorator";
 
 @Controller('v1/meals')
 export class MealController {
@@ -53,6 +54,14 @@ export class MealController {
     @ActiveUser('userId') userId: Types.ObjectId,
   ) {
     return this.mealService.getMealSummary(String(userId), date);
+  }
+  @Get('/summary/:userId')
+  @IsPublic()
+  async getMealSummaryByUserId(
+    @Param('userId') userId: string,
+    @Query('date') date: string,
+  ) {
+    return this.mealService.getMealSummary(userId, date);
   }
 
   @Patch(':mealId')

@@ -22,7 +22,7 @@ import { IsPublic } from 'src/shared/decorators/auth.decorator';
 export class ExpertCertificateController {
   constructor(
     private readonly expertCertificateService: ExpertCertificateService,
-  ) {}
+  ) { }
 
   @Post()
   @IsPublic()

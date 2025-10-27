@@ -20,12 +20,13 @@ const FloatingChatBox = () => {
   const [messages, setMessages] = useState([
     {
       message:
-        "Xin chào! Tôi là HealthMate AI 🤖. Bạn cần tư vấn dinh dưỡng gì hôm nay?",
-      sender: "HealthMate AI",
+        "Xin chào! Bạn cần tư vấn dinh dưỡng gì cho ngày hôm nay?",
+      sender: "HealthMate Assistant",
       sentTime: "just now",
       direction: "incoming",
     },
   ]);
+  const cleanMarkdown = (text) => text.replace(/[#*]/g, "");
 
   const handleSend = async (input) => {
     if (input.trim() === "") return;
@@ -48,7 +49,7 @@ const FloatingChatBox = () => {
       const botReply =
         response?.data?.message ||
         response?.data?.reply ||
-        "Xin lỗi, tôi chưa hiểu câu hỏi của bạn 😅";
+        "Xin lỗi, tôi chưa hiểu câu hỏi của bạn ";
 
       setMessages((prev) => [
         ...prev,
@@ -89,7 +90,7 @@ const FloatingChatBox = () => {
         <Button
           variant="contained"
           sx={{
-            backgroundColor: "#4edd47ff",
+            backgroundColor: "#55B359",
             color: "white",
             borderRadius: "50%",
             width: 60,
@@ -140,10 +141,10 @@ const FloatingChatBox = () => {
             }}
           >
             <Typography variant="subtitle1" fontWeight="bold">
-              HealthMate AI
+              HealthMate Assistant
             </Typography>
             <Typography variant="caption">
-              Tư vấn chế độ ăn uống và sức khỏe 🌿
+              Đồng hành với chế độ ăn uống và sức khỏe của bạn.
             </Typography>
           </Box>
 
@@ -164,12 +165,12 @@ const FloatingChatBox = () => {
                     key={index}
                     className={msg.bounce ? "bounce-enter" : ""}
                     model={{
-                      message: msg.message,
+                      message: cleanMarkdown(msg.message),
                       sentTime: msg.sentTime,
                       sender: msg.sender,
                       direction: msg.direction,
                     }}
-                    avatarSymbol={msg.sender === "HealthMate AI" ? "🤖" : "🧑"}
+                    avatarSymbol={msg.sender === "HealthMate Chat" ? "🤖" : "🧑"}
                     position="single"
                   />
                 ))}
@@ -178,7 +179,7 @@ const FloatingChatBox = () => {
                   <Message
                     className="bounce-enter"
                     model={{
-                      message: "HealthMate AI đang phản hồi...",
+                      message: "HealthMate Assistant đang phản hồi ...",
                       sender: "HealthMate AI",
                       direction: "incoming",
                     }}
@@ -189,7 +190,7 @@ const FloatingChatBox = () => {
               </MessageList>
 
               <MessageInput
-                placeholder="Tôi có thể giúp gì cho bạn?"
+                placeholder="Nhập câu hỏi của bạn ..."
                 onSend={handleSend}
                 attachButton={false}
                 disabled={isTyping}

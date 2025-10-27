@@ -57,4 +57,9 @@ export class IngredientController {
     ): Promise<void> {
         await this.ingredientService.delete(params.ingredientId, userId, roleName);
     }
+
+    @Get('/types')
+    async getIngredientTypes(): Promise<string[]> {
+        return this.ingredientService.getDistinctTypes();
+    }
 }

@@ -19,6 +19,7 @@ import {
   UpdateUserDTO,
 } from './user.dto';
 import { DeleteResult } from 'mongoose';
+import {IsPublic} from "../../shared/decorators/auth.decorator";
 
 @Controller('v1/users')
 export class UserController {
@@ -30,18 +31,32 @@ export class UserController {
     return this.usersService.getUsers(parsed);
   }
 
+  @Get('me')
+  async getCurrentUser(@ActiveUser('userId') userId: string) {
+    return this.usersService.getUserById(userId);
+  }
+
   @Get(':userId')
+  @IsPublic()
   async getUser(@Param() params: GetUserDetailParamsDTO) {
     return this.usersService.getUserById(params.userId);
   }
 
-  @Post()
-  async createUser(
-    @Body() body: CreateUserDTO,
-    @ActiveUser('userId') activeUserId: string,
-  ) {
-    return this.usersService.createUser(body, activeUserId);
-  }
+    @Post()
+    async createUser(
+        @Body() body: CreateUserDTO,
+        @ActiveUser('userId') activeUserId: string,
+    ) {
+        return this.usersService.createUser(body, activeUserId);
+    }
+
+    @Put('me')
+    async updateCurrentUser(
+        @ActiveUser('userId') userId: string,
+        @Body() body: UpdateUserDTO,
+    ) {
+        return this.usersService.updateMe(userId, body);
+    }
 
   @Put(':userId')
   async updateUser(

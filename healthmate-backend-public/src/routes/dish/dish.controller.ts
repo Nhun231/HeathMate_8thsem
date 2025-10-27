@@ -38,6 +38,15 @@ export class DishController {
         return this.dishService.create(body, userId, roleName);
     }
 
+    @Post('/copy')
+    async createCustomDishCopy(
+        @Body() body: CreateDishBodyDTO,
+        @ActiveUser('userId') userId: Types.ObjectId,
+        @ActiveUser('roleName') roleName: string,
+    ): Promise<DishDocument> {
+        return this.dishService.createCustomCopy(body, userId, roleName);
+    }
+
     @Patch(':dishId')
     async updateDish(
         @Param() params: DishParamsDTO,
