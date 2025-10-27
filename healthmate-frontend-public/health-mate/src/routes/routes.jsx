@@ -29,6 +29,7 @@ import CustomerChatPage from "../pages/customer/CustomerChatPage.jsx";
 import RequireRole from "../components/common/RequireRole.jsx";
 import ExpertUpload from "../components/expert/UploadCertificate.jsx";
 import RegisterExpert from "../components/expert/ExpertRegister.jsx";
+import ViewPremium from "../components/premium/ViewPremium.jsx";
 
 
 class AuthLayout extends Component {
@@ -168,6 +169,10 @@ const router = createBrowserRouter([
           {
             path: "/update-nutrient",
             element: <UpdateNutrient />,
+          },
+          {
+            path: "/view-package",
+            element: <ViewPremium />,
           },
         ],
       },
