@@ -9,8 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ExpertCertificateService } from './expert-certificate.service';
-import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
-import { DeleteResult, Types } from 'mongoose';
+import { DeleteResult } from 'mongoose';
 import {
   CreateCertificateBodyDto,
   GetCertificateParamsDto,

@@ -76,15 +76,6 @@ const AdminDashboard = () => {
 
   const tabContent = [
     {
-      label: "Tổng quan",
-      icon: <DashboardIcon />,
-      component: (
-        <Typography sx={{ textAlign: "center", mt: 2 }}>
-          Chào mừng bạn đến trang quản trị HealthMate!
-        </Typography>
-      ),
-    },
-    {
       label: "Quản lý nguyên liệu",
       icon: <Restaurant />,
       component: <IngredientManagement />,
@@ -100,7 +91,7 @@ const AdminDashboard = () => {
       component: <PermissionManagement />,
     },
     {
-      label: "Giao dịch xu",
+      label: "Quản lý giao dịch",
       icon: <AccountBalance />,
       component: (
         <Typography sx={{ textAlign: "center", mt: 2 }}>
@@ -336,52 +327,6 @@ const AdminDashboard = () => {
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#666" }}>
                     Tổng số người dùng
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <Card
-                sx={{
-                  backgroundColor: "#F3E5F5",
-                  border: "2px solid #9C27B0",
-                  borderRadius: 3,
-                  boxShadow: 2,
-                  transition: "all 0.25s ease",
-                  "&:hover": { transform: "translateY(-5px)", boxShadow: 4 },
-                }}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      mb: 1,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: "bold", color: "#7B1FA2" }}
-                    >
-                      Xu đã phân phối
-                    </Typography>
-                    <Assessment sx={{ fontSize: 36, color: "#7B1FA2" }} />
-                  </Box>
-                  <Typography
-                    variant="h4"
-                    sx={{ color: "#7B1FA2", fontWeight: "bold" }}
-                  >
-                    {loading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                     // quickStats.totalCoinsDistributed.toLocaleString('vi-VN')
-                        0
-                    )}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#666" }}>
-                    Tổng xu đã phát
                   </Typography>
                 </CardContent>
               </Card>
