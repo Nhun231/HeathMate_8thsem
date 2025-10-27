@@ -108,7 +108,7 @@ export class PaymentRepo {
             code: body.code,
             transactionContent: body.content,
             referenceNumber: body.referenceCode,
-            body: body.description,
+            description: body.description,
           },
         ],
         { session },

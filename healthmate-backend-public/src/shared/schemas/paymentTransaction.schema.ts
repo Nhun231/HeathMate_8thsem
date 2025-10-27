@@ -34,7 +34,7 @@ export class PaymentTransaction {
   referenceNumber?: string;
 
   @Prop({ type: String })
-  body?: string;
+  description?: string;
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
