@@ -19,11 +19,15 @@ import {
     Stack,
     Pagination,
     Divider,
+    TextField,
+    MenuItem,
+    Grid,
 } from "@mui/material";
 import {
     listExpertCertificates,
     updateExpertCertificateStatus,
 } from "../../services/ExpertCertificateService";
+import { updateUser } from "../../services/AdminService";
 import { getPresignedViewUrl } from "../../services/MediaService";
 import CustomAlert from "../common/Alert";
 
@@ -35,6 +39,8 @@ const ExpertCertificateList = () => {
     const [imageUrls, setImageUrls] = useState({});
     const [page, setPage] = useState(1);
     const [alert, setAlert] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterStatus, setFilterStatus] = useState("All");
 
     const rowsPerPage = 10;
 
@@ -42,11 +48,11 @@ const ExpertCertificateList = () => {
     const fetchCertificates = async () => {
         try {
             setLoading(true);
-            const res = await listExpertCertificates({ page: 1, limit: 1000 }); // limit lớn
+            const res = await listExpertCertificates({ page: 1, limit: 1000 });
             const data = res?.data || [];
             setCertificates(data);
 
-            // Lấy presigned URL cho tất cả
+            // Lấy presigned URL cho tất cả ảnh chứng chỉ
             const urls = {};
             await Promise.all(
                 data.map(async (cert) => {
@@ -75,25 +81,46 @@ const ExpertCertificateList = () => {
         setTimeout(() => setAlert(null), 2500);
     };
 
+    // Phê duyệt chứng chỉ
     const handleApprove = async (id) => {
         try {
             await updateExpertCertificateStatus(id, { status: "Approved" });
-            await fetchCertificates();
-            showAlert("Phê duyệt chứng chỉ thành công", "success");
+            const cert = certificates.find((c) => c._id === id);
+            const userId = cert?.user?._id;
+            if (userId) await updateUser(userId, { status: "Active" });
+
+            // Cập nhật tại chỗ để ẩn nút
+            setCertificates((prev) =>
+                prev.map((c) =>
+                    c._id === id ? { ...c, status: "Approved" } : c
+                )
+            );
+
+            showAlert("Phê duyệt chứng chỉ và kích hoạt người dùng thành công", "success");
         } catch (err) {
-            console.error("Lỗi khi duyệt chứng chỉ:", err);
-            showAlert("Có lỗi khi phê duyệt chứng chỉ", "error");
+            console.error("Lỗi khi phê duyệt:", err);
+            showAlert("Có lỗi xảy ra khi phê duyệt", "error");
         }
     };
 
+    // Từ chối chứng chỉ
     const handleReject = async (id) => {
         try {
             await updateExpertCertificateStatus(id, { status: "Rejected" });
-            await fetchCertificates();
-            showAlert("Đã từ chối chứng chỉ", "warning");
+            const cert = certificates.find((c) => c._id === id);
+            const userId = cert?.user?._id;
+            if (userId) await updateUser(userId, { status: "Inactive" });
+
+            setCertificates((prev) =>
+                prev.map((c) =>
+                    c._id === id ? { ...c, status: "Rejected" } : c
+                )
+            );
+
+            showAlert("Từ chối chứng chỉ và vô hiệu hóa người dùng thành công", "warning");
         } catch (err) {
-            console.error("Lỗi khi từ chối chứng chỉ:", err);
-            showAlert("Có lỗi khi từ chối chứng chỉ", "error");
+            console.error("Lỗi khi từ chối:", err);
+            showAlert("Có lỗi xảy ra khi từ chối", "error");
         }
     };
 
@@ -122,7 +149,17 @@ const ExpertCertificateList = () => {
         setPage(value);
     };
 
-    const paginatedData = certificates.slice(
+    // Lọc và tìm kiếm
+    const filteredCertificates = certificates.filter((cert) => {
+        const matchName = cert.user?.fullname
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase());
+        const matchStatus =
+            filterStatus === "All" || cert.status === filterStatus;
+        return matchName && matchStatus;
+    });
+
+    const paginatedData = filteredCertificates.slice(
         (page - 1) * rowsPerPage,
         page * rowsPerPage
     );
@@ -144,13 +181,50 @@ const ExpertCertificateList = () => {
                 />
             )}
 
-            <Typography variant="h4" fontWeight="bold" color="primary" textAlign="center" gutterBottom>
-                QUẢN LÝ CHỨNG CHỈ CHUYÊN GIA
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary" textAlign="center" mb={3}>
-                Danh sách chứng chỉ đang chờ phê duyệt hoặc đã xử lý
-            </Typography>
+            {/* Header: tiêu đề + tìm kiếm & lọc */}
+            <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={3}
+                flexWrap="wrap"
+                gap={2}
+            >
+                {/* Bên trái: tiêu đề */}
+                <Box>
+                    <Typography variant="h4" fontWeight="bold" color="primary" gutterBottom>
+                        QUẢN LÝ CHỨNG CHỈ CHUYÊN GIA
+                    </Typography>
+                    <Typography variant="subtitle1" color="text.secondary">
+                        Danh sách chứng chỉ đang chờ phê duyệt hoặc đã xử lý
+                    </Typography>
+                </Box>
 
+                {/* Bên phải: tìm kiếm + lọc */}
+                <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+                    <TextField
+                        label="Tìm kiếm theo tên"
+                        variant="outlined"
+                        size="small"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        sx={{ minWidth: 250 }}
+                    />
+                    <TextField
+                        select
+                        label="Lọc theo trạng thái"
+                        size="small"
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        sx={{ minWidth: 180 }}
+                    >
+                        <MenuItem value="All">Tất cả</MenuItem>
+                        <MenuItem value="Approved">Đã duyệt</MenuItem>
+                        <MenuItem value="Rejected">Từ chối</MenuItem>
+                        <MenuItem value="Pending">Chờ duyệt</MenuItem>
+                    </TextField>
+                </Box>
+            </Box>
             <Paper
                 sx={{
                     overflowX: "auto",
@@ -184,7 +258,14 @@ const ExpertCertificateList = () => {
                                 <TableCell align="center">
                                     {(page - 1) * rowsPerPage + index + 1}
                                 </TableCell>
-                                <TableCell align="center">{cert.user?.fullname}</TableCell>
+
+                                <TableCell align="center">
+                                    <Typography fontWeight="bold">{cert.user?.fullname}</Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {new Date(cert.createdAt).toLocaleString("vi-VN")}
+                                    </Typography>
+                                </TableCell>
+
                                 <TableCell align="center">
                                     {imageUrls[cert._id] ? (
                                         <CardMedia
@@ -206,44 +287,51 @@ const ExpertCertificateList = () => {
                                         </Typography>
                                     )}
                                 </TableCell>
+
                                 <TableCell align="center">
                                     {renderStatusChip(cert.status)}
                                 </TableCell>
+
                                 <TableCell align="center">
                                     <Stack direction="row" spacing={1.2} justifyContent="center">
-                                        <Button
-                                            variant="contained"
-                                            size="small"
-                                            sx={{
-                                                backgroundColor: "#43A047",
-                                                color: "#fff",
-                                                textTransform: "none",
-                                                borderRadius: 2,
-                                                fontWeight: 600,
-                                                px: 2.5,
-                                                "&:hover": { backgroundColor: "#388E3C" },
-                                            }}
-                                            onClick={() => handleApprove(cert._id)}
-                                        >
-                                            Duyệt
-                                        </Button>
+                                        {/* Ẩn nút nếu đã xử lý */}
+                                        {cert.status === "Pending" && (
+                                            <>
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    sx={{
+                                                        backgroundColor: "#43A047",
+                                                        color: "#fff",
+                                                        textTransform: "none",
+                                                        borderRadius: 2,
+                                                        fontWeight: 600,
+                                                        px: 2.5,
+                                                        "&:hover": { backgroundColor: "#388E3C" },
+                                                    }}
+                                                    onClick={() => handleApprove(cert._id)}
+                                                >
+                                                    Duyệt
+                                                </Button>
 
-                                        <Button
-                                            variant="contained"
-                                            size="small"
-                                            sx={{
-                                                backgroundColor: "#E53935",
-                                                color: "#fff",
-                                                textTransform: "none",
-                                                borderRadius: 2,
-                                                fontWeight: 600,
-                                                px: 2.5,
-                                                "&:hover": { backgroundColor: "#C62828" },
-                                            }}
-                                            onClick={() => handleReject(cert._id)}
-                                        >
-                                            Từ chối
-                                        </Button>
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    sx={{
+                                                        backgroundColor: "#E53935",
+                                                        color: "#fff",
+                                                        textTransform: "none",
+                                                        borderRadius: 2,
+                                                        fontWeight: 600,
+                                                        px: 2.5,
+                                                        "&:hover": { backgroundColor: "#C62828" },
+                                                    }}
+                                                    onClick={() => handleReject(cert._id)}
+                                                >
+                                                    Từ chối
+                                                </Button>
+                                            </>
+                                        )}
 
                                         <Button
                                             variant="contained"
@@ -271,7 +359,7 @@ const ExpertCertificateList = () => {
 
             <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
                 <Pagination
-                    count={Math.ceil(certificates.length / rowsPerPage)}
+                    count={Math.ceil(filteredCertificates.length / rowsPerPage)}
                     page={page}
                     onChange={handleChangePage}
                     color="primary"
@@ -292,12 +380,9 @@ const ExpertCertificateList = () => {
                                 <b>Trạng thái:</b> {renderStatusChip(selectedCert.status)}
                             </Typography>
                             <Typography sx={{ mb: 2 }}>
-                                <b>Thời gian nộp:</b>{" "}
-                                {new Date(selectedCert.createdAt).toLocaleString("vi-VN")}
+                                <b>Thời gian nộp:</b> {new Date(selectedCert.createdAt).toLocaleString("vi-VN")}
                             </Typography>
-
                             <Divider sx={{ my: 2 }} />
-
                             <Box textAlign="center">
                                 {imageUrls[selectedCert._id] && (
                                     <CardMedia
