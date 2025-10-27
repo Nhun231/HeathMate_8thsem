@@ -124,5 +124,11 @@ export const  getMyIngredients = async (params = {}) => {
     return res.data;
   }
 
+  // Get distinct ingredient types
+export const getIngredientTypes = async () => {
+    const res = await axios.get('/ingredients/types');
+    return res.data;
+  }
+
 
 

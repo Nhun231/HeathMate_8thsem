@@ -36,6 +36,7 @@ export const MealParamsSchema = z
 export const UpdateMealSchema = z
   .object({
     quantity: z.number().min(0).optional(),
+    dishId: z.string().min(1).optional(),
   })
   .strict();
 

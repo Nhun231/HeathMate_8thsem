@@ -37,8 +37,15 @@ export class MealService {
         throw new MealNotFoundError('Dish not found');
       }
 
-      // Calculate nutrition values based on quantity
-      const factor = addDishDto.quantity / 100; // assuming quantity is in grams
+      // Validate quantity - should not exceed 3x the total ingredient weight
+      const maxQuantity = (dish.totalIngredientWeight || 100) * 3;
+      if (addDishDto.quantity > maxQuantity) {
+        throw new MealNotFoundError(`Quantity cannot exceed ${maxQuantity}g (3x the dish's total ingredient weight)`);
+      }
+
+      // Calculate nutrition values based on quantity relative to total ingredient weight
+      const totalWeight = dish.totalIngredientWeight || 100; // fallback to 100g if not set
+      const factor = addDishDto.quantity / totalWeight;
       const nutrition = {
         calories: Math.round(((dish.totalCalories || 0) * factor) * 10) / 10,
         protein: Math.round(((dish.totalProtein || 0) * factor) * 10) / 10,
@@ -119,7 +126,6 @@ export class MealService {
       const startDate = new Date(getMealsDto.date);
       startDate.setHours(0, 0, 0, 0)
       const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // next day
-      console.log(startDate, "-", endDate)
       return await this.mealRepo.findByUserIdAndDate(
         new Types.ObjectId(userId),
         startDate,
@@ -146,7 +152,28 @@ export class MealService {
         throw new MealForbiddenError('Cannot update meal you do not own');
       }
 
+      // Handle dishId update (for custom dish creation)
+      if (updateMealDto.dishId !== undefined) {
+        this.validateObjectId(updateMealDto.dishId);
+        const newDish = await this.dishModel.findById(updateMealDto.dishId).exec();
+        if (!newDish) {
+          throw new MealNotFoundError('New dish not found');
+        }
+        meal.dishId = new Types.ObjectId(updateMealDto.dishId);
+      }
+
       if (updateMealDto.quantity !== undefined) {
+        // Validate quantity for dishes
+        if (meal.dishId) {
+          const dish = await this.dishModel.findById(meal.dishId).exec();
+          if (dish) {
+            const maxQuantity = (dish.totalIngredientWeight || 100) * 3;
+            if (updateMealDto.quantity > maxQuantity) {
+              throw new MealNotFoundError(`Quantity cannot exceed ${maxQuantity}g (3x the dish's total ingredient weight)`);
+            }
+          }
+        }
+
         // Recalculate nutrition based on new quantity
         const factor = updateMealDto.quantity / 100;
 
@@ -163,12 +190,14 @@ export class MealService {
         } else if (meal.dishId) {
           const dish = await this.dishModel.findById(meal.dishId).exec();
           if (dish) {
-            meal.calories = Math.round(((dish.totalCalories || 0) * factor) * 10) / 10;
-            meal.protein = Math.round(((dish.totalProtein || 0) * factor) * 10) / 10;
-            meal.fat = Math.round(((dish.totalFat || 0) * factor) * 10) / 10;
-            meal.carbs = Math.round(((dish.totalCarbs || 0) * factor) * 10) / 10;
-            meal.fiber = Math.round(((dish.totalFiber || 0) * factor) * 10) / 10;
-            meal.sugar = Math.round(((dish.totalSugar || 0) * factor) * 10) / 10;
+            const totalWeight = dish.totalIngredientWeight || 100; // fallback to 100g if not set
+            const dishFactor = updateMealDto.quantity / totalWeight;
+            meal.calories = Math.round(((dish.totalCalories || 0) * dishFactor) * 10) / 10;
+            meal.protein = Math.round(((dish.totalProtein || 0) * dishFactor) * 10) / 10;
+            meal.fat = Math.round(((dish.totalFat || 0) * dishFactor) * 10) / 10;
+            meal.carbs = Math.round(((dish.totalCarbs || 0) * dishFactor) * 10) / 10;
+            meal.fiber = Math.round(((dish.totalFiber || 0) * dishFactor) * 10) / 10;
+            meal.sugar = Math.round(((dish.totalSugar || 0) * dishFactor) * 10) / 10;
           }
         }
 

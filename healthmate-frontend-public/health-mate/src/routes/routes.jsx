@@ -24,6 +24,8 @@ import EditProfilePage from "../pages/EditProfilePage.jsx";
 import WaterInformation from "../components/water/WaterInformation.jsx";
 import UpdateNutrient from "../components/nutrients/UpdateNutrients.jsx"
 import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
+import ExpertChatPage from "../pages/expert/ExpertChatPage.jsx";
+import CustomerChatPage from "../pages/customer/CustomerChatPage.jsx";
 import RequireRole from "../components/common/RequireRole.jsx";
 import ExpertUpload from "../components/expert/UploadCertificate.jsx";
 import RegisterExpert from "../components/expert/ExpertRegister.jsx";
@@ -93,13 +95,18 @@ const router = createBrowserRouter([
           //     path: "/oauth-callback",
           //     element: <OAuthCallback />,
           // },
-
-
+          {
+            path: "/customer-chat",
+            element: <CustomerChatPage />,
+          },
+          {
+            path: "/expert-chat",
+            element: <ExpertChatPage />,
+          },
           {
             path: "/",
             element: <DefaultRedirect />,
           },
-
           {
             path: "/calculate",
             element: <Calculate />,
@@ -162,10 +169,6 @@ const router = createBrowserRouter([
             path: "/update-nutrient",
             element: <UpdateNutrient />,
           },
-          // {
-          //   path: "/upload-certificate",
-          //   element: <ExpertUpload />,
-          // },
         ],
       },
     ],
