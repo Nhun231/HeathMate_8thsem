@@ -23,6 +23,8 @@ const configSchema = z.object({
   REFRESH_TOKEN_EXPIRES_IN: z.string(),
   ACCESS_TOKEN_EXPIRES_IN: z.string(),
   PAYMENT_API_KEY: z.string(),
+  SEPAY_BANK_ACCOUNT: z.string(),
+  SEPAY_BANK: z.string(),
   ADMIN_FULLNAME: z.string(),
   ADMIN_EMAIL: z.email(),
   ADMIN_PASSWORD: z.string().min(6),

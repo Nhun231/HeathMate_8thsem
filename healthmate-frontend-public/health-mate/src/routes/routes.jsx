@@ -22,15 +22,15 @@ import OAuth from "../pages/authentication/OAuth.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import EditProfilePage from "../pages/EditProfilePage.jsx";
 import WaterInformation from "../components/water/WaterInformation.jsx";
-import UpdateNutrient from "../components/nutrients/UpdateNutrients.jsx"
+import UpdateNutrient from "../components/nutrients/UpdateNutrients.jsx";
 import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
 import ExpertChatPage from "../pages/expert/ExpertChatPage.jsx";
 import CustomerChatPage from "../pages/customer/CustomerChatPage.jsx";
 import RequireRole from "../components/common/RequireRole.jsx";
 import ExpertUpload from "../components/expert/UploadCertificate.jsx";
 import RegisterExpert from "../components/expert/ExpertRegister.jsx";
-import ViewPremium from "../components/premium/ViewPremium.jsx";
-
+import ViewSubscriptions from "../components/subscription/ViewSubscription.jsx";
+import PaymentSuccess from "../components/subscription/PaymentSucess.jsx";
 
 class AuthLayout extends Component {
   render() {
@@ -132,8 +132,9 @@ const router = createBrowserRouter([
             path: "/diary",
             element: (
               <RequireRole allowedRoles={["Customer"]}>
-                <DiaryProvider><FoodDiary /></DiaryProvider>
-
+                <DiaryProvider>
+                  <FoodDiary />
+                </DiaryProvider>
               </RequireRole>
             ),
           },
@@ -144,7 +145,7 @@ const router = createBrowserRouter([
               <RequireRole allowedRoles={["Admin"]}>
                 <AdminDashboard />
               </RequireRole>
-            )
+            ),
           },
           {
             path: "/unauthorized",
@@ -171,8 +172,12 @@ const router = createBrowserRouter([
             element: <UpdateNutrient />,
           },
           {
-            path: "/view-package",
-            element: <ViewPremium />,
+            path: "/view-subscriptions",
+            element: <ViewSubscriptions />,
+          },
+          {
+            path: "/payment-success",
+            element: <PaymentSuccess />,
           },
           {
             path: "/customer-progress/:userId",

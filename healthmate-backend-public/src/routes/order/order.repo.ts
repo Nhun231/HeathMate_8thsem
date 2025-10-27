@@ -55,12 +55,16 @@ export class OrderRepo {
     return order;
   }
 
-  create(userId: Types.ObjectId, data: CreateOrderBodyType) {
-    return this.orderModel.create({
+  async create(userId: Types.ObjectId, data: CreateOrderBodyType) {
+    const order = await this.orderModel.create({
       user: userId,
       subscription: new Types.ObjectId(data.subscriptionId),
       status: OrderStatus.PENDING,
     });
+
+    await order.populate({ path: 'subscription' });
+
+    return order;
   }
 
   async cancel(userId: Types.ObjectId, orderId: Types.ObjectId) {

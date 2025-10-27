@@ -33,8 +33,15 @@ export const WebhookPaymentBodySchema = z.object({
   description: z.string(), // Toàn bộ nội dung tin nhắn sms
 });
 
+export const GenerateQRCodeSchema = z.object({
+  amount: z.number(),
+  orderId: z.string(),
+});
+
 export type PaymentTransactionType = z.infer<
   typeof PaymentTransactionBodySchema
 >;
 
 export type WebhookPaymentBodyType = z.infer<typeof WebhookPaymentBodySchema>;
+
+export type GenerateQRCodeType = z.infer<typeof GenerateQRCodeSchema>;
