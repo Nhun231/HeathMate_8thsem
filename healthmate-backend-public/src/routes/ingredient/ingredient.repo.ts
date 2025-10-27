@@ -142,4 +142,8 @@ export class IngredientRepo {
   async countDocuments(filter: any = {}): Promise<number> {
     return this.ingredientModel.countDocuments(filter).exec();
   }
+
+  async distinct(field: string): Promise<string[]> {
+    return this.ingredientModel.distinct(field).exec() as Promise<string[]>;
+  }
 }

@@ -14,7 +14,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { getCurrentDietPlan } from "../../services/DietPlan";
 import { getAllCalculations } from "../../services/Calculation";
-import {getMealSummary} from "../../services/Meal.js";
+import { getMealSummary } from "../../services/Meal.js";
+import { getWaterData } from "../../services/WaterService.js";
 const COLORS = ["#4CAF50", "#E0E0E0"];
 
 const DietPlanProgress = () => {
@@ -26,12 +27,16 @@ const DietPlanProgress = () => {
   const [error, setError] = useState("");
   const [avgCalories, setAvgCalories] = useState(0);
   const navigate = useNavigate();
+  const [avgWater, setAvgWater] = useState({ consumed: 0, target: 0 });
 
   const goalMap = {
     GainWeight: "Tăng cân",
     LoseWeight: "Giảm cân",
     MaintainWeight: "Giữ cân",
   };
+  const progressPercentage = avgWater.target
+    ? Math.min(Math.round((avgWater.consumed / avgWater.target) * 100), 100)
+    : 0;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,6 +90,31 @@ const DietPlanProgress = () => {
 
         const avg = daysWithData > 0 ? totalCaloriesSum / daysWithData : 0;
         setAvgCalories(avg);
+        // Calculate average water consumption
+        let totalConsumed = 0;
+        let daysWithWaterData = 0;
+
+        const start = new Date(plan.startDate);
+        const end = new Date(); // today
+
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          try {
+            const dateString = d.toISOString().split("T")[0];
+            const response = await getWaterData(dateString);
+            const waterData = response?.data;
+
+            if (waterData && waterData.consumed > 0) {
+              totalConsumed += waterData.consumed;
+              daysWithWaterData++;
+            }
+          } catch (e) {
+            console.warn(`Không có dữ liệu nước cho ngày ${d.toDateString()}`);
+          }
+        }
+        const avgConsumed =
+          daysWithWaterData > 0 ? totalConsumed / daysWithWaterData : 0;
+        const avgTarget = latestCalc.waterNeeded * 1000; // convert to ml
+        setAvgWater({ consumed: avgConsumed, target: avgTarget });
       } catch (err) {
         console.error(err);
         setError("Không thể tải dữ liệu kế hoạch dinh dưỡng.");
@@ -133,10 +163,12 @@ const DietPlanProgress = () => {
     );
   }
 
-  // Pie chart - tiến trình ngày
+  // Pie chart 
   const today = new Date();
   const startDate = new Date(dietPlan.startDate);
   const endDate = dietPlan.endDate ? new Date(dietPlan.endDate) : today;
+  const startTime = startDate.getTime();
+  const endTime = endDate.getTime();
   const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
   const elapsedDays = Math.max(
     0,
@@ -149,28 +181,88 @@ const DietPlanProgress = () => {
     { name: "Còn lại", value: 100 - dayPercent },
   ];
 
-  // Chuẩn bị dữ liệu cân nặng
-  const weightData = calculations.map((c) => {
-    const d = new Date(c.createdAt);
-    return {
-      date: d.getTime(),
-      weight: c.weight,
-      target: targetWeight,
-    };
+  // Sort calculations within plan duration
+  const filteredCalcs = calculations.filter((c) => {
+    const time = new Date(c.createdAt).getTime();
+    return time >= startTime && time <= endTime;
   });
 
-  // Chia tick đều theo toàn bộ duration
-  const ticks = [];
-  if (dietPlan.startDate && dietPlan.endDate) {
-    const start = new Date(dietPlan.startDate).getTime();
-    const end = new Date(dietPlan.endDate).getTime();
-    const numTicks = 8;
-    const step = Math.ceil((end - start) / numTicks);
+  // Select latest calc per day
+  const dailyLatestMap = new Map();
 
-    for (let i = 0; i <= numTicks; i++) {
-      ticks.push(start + i * step);
+  filteredCalcs.forEach((c) => {
+    const dateKey = new Date(c.createdAt).toISOString().split("T")[0]; 
+    const existing = dailyLatestMap.get(dateKey);
+    if (!existing || new Date(c.createdAt) > new Date(existing.createdAt)) {
+      dailyLatestMap.set(dateKey, c);
     }
-  }
+  });
+
+  const uniqueDailyCalcs = Array.from(dailyLatestMap.values()).sort(
+    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+  );
+
+  const sameDayCalc = calculations.find((c) => {
+    const calcDate = new Date(c.createdAt);
+    return (
+      calcDate.getFullYear() === startDate.getFullYear() &&
+      calcDate.getMonth() === startDate.getMonth() &&
+      calcDate.getDate() === startDate.getDate()
+    );
+  });
+
+  const latestBeforeStart = !sameDayCalc
+    ? [...calculations]
+        .reverse()
+        .find((c) => new Date(c.createdAt).getTime() < startTime)
+    : null;
+
+    const startWeight =
+    sameDayCalc?.weight ??
+    latestBeforeStart?.weight ??
+    uniqueDailyCalcs[0]?.weight ??
+    null;
+
+  // Data for line chart
+  const weightData = [
+    { date: startTime, weight: startWeight, target: targetWeight },
+    ...uniqueDailyCalcs.map((c) => ({
+      date: new Date(c.createdAt).getTime(),
+      weight: c.weight,
+      target: targetWeight,
+    })),
+    { date: endTime, weight: null, target: targetWeight },
+  ];
+
+  const numTicks = 4;
+  const step = (endTime - startTime) / numTicks;
+  const ticks = Array.from(
+    { length: numTicks + 1 },
+    (_, i) => startTime + i * step
+  );
+
+  const weights = [
+    ...filteredCalcs.map((c) => c.weight),
+    startWeight ?? targetWeight, 
+  ];
+
+  const minWeight = Math.min(...weights);
+  const maxWeight = Math.max(...weights);
+
+  // Calculate y-axis bounds
+  let yMin = Math.floor(Math.min(minWeight, targetWeight) - 2);
+  let yMax = Math.ceil(Math.max(maxWeight, targetWeight) + 2);
+
+  // Suitable step
+  const diff = yMax - yMin;
+  const stepY = diff > 8 ? 2 : 1;
+  yMax = yMin + Math.ceil(diff / stepY) * stepY;
+
+  // Generate y-axis ticks
+  const yTicks = Array.from(
+    { length: Math.floor((yMax - yMin) / stepY) + 1 },
+    (_, i) => yMin + i * stepY
+  );
 
   return (
     <Container sx={{ mt: 5 }}>
@@ -304,7 +396,10 @@ const DietPlanProgress = () => {
                 />
 
                 <YAxis
-                  domain={["auto", "auto"]}
+                  domain={[yMin, yMax]}
+                  interval={0}
+                  ticks={yTicks}
+                  tickFormatter={(value) => Math.round(value)}
                   label={{
                     value: "(kg)",
                     position: "top",
@@ -316,6 +411,11 @@ const DietPlanProgress = () => {
                   labelFormatter={(timestamp) =>
                     new Date(timestamp).toLocaleDateString("vi-VN")
                   }
+                  formatter={(value, name) => {
+                    if (name === "weight") return [`${value} kg`, "Cân nặng"];
+                    if (name === "target") return [`${value} kg`, "Mục tiêu"];
+                    return [value, name];
+                  }}
                 />
                 <Line
                   type="monotone"
@@ -334,7 +434,12 @@ const DietPlanProgress = () => {
                 />
               </LineChart>
 
-              <Typography  textAlign="center"variant="h5" fontWeight="bold" mt={1}>
+              <Typography
+                textAlign="center"
+                variant="h5"
+                fontWeight="bold"
+                mt={1}
+              >
                 Hiện tại: {currentWeight} kg
               </Typography>
             </Box>
@@ -361,12 +466,12 @@ const DietPlanProgress = () => {
                 let messageColor = "#4CAF50";
 
                 if (diff < -150) {
-                  color = "#FFC107"; 
+                  color = "#FFC107";
                   message =
                     "Ít hơn mức khuyến khị - thử tăng khẩu phần ăn mỗi ngày bạn nhé !";
                   messageColor = "#FFC107";
                 } else if (diff > 100) {
-                  color = "#f44336"; 
+                  color = "#f44336";
                   message =
                     "Vượt mức khuyến nghị - thử giảm khẩu phần ăn mỗi ngày bạn nhé !";
                   messageColor = "#f44336";
@@ -438,9 +543,72 @@ const DietPlanProgress = () => {
             </Box>
           </Grid>
         </Grid>
+        <Box textAlign="center" sx={{ mt: 5 }}>
+          <Typography variant="h6" mb={2}>
+            Lượng nước trung bình
+          </Typography>
+
+          <Box sx={{ position: "relative", display: "inline-block" }}>
+            {/* Cốc nước */}
+            <Box
+              sx={{
+                position: "relative",
+                width: 120,
+                height: 150,
+                border: "3px solid #00aaff",
+                borderRadius: "8px 8px 12px 12px",
+                overflow: "hidden",
+                boxShadow: "0 4px 10px rgba(0, 170, 255, 0.3)",
+                mx: "auto",
+              }}
+            >
+              {/* Liquid Fill */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  bottom: 0,
+                  width: "100%",
+                  height: `${progressPercentage}%`,
+                  background:
+                    "linear-gradient(180deg, #00aaff 0%, #0088cc 50%, #005fa3 100%)",
+                  transition: "height 0.3s ease-out",
+                }}
+              />
+              {/* Inner Shine */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: "10%",
+                  width: "15%",
+                  height: "100%",
+                  background:
+                    "linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 100%)",
+                }}
+              />
+              {/* Handle */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  right: -20,
+                  top: 20,
+                  width: 20,
+                  height: 50,
+                  border: "2px solid #00aaff",
+                  borderLeft: "none",
+                  borderRadius: "0 12px 12px 0",
+                }}
+              />
+            </Box>
+
+            <Typography variant="h5" fontWeight="bold" mt={2}>
+              {avgWater.consumed.toFixed(0)} / {avgWater.target.toFixed(0)} ml
+              (TB mỗi ngày)
+            </Typography>
+          </Box>
+        </Box>
       </Paper>
     </Container>
-    
   );
 };
 

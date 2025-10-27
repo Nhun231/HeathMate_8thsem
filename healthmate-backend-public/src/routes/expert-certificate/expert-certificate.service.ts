@@ -10,7 +10,7 @@ import {
 
 @Injectable()
 export class ExpertCertificateService {
-  constructor(private readonly expertCertificateRepo: ExpertCertificateRepo) {}
+  constructor(private readonly expertCertificateRepo: ExpertCertificateRepo) { }
 
   async list(query: QueryType) {
     return this.expertCertificateRepo.findAll(query);
@@ -52,4 +52,5 @@ export class ExpertCertificateService {
 
     return this.expertCertificateRepo.delete(certificate._id);
   }
+
 }

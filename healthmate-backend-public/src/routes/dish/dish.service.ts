@@ -23,6 +23,7 @@ export class DishService {
     }
 
     private async calculateNutritionalValues(ingredients: any[]): Promise<{
+        totalIngredientWeight: number;
         totalCalories: number;
         totalCarbs: number;
         totalProtein: number;
@@ -31,6 +32,7 @@ export class DishService {
         totalSugar: number;
     }> {
         let totals = {
+            totalIngredientWeight: 0,
             totalCalories: 0,
             totalCarbs: 0,
             totalProtein: 0,
@@ -64,6 +66,9 @@ export class DishService {
                 continue;
             }
 
+            // Add to total ingredient weight
+            totals.totalIngredientWeight += amount;
+            
             // Calculate nutritional values based on amount (assuming nutrition is per 100g)
             const factor = amount / 100;
             totals.totalCalories += (nutrition.caloPer100g || 0) * factor;
@@ -126,6 +131,7 @@ export class DishService {
 
             // Calculate nutritional values
             const nutritionalValues = await this.calculateNutritionalValues(data.ingredients);
+            payload.totalIngredientWeight = nutritionalValues.totalIngredientWeight;
             payload.totalCalories = nutritionalValues.totalCalories;
             payload.totalCarbs = nutritionalValues.totalCarbs;
             payload.totalProtein = nutritionalValues.totalProtein;
@@ -137,6 +143,31 @@ export class DishService {
         } catch (error) {
             console.error('[DishService.create] Unexpected error:', error);
             throw new Error('Failed to create dish');
+        }
+    }
+
+    async createCustomCopy(data: any, userId: any, roleName: string): Promise<DishDocument> {
+        try {
+            // Always create as custom dish (belongsTo = userId) for customers
+            const payload = {
+                ...data,
+                belongsTo: userId, // Always mark as custom dish
+            } as Partial<Dish>;
+
+            // Calculate nutritional values
+            const nutritionalValues = await this.calculateNutritionalValues(data.ingredients);
+            payload.totalIngredientWeight = nutritionalValues.totalIngredientWeight;
+            payload.totalCalories = nutritionalValues.totalCalories;
+            payload.totalCarbs = nutritionalValues.totalCarbs;
+            payload.totalProtein = nutritionalValues.totalProtein;
+            payload.totalFat = nutritionalValues.totalFat;
+            payload.totalFiber = nutritionalValues.totalFiber;
+            payload.totalSugar = nutritionalValues.totalSugar;
+
+            return this.dishRepo.create(payload);
+        } catch (error) {
+            console.error('[DishService.createCustomCopy] Unexpected error:', error);
+            throw new Error('Failed to create custom dish copy');
         }
     }
 
@@ -161,6 +192,7 @@ export class DishService {
             // Update nutritional values if ingredients are being updated
             if (data.ingredients) {
                 const nutritionalValues = await this.calculateNutritionalValues(data.ingredients);
+                data.totalIngredientWeight = nutritionalValues.totalIngredientWeight;
                 data.totalCalories = nutritionalValues.totalCalories;
                 data.totalCarbs = nutritionalValues.totalCarbs;
                 data.totalProtein = nutritionalValues.totalProtein;

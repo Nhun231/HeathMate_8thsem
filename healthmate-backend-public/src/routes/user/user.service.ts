@@ -59,7 +59,21 @@ export class UserService {
       roleId: createUserRole._id,
     });
   }
+  async updateMe(id: string, data: UpdateUserType) {
+    if (data.role) {
+      const userRole = await this.sharedRoleRepository.findUnique({
+        name: data.role,
+      });
+      if (!userRole) throw new Error('Role not found!');
 
+      return this.userRepo.update(id, {
+        ...data,
+        roleId: userRole._id,
+      });
+    }
+
+    return this.userRepo.update(id, data);
+  }
   async updateUser(userId: string, data: UpdateUserType, activeUserId: string) {
     this.verifyYourself({ userAgentId: activeUserId, userTargetId: userId });
 

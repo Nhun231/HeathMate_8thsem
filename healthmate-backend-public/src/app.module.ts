@@ -28,6 +28,7 @@ import { SubscriptionModule } from './routes/subscription/subscription.module';
 import { PaymentModule } from './routes/payment/payment.module';
 import { BullModule } from '@nestjs/bullmq';
 
+import { ChatModule } from './routes/chat/chat.module';
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -55,6 +56,7 @@ import { BullModule } from '@nestjs/bullmq';
     ExpertCertificateModule,
     RoleModule,
     ProfileModule,
+    ChatModule,
     WaterModule,
     OrderModule,
     SubscriptionModule,
