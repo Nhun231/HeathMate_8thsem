@@ -20,6 +20,6 @@ export class Payment {
   status: string;
 }
 
-export const PayementSchema = SchemaFactory.createForClass(Payment);
+export const PaymentSchema = SchemaFactory.createForClass(Payment);
 
 export type PaymentDocument = HydratedDocument<Payment>;

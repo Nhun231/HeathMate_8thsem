@@ -130,6 +130,7 @@ export class AuthService {
     });
 
     if (error) {
+      console.log('Resend Error: ', error);
       throw FailedToSendOTPException;
     }
 

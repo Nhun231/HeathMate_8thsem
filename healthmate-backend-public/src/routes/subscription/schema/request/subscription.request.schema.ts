@@ -8,7 +8,7 @@ export const GetSubscriptionParamsSchema = z.object({
 export const CreateSubscriptionSchema = z.object({
   name: z.string(),
   type: z.enum([SubscriptionType.INDEPTH, SubscriptionType.ADVANCED]),
-  duration: z.number(),
+  durationDays: z.number(),
   price: z.number(),
 });
 
@@ -17,7 +17,7 @@ export const UpdateSubscriptionSchema = z.object({
   type: z
     .enum([SubscriptionType.INDEPTH, SubscriptionType.ADVANCED])
     .optional(),
-  duration: z.number().optional(),
+  durationDays: z.number().optional(),
   price: z.number().optional(),
 });
 
