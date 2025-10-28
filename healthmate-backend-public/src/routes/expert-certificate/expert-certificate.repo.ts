@@ -51,8 +51,6 @@ export class ExpertCertificateRepo {
     userId: Types.ObjectId;
     data: CreateCertificateBodyType;
   }) {
-    console.log(userId);
-    console.log(data);
     return this.expertCertificateModel.create({ user: userId, ...data });
   }
 

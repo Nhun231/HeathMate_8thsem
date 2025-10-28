@@ -19,19 +19,21 @@ import {
   Chip
 } from "@mui/material"
 import { Close as CloseIcon, Save as SaveIcon, Delete as DeleteIcon, Add as AddIcon, Restaurant as RestaurantIcon } from "@mui/icons-material"
-import { updateMeal, deleteMeal } from "../../services/Meal"
-import { getDish, updateDish } from "../../services/Dish"
+import { updateMeal, deleteMeal, updateMealWithDish } from "../../services/Meal"
+import { getDish, updateDish, createCustomDishCopy } from "../../services/Dish"
 import { listCustomAndPublicIngredients } from "../../services/Ingredient"
 
 function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) {
   const [formData, setFormData] = useState({
     quantity: 100
   })
+  const [maxQuantity, setMaxQuantity] = useState(1000) // Default max quantity
   const [loading, setLoading] = useState(false)
   const [alert, setAlert] = useState({ show: false, message: "", severity: "info" })
   
   // Dish and ingredient management
   const [dish, setDish] = useState(null)
+  const [customDish, setCustomDish] = useState(null) // Track if we created a custom dish
   const [selectedIngredients, setSelectedIngredients] = useState([])
   const [availableIngredients, setAvailableIngredients] = useState([])
   const [ingredientsLoading, setIngredientsLoading] = useState(false)
@@ -43,6 +45,10 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
       setDishLoading(true)
       const dishData = await getDish(dishId)
       setDish(dishData)
+      
+      // Set max quantity to 3x the total ingredient weight (will be updated when ingredients are loaded)
+      const totalWeight = dishData.totalIngredientWeight || 100
+      setMaxQuantity(totalWeight * 3)
       
       // Convert dish ingredients to selectedIngredients format
       if (dishData.ingredients) {
@@ -83,7 +89,7 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
     try {
       if (meal && open) {
         setFormData({
-          quantity: meal.quantity || 100
+          quantity: meal.quantity || 100 // Will be updated when dish loads
         })
         setAlert({ show: false, message: "", severity: "info" })
         
@@ -113,6 +119,18 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
     }))
   }
 
+  // Calculate total ingredient weight
+  const calculateTotalWeight = () => {
+    if (!selectedIngredients || selectedIngredients.length === 0) {
+      return 0
+    }
+    
+    return selectedIngredients.reduce((total, ing) => {
+      if (!ing || !ing.amount) return total
+      return total + Number(ing.amount)
+    }, 0)
+  }
+
   // Calculate nutritional values
   const calculateNutrition = () => {
     if (!selectedIngredients || selectedIngredients.length === 0) {
@@ -135,6 +153,22 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
   }
 
   const nutrition = calculateNutrition()
+  const currentTotalWeight = calculateTotalWeight()
+
+  // Update max quantity and default quantity when ingredients change
+  useEffect(() => {
+    if (currentTotalWeight > 0) {
+      setMaxQuantity(currentTotalWeight * 3)
+      
+      // Update default quantity to total ingredient weight if it's still the old default
+      if (formData.quantity === 100 || formData.quantity === (dish?.totalIngredientWeight || 100)) {
+        setFormData(prev => ({
+          ...prev,
+          quantity: currentTotalWeight
+        }))
+      }
+    }
+  }, [currentTotalWeight, formData.quantity, dish?.totalIngredientWeight])
 
   // Ingredient management functions
   const addIngredient = (ingredient) => {
@@ -178,6 +212,16 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
       })
       return false
     }
+    
+    if (formData.quantity > maxQuantity) {
+      setAlert({
+        show: true,
+        message: `Số lượng không được vượt quá ${maxQuantity}g (3x tổng trọng lượng nguyên liệu: ${currentTotalWeight}g)`,
+        severity: "error"
+      })
+      return false
+    }
+    
     return true
   }
 
@@ -186,9 +230,9 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
 
     setLoading(true)
     try {
-      // If it's a dish (not ingredient), update the dish first
+      // If it's a dish (not ingredient), handle dish updates
       if (!meal.isIngredient && dish) {
-        const updatedDishData = {
+        const dishData = {
           name: dish.name,
           description: dish.description,
           type: dish.type,
@@ -200,11 +244,30 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
           }))
         }
         
-        await updateDish(dish._id, updatedDishData)
+        // Check if dish is public (no belongsTo) or if ingredients have changed
+        const isPublicDish = !dish.belongsTo || String(dish.belongsTo).trim() === ''
+        const ingredientsChanged = JSON.stringify(selectedIngredients) !== JSON.stringify(dish.ingredients)
+        
+        if (isPublicDish && ingredientsChanged) {
+          // Create custom copy for public dish
+          const customDishCopy = await createCustomDishCopy(dishData)
+          setCustomDish(customDishCopy)
+          
+          // Update meal to use the new custom dish
+          await updateMealWithDish(meal.id, Number(formData.quantity), customDishCopy._id)
+        } else if (!isPublicDish) {
+          // Update private dish directly
+          await updateDish(dish._id, dishData)
+          // Update the meal quantity
+          await updateMeal(meal.id, Number(formData.quantity))
+        } else {
+          // Public dish with no ingredient changes, just update quantity
+          await updateMeal(meal.id, Number(formData.quantity))
+        }
+      } else {
+        // For ingredients, just update quantity
+        await updateMeal(meal.id, Number(formData.quantity))
       }
-      
-      // Update the meal quantity
-      await updateMeal(meal.id, Number(formData.quantity))
       
       setAlert({
         show: true,
@@ -381,13 +444,16 @@ function UpdateMealModal({ open, onClose, meal, onMealUpdated, onMealDeleted }) 
               <Typography variant="body2" sx={{ color: "#4CAF50", fontWeight: 500, mb: 1 }}>
                 Số lượng món ăn (gram) *
               </Typography>
+              <Typography variant="caption" sx={{ color: "#666", mb: 1, display: "block" }}>
+                Tổng trọng lượng nguyên liệu: {calculateTotalWeight()}g 
+              </Typography>
               <TextField
                 fullWidth
                 type="number"
                 value={formData.quantity}
                 onChange={handleChange('quantity')}
                 disabled={loading}
-                inputProps={{ min: 1, max: 10000, step: 1 }}
+                inputProps={{ min: 1, max: maxQuantity, step: 1 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     borderRadius: 2,

@@ -9,28 +9,29 @@ import {
   Query,
 } from '@nestjs/common';
 import { ExpertCertificateService } from './expert-certificate.service';
-import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
-import { DeleteResult, Types } from 'mongoose';
+import { DeleteResult } from 'mongoose';
 import {
   CreateCertificateBodyDto,
   GetCertificateParamsDto,
   UpdateCertificateBodyDto,
 } from './expert-certificate.dto';
 import { QuerySchema } from 'src/shared/schemas/request/request.schema';
+import { IsPublic } from 'src/shared/decorators/auth.decorator';
 
 @Controller('v1/expert-certificate')
 export class ExpertCertificateController {
   constructor(
     private readonly expertCertificateService: ExpertCertificateService,
-  ) {}
+  ) { }
 
   @Post()
-  async create(
-    @ActiveUser('userId') userId: Types.ObjectId,
-    @Body() body: CreateCertificateBodyDto,
-  ) {
-    console.log(userId);
-    return this.expertCertificateService.create({ userId, data: body });
+  @IsPublic()
+  async create(@Body() body: CreateCertificateBodyDto & { userId: string }) {
+    const { userId, ...data } = body;
+    return this.expertCertificateService.create({
+      userId,
+      data,
+    });
   }
 
   @Get()

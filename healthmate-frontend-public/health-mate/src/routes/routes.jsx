@@ -14,7 +14,7 @@ import CustomerHomePage from "../components/homepage/CustomerHomePage.jsx";
 import SetGoal from "../components/dietplan/SetGoal.jsx";
 import DietPlan from "../components/dietplan/DietPlan.jsx";
 import DietPlanProgress from "../components/dietplan/DietPlanProgress.jsx";
-
+import CustomerProgress from "../components/customerprogress/CustomerProgress.jsx";
 import FoodDiary from "../components/diary/FoodDiary.jsx";
 import { DiaryProvider } from "../context/DiaryContext.jsx";
 import CustomerPage from "../components/homepage/CustomerPage.jsx";
@@ -22,9 +22,16 @@ import OAuth from "../pages/authentication/OAuth.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import EditProfilePage from "../pages/EditProfilePage.jsx";
 import WaterInformation from "../components/water/WaterInformation.jsx";
-import UpdateNutrient from "../components/nutrients/UpdateNutrients.jsx"
+import UpdateNutrient from "../components/nutrients/UpdateNutrients.jsx";
 import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
+import ExpertChatPage from "../pages/expert/ExpertChatPage.jsx";
+import CustomerChatPage from "../pages/customer/CustomerChatPage.jsx";
 import RequireRole from "../components/common/RequireRole.jsx";
+import ExpertUpload from "../components/expert/UploadCertificate.jsx";
+import RegisterExpert from "../components/expert/ExpertRegister.jsx";
+import ViewSubscriptions from "../components/subscription/ViewSubscription.jsx";
+import PaymentSuccess from "../components/subscription/PaymentSucess.jsx";
+
 class AuthLayout extends Component {
   render() {
     return (
@@ -56,6 +63,18 @@ const router = createBrowserRouter([
     path: "/guest-homepage",
     element: <GuestHomePage />,
   },
+  {
+    path: "/register-expert",
+    element: (
+      <AuthProvider>
+        <RegisterExpert />
+      </AuthProvider>
+    ),
+  },
+  // {
+  //   path: "/expert-register",
+  //   element: <ExpertUpload />,
+  // },
 
   // {
   //     path: "/login",
@@ -77,7 +96,14 @@ const router = createBrowserRouter([
           //     path: "/oauth-callback",
           //     element: <OAuthCallback />,
           // },
-
+          {
+            path: "/customer-chat",
+            element: <CustomerChatPage />,
+          },
+          {
+            path: "/expert-chat",
+            element: <ExpertChatPage />,
+          },
           {
             path: "/",
             element: <DefaultRedirect />,
@@ -105,20 +131,21 @@ const router = createBrowserRouter([
           {
             path: "/diary",
             element: (
-                <RequireRole allowedRoles={["Customer"]}>
-                  <DiaryProvider><FoodDiary /></DiaryProvider>
-
-                </RequireRole>
+              <RequireRole allowedRoles={["Customer"]}>
+                <DiaryProvider>
+                  <FoodDiary />
+                </DiaryProvider>
+              </RequireRole>
             ),
           },
-            //admin
+          //admin
           {
             path: "/admin/dashboard",
             element: (
-                <RequireRole allowedRoles={["Admin"]}>
-                  <AdminDashboard />
-                </RequireRole>
-            )
+              <RequireRole allowedRoles={["Admin"]}>
+                <AdminDashboard />
+              </RequireRole>
+            ),
           },
           {
             path: "/unauthorized",
@@ -143,6 +170,18 @@ const router = createBrowserRouter([
           {
             path: "/update-nutrient",
             element: <UpdateNutrient />,
+          },
+          {
+            path: "/view-subscriptions",
+            element: <ViewSubscriptions />,
+          },
+          {
+            path: "/payment-success",
+            element: <PaymentSuccess />,
+          },
+          {
+            path: "/customer-progress/:userId",
+            element: <CustomerProgress />,
           },
         ],
       },

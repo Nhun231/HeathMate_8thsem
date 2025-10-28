@@ -81,13 +81,13 @@ const ProfilePage = () => {
   };
 
   const getVietnameseActivityLevel = (level) =>
-    ({
-      Sedentary: "Ít vận động",
-      Light: "Vận động nhẹ",
-      Moderate: "Vận động vừa",
-      Active: "Vận động nhiều",
-      VeryActive: "Vận động cực nhiều",
-    }[level] || "--");
+  ({
+    Sedentary: "Ít vận động",
+    Light: "Vận động nhẹ",
+    Moderate: "Vận động vừa",
+    Active: "Vận động nhiều",
+    VeryActive: "Vận động cực nhiều",
+  }[level] || "--");
 
   const InfoItem = ({ label, value, unit }) => (
     <div className="p-3 rounded-lg bg-gray-50 mb-4">
@@ -138,8 +138,8 @@ const ProfilePage = () => {
                 {userData?.gender === "Male"
                   ? "Nam"
                   : userData?.gender === "Female"
-                  ? "Nữ"
-                  : "--"}
+                    ? "Nữ"
+                    : "--"}
               </span>
               <span className="my-badge badge-green text-green-700">
                 {userData.dob ? calculateAge(userData.dob) : "--"} Tuổi
@@ -172,8 +172,8 @@ const ProfilePage = () => {
                 userData.gender === "Male"
                   ? "Nam"
                   : userData.gender === "Female"
-                  ? "Nữ"
-                  : "--"
+                    ? "Nữ"
+                    : "--"
               }
             />
             <InfoItem
@@ -304,14 +304,14 @@ const ProfilePage = () => {
             </p>
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Quick Actions */}
       <div className="my-card">
         <div className="my-card-header">
           <div className="my-card-title">Thao tác nhanh</div>
         </div>
-        <div className="card-content grid grid-cols-1 grid-cols-3 gap-4">
+        <div className="card-content flex justify-between flex-wrap gap-4">
           {[
             {
               to: "/water-infor",
@@ -328,18 +328,22 @@ const ProfilePage = () => {
               icon: TrackChangesIcon,
               label: "Thiết lập mục tiêu mới",
             },
+            {
+              to: "/update-nutrient",
+              icon: SpeedIcon,
+              label: "Cập nhật chỉ số dinh dưỡng",
+            },
           ].map((action, idx) => {
             const Icon = action.icon;
             return (
               <Link
                 key={idx}
                 to={action.to}
-                className="btn btn-outline p-4 text-center"
+                className="btn btn-outline flex-1 min-w-[200px] p-4 text-center rounded-xl hover:bg-green-50 transition flex flex-col items-center justify-center"
               >
                 <Icon
                   style={{ fontSize: 32, marginBottom: 8, color: "green" }}
                 />
-                <br />
                 <span>{action.label}</span>
               </Link>
             );
