@@ -29,7 +29,10 @@ jobs:
         run: npm install --force
 
       - name: Import .env
-        run: echo "${{secrets.BACKEND_ENV_PRODUCTION}}" > healthmate-backend-public/.env
+        run: |
+          cat <<'EOF' > healthmate-backend-public/.env
+          ${{ secrets.BACKEND_ENV_PRODUCTION }}
+          EOF
 
       - name: Build backend
         working-directory: healthmate-backend-public
@@ -62,7 +65,7 @@ jobs:
         run: npm install --force
 
       - name: Import .env
-        run: echo "${{secrets.FRONTEND_ENV_PRODUCTION}}" > healthmate-frontend-public/health-mate/.env
+        run: echo "${{ secrets.FRONTEND_ENV_PRODUCTION }}" > healthmate-frontend-public/health-mate/.env
 
       - name: Build frontend
         working-directory: healthmate-frontend-public/health-mate
