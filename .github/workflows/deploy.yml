@@ -34,6 +34,11 @@ jobs:
           ${{ secrets.BACKEND_ENV_PRODUCTION }}
           EOF
 
+      - name: Preview .env (safe)
+        run: |
+          echo "=== first 10 lines of .env ==="
+          head -n 3 healthmate-backend-public/.env
+
       - name: Build backend
         working-directory: healthmate-backend-public
         run: npm run build-vps
