@@ -11,17 +11,7 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter(app));
 
   app.enableCors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-	'http://localhost:5173',
-	'https://yourhealthmate.io.vn'
-	];
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: true,
     credentials: true,
   });
 
