@@ -119,12 +119,14 @@ jobs:
           password: ${{ secrets.PASSWORD_PRODUCTION }}
           port: ${{ secrets.PORT_PRODUCTION }}
           script: |
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
             cd ~/HeathMate_8thsem/healthmate-frontend-public/health-mate
             git fetch origin
             git reset --hard origin/main
             cat <<'EOF' > .env
             ${{ secrets.FRONTEND_ENV_PRODUCTION }}
             EOF
-            npm i --force
+            npm install --force
             npm run build
             pm2 restart HealthMateFE
