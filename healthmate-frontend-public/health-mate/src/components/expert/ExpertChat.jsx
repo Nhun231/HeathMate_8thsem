@@ -32,6 +32,7 @@ import {
 import socketService from '../../services/SocketService';
 import chatService from '../../services/ChatService';
 import { useAuth } from '../../context/AuthProvider';
+import {useNavigate} from "react-router-dom";
 
 const ExpertChat = () => {
   // State management
@@ -307,7 +308,7 @@ const ExpertChat = () => {
     date2.setHours(0, 0, 0, 0);
     return date1.getTime() !== date2.getTime();
   };
-
+  const navigate = useNavigate();
   return (
       <Box
           sx={{
@@ -346,7 +347,7 @@ const ExpertChat = () => {
             gap: 2,
           }}
         >
-          <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}>
+          <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} onClick={()=>(navigate(`customer-progress/:${selectedCustomer.id}`))}>
             <PersonIcon />
           </Avatar>
           <Box>
