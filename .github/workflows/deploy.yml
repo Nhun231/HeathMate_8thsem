@@ -37,11 +37,11 @@ jobs:
       - name: Preview .env (safe)
         run: |
           echo "=== first 10 lines of .env ==="
-          head -n 3 healthmate-backend-public/.env
+          head -n 10 healthmate-backend-public/.env
 
       - name: Build backend
         working-directory: healthmate-backend-public
-        run: npm run build-vps
+        run: npm run build
 
       - name: Upload backend build artifact
         id: upload-backend
@@ -82,3 +82,49 @@ jobs:
         with:
           name: frontend-build
           path: healthmate-frontend-public/health-mate/dist
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    needs: build-backend
+    steps:
+      - name: Executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST_PRODUCTION }}
+          username: ${{ secrets.USERNAME_PRODUCTION }}
+          password: ${{ secrets.PASSWORD_PRODUCTION }}
+          port: ${{ secrets.PORT_PRODUCTION }}
+          script: |
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
+            cd ~/HeathMate_8thsem/healthmate-backend-public
+            git fetch origin
+            git reset --hard origin/main
+            cat <<'EOF' > .env
+            ${{ secrets.BACKEND_ENV_PRODUCTION }}
+            EOF
+            npm i --force
+            npm run build-vps
+            pm2 restart HealthMateBE
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    steps:
+      - name: Deploy Frontend
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST_PRODUCTION }}
+          username: ${{ secrets.USERNAME_PRODUCTION }}
+          password: ${{ secrets.PASSWORD_PRODUCTION }}
+          port: ${{ secrets.PORT_PRODUCTION }}
+          script: |
+            cd ~/HeathMate_8thsem/healthmate-frontend-public/health-mate
+            git fetch origin
+            git reset --hard origin/main
+            cat <<'EOF' > .env
+            ${{ secrets.FRONTEND_ENV_PRODUCTION }}
+            EOF
+            npm i --force
+            npm run build
+            pm2 restart HealthMateFE
