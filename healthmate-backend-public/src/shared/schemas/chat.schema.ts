@@ -26,6 +26,12 @@ export class ChatRoom {
 
 export const ChatRoomSchema = SchemaFactory.createForClass(ChatRoom);
 
+// Add unique compound index to prevent duplicate chat rooms between the same users
+ChatRoomSchema.index(
+  { customerId: 1, expertId: 1 }, 
+  { unique: true, name: 'unique_customer_expert' }
+);
+
 export type MessageDocument = Message & Document;
 
 @Schema({ timestamps: true })
