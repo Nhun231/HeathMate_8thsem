@@ -20,6 +20,7 @@ const Header = () => {
   // Use AuthContext directly with fallback - won't throw error if not within provider
   const authContext = useContext(AuthContext);
   const user = authContext?.user || null;
+  const subscripted = !!user?.subscripted;
   const userRole = user?.roleId?.name || null;
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -242,19 +243,21 @@ const Header = () => {
                   >
                     Thực đơn hôm nay
                   </Button>
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate("/customer-chat")}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Tư vấn cùng chuyên gia
-                  </Button>
+                  {subscripted && (
+                    <Button
+                      color="inherit"
+                      onClick={() => navigate("/customer-chat")}
+                      sx={{
+                        fontWeight: "bold",
+                        color: "white",
+                        "&:hover": {
+                          bgcolor: "rgba(255, 255, 255, 0.1)",
+                        },
+                      }}
+                    >
+                      Tư vấn cùng chuyên gia
+                    </Button>
+                  )}
                   <Button
                     color="inherit"
                     onClick={handleClick}

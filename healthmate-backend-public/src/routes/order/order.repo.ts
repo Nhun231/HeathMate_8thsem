@@ -23,17 +23,24 @@ export class OrderRepo {
   }
 
   async findAll(query: QueryType) {
+    const normalizedQuery: QueryType = { ...(query as any) } as any;
+    if ((normalizedQuery as any).user && Types.ObjectId.isValid((normalizedQuery as any).user as any)) {
+      (normalizedQuery as any).user = new Types.ObjectId((normalizedQuery as any).user as any);
+    }
     const queryOrders = await this.queryBuilder.query({
-      query,
-      allowedFilters: ['name', 'module'],
+      query: normalizedQuery,
+      allowedFilters: ['user', 'status', 'name', 'module'],
       populateFields: [
         {
           path: 'user',
           select: '_id email fullname phoneNumber gender avatar',
         },
+        {
+          path: 'subscription',
+          select: '_id name price durationDays type',
+        },
       ],
     });
-
     return queryOrders;
   }
 

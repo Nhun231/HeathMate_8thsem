@@ -28,23 +28,38 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     console.log("Auth state updated:", auth);
   }, [auth]);
-  // Set token from localStorage on mount
+  // Set token from localStorage on mount (enhanced to check subscription)
   useLayoutEffect(() => {
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem("accessToken");
-      if (storedToken) {
-          try {
-            const decodedUser = jwtDecode(storedToken);
-            const userInfo = await axios.get(`${BASE_URL}/users/${decodedUser.userId}`);
-            setAuth({ accessToken: storedToken, user: userInfo.data });
-          } catch (e) {
-          console.error("Invalid stored token", e);
-          //localStorage.removeItem("accessToken");
-        }
+      if (!storedToken) {
+        setLoading(false);
+        return;
       }
-      setLoading(false); 
+      try {
+        const decodedUser = jwtDecode(storedToken);
+        const userInfoRes = await axios.get(`${BASE_URL}/users/${decodedUser.userId}`);
+        const user = userInfoRes.data;
+        // Call order API to check active subscription
+        let subscripted = false;
+        try {
+          const ordersRes = await axios.get("/order", { params: { user: user._id } });
+          const orders = ordersRes.data?.data || ordersRes.data || [];
+          const now = new Date();
+          subscripted = orders.some(order => {
+            if ((order.status !== "SUCCESS") || !order.startDate) return false;
+            return true;
+          });
+        } catch (e) {
+          // fail to load orders, treat as un-subscribed
+        }
+        setAuth({ accessToken: storedToken, user: { ...user, subscripted } });
+      } catch (e) {
+        console.error("Invalid stored token", e);
+        //localStorage.removeItem("accessToken");
+      }
+      setLoading(false);
     };
-
     initializeAuth();
   }, []);
 
