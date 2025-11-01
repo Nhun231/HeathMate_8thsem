@@ -31,7 +31,7 @@ import PermissionManagement from "../../components/admin/PermissionManagement.js
 import UserManagement from "../../components/admin/UserManagement.jsx";
 import { getUserStats } from "../../services/AdminService.js";
 import ExpertCertificateManagement from "../../components/admin/ExpertCertificateManagement.jsx";
-
+import PaymentManagement from "../../components/admin/PaymentManagement.jsx";
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [quickStats, setQuickStats] = useState({
@@ -93,11 +93,7 @@ const AdminDashboard = () => {
     {
       label: "Quản lý giao dịch",
       icon: <AccountBalance />,
-      component: (
-        <Typography sx={{ textAlign: "center", mt: 2 }}>
-          Chức năng đang được phát triển...
-        </Typography>
-      ),
+      component: <PaymentManagement />,
     },
     {
       label: "Quản lý người dùng",

@@ -31,7 +31,7 @@ import ExpertUpload from "../components/expert/UploadCertificate.jsx";
 import RegisterExpert from "../components/expert/ExpertRegister.jsx";
 import ViewSubscriptions from "../components/subscription/ViewSubscription.jsx";
 import PaymentSuccess from "../components/subscription/PaymentSucess.jsx";
-
+import BankInfo from "../components/bank/BankInfo.jsx";
 class AuthLayout extends Component {
   render() {
     return (
@@ -146,6 +146,10 @@ const router = createBrowserRouter([
                 <AdminDashboard />
               </RequireRole>
             ),
+          },
+          {
+            path: "/bankinfo",
+            element: (<BankInfo />),
           },
           {
             path: "/unauthorized",

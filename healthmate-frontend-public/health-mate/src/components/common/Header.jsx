@@ -200,6 +200,19 @@ const Header = () => {
                   </Button>
                   <Button
                     color="inherit"
+                    onClick={() => navigate("/bankinfo")}
+                    sx={{
+                      fontWeight: "bold",
+                      color: "white",
+                      "&:hover": {
+                        bgcolor: "rgba(255, 255, 255, 0.1)",
+                      },
+                    }}
+                  >
+                    Thông tin ngân hàng
+                  </Button>
+                  <Button
+                    color="inherit"
                     onClick={handleLogout}
                     sx={{
                       fontWeight: "bold",

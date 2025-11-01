@@ -29,6 +29,7 @@ import { PaymentModule } from './routes/payment/payment.module';
 import { BullModule } from '@nestjs/bullmq';
 
 import { ChatModule } from './routes/chat/chat.module';
+import { BankInfoModule } from './routes/bank-info/bankinfo.module';
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -61,6 +62,7 @@ import { ChatModule } from './routes/chat/chat.module';
     OrderModule,
     SubscriptionModule,
     PaymentModule,
+    BankInfoModule
   ],
   controllers: [AppController],
   providers: [
