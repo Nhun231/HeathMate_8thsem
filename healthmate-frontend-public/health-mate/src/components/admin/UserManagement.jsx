@@ -38,6 +38,8 @@ import {
   Select,
 } from "@mui/material";
 import CustomAlert from "../common/Alert";
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthProvider";
 
 const UserManagement = () => {
   // --- State chính ---
@@ -124,27 +126,54 @@ const UserManagement = () => {
     fetchUsers(page);
   }, [page]);
 
+  const { user } = useContext(AuthContext);
+  const currentUserId = user?._id;
   // --- Toggle Status ---
-  const handleToggleStatus = async (user) => {
-    const newStatus = user.status === "Active" ? "Inactive" : "Active";
-    if (
-      !window.confirm(
-        `Chuyển người dùng này sang trạng thái "${newStatus === "Active" ? "Hoạt động" : "Ngừng hoạt động"}"?`
-      )
-    )
-      return;
-
+  const handleToggleStatus = async (targetUser) => {
     try {
-      await updateUser(user._id, { status: newStatus });
+      console.log("Kiểm tra ID:", { currentUserId, targetId: targetUser._id });
+
+      // Chặn admin tự khóa chính mình
+      if (currentUserId && currentUserId === targetUser._id) {
+        setAlertInfo({
+          message: "Bạn không thể vô hiệu hóa tài khoản của chính mình!",
+          variant: "warning",
+        });
+        return;
+      }
+
+      const newStatus = targetUser.status === "Active" ? "Inactive" : "Active";
+
+      if (
+        !window.confirm(
+          `Bạn có chắc muốn chuyển người dùng này sang trạng thái "${newStatus === "Active" ? "Hoạt động" : "Ngừng hoạt động"
+          }"?`
+        )
+      )
+        return;
+
+      const res = await updateUser(targetUser._id, { status: newStatus });
+
+      if (res?.statusCode === 422) {
+        setAlertInfo({
+          message: "Cập nhật trạng thái thất bại!",
+          variant: "error",
+        });
+        return;
+      }
+
       setUsers((prev) =>
-        prev.map((u) => (u._id === user._id ? { ...u, status: newStatus } : u))
+        prev.map((u) =>
+          u._id === targetUser._id ? { ...u, status: newStatus } : u
+        )
       );
+
       setAlertInfo({
-        message: "Đã cập nhật trạng thái thành công!",
+        message: "Cập nhật trạng thái thành công!",
         variant: "success",
       });
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi khi cập nhật trạng thái:", err);
       setAlertInfo({
         message: "Cập nhật trạng thái thất bại!",
         variant: "error",
