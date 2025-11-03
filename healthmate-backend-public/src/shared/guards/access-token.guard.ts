@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { TokenService } from '../services/token.service';
 import {
@@ -18,11 +19,13 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Role, RoleDocument } from '../schemas/role.schema';
+import { SharedUserRepository } from '../repositories/shared-user.repo';
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
   constructor(
     private readonly tokenService: TokenService,
+    private readonly userRepo: SharedUserRepository,
 
     @InjectModel(Permission.name)
     private permissionModel: Model<PermissionDocument>,
@@ -78,6 +81,25 @@ export class AccessTokenGuard implements CanActivate {
       throw new ForbiddenException(
         'You do not have permission to access this resource',
       );
+    }
+    try {
+      if (permission.subscriptionType.length > 0) {
+        const user = await this.userRepo.findUnique({
+          _id: new Types.ObjectId(decodedAccessToken.userId),
+        });
+
+        const subType = user?.populated('subscriptionType')._id;
+
+        if (!permission.subscriptionType.includes(subType)) {
+          throw new ForbiddenException(
+            'You do not have permission to access this resource',
+          );
+        }
+      }
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException('User not found');
+      }
     }
 
     const role = await this.roleModel
