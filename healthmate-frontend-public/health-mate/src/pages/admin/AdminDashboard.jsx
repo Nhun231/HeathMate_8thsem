@@ -22,6 +22,7 @@ import {
   Assessment,
   Lock,
   MenuBook,
+  CreditCard,
 } from "@mui/icons-material";
 import { listCustomAndPublicIngredients } from "../../services/Ingredient.js";
 import { listDishes } from "../../services/Dish.js";
@@ -31,6 +32,7 @@ import PermissionManagement from "../../components/admin/PermissionManagement.js
 import UserManagement from "../../components/admin/UserManagement.jsx";
 import { getUserStats } from "../../services/AdminService.js";
 import ExpertCertificateManagement from "../../components/admin/ExpertCertificateManagement.jsx";
+import SubcriptionManagement from "../../components/admin/SubcriptionManagement.jsx";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -80,11 +82,11 @@ const AdminDashboard = () => {
       icon: <Restaurant />,
       component: <IngredientManagement />,
     },
-      {
-          label: 'Quản lý món ăn',
-          icon: <MenuBook />,
-          component: <DishManagement />,
-      },
+    {
+      label: 'Quản lý món ăn',
+      icon: <MenuBook />,
+      component: <DishManagement />,
+    },
     {
       label: "Quản lý quyền",
       icon: <Lock />,
@@ -108,6 +110,11 @@ const AdminDashboard = () => {
       label: "Quản lý chứng chỉ chuyên gia",
       icon: <Assessment />,
       component: <ExpertCertificateManagement />,
+    },
+    {
+      label: "Quản lý các gói khuyến mãi ",
+      icon: <CreditCard />,
+      component: <SubcriptionManagement />,
     },
   ];
 
@@ -276,7 +283,7 @@ const AdminDashboard = () => {
                       <CircularProgress size={24} />
                     ) : (
                       // quickStats.pendingTransactions
-                        0
+                      0
                     )}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#666" }}>
