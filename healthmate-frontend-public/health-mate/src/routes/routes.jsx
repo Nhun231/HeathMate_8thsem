@@ -27,6 +27,7 @@ import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
 import ExpertChatPage from "../pages/expert/ExpertChatPage.jsx";
 import CustomerChatPage from "../pages/customer/CustomerChatPage.jsx";
 import RequireRole from "../components/common/RequireRole.jsx";
+import RequireCalculation from "../components/common/RequireCalculation.jsx";
 import ExpertUpload from "../components/expert/UploadCertificate.jsx";
 import RegisterExpert from "../components/expert/ExpertRegister.jsx";
 import ViewSubscriptions from "../components/subscription/ViewSubscription.jsx";
@@ -98,7 +99,11 @@ const router = createBrowserRouter([
           // },
           {
             path: "/customer-chat",
-            element: <CustomerChatPage />,
+            element: (
+              <RequireCalculation>
+                <CustomerChatPage />
+              </RequireCalculation>
+            ),
           },
           {
             path: "/expert-chat",
@@ -114,28 +119,46 @@ const router = createBrowserRouter([
           },
           {
             path: "/customer-homepage",
-            element: <CustomerPage />,
+            element: (
+              <RequireCalculation>
+                <CustomerPage />
+              </RequireCalculation>
+            ),
           },
           {
             path: "/set-goal",
-            element: <SetGoal />,
+            element: (
+              <RequireCalculation>
+                <SetGoal />
+              </RequireCalculation>
+            ),
           },
           {
             path: "/dietplan",
-            element: <DietPlan />,
+            element: (
+              <RequireCalculation>
+                <DietPlan />
+              </RequireCalculation>
+            ),
           },
           {
             path: "/dietplan/progress",
-            element: <DietPlanProgress />,
+            element: (
+              <RequireCalculation>
+                <DietPlanProgress />
+              </RequireCalculation>
+            ),
           },
           {
             path: "/diary",
             element: (
-              <RequireRole allowedRoles={["Customer"]}>
-                <DiaryProvider>
-                  <FoodDiary />
-                </DiaryProvider>
-              </RequireRole>
+              <RequireCalculation>
+                <RequireRole allowedRoles={["Customer"]}>
+                  <DiaryProvider>
+                    <FoodDiary />
+                  </DiaryProvider>
+                </RequireRole>
+              </RequireCalculation>
             ),
           },
           //admin
@@ -169,11 +192,19 @@ const router = createBrowserRouter([
           },
           {
             path: "/water-infor",
-            element: <WaterInformation />,
+            element: (
+              <RequireCalculation>
+                <WaterInformation />
+              </RequireCalculation>
+            ),
           },
           {
             path: "/update-nutrient",
-            element: <UpdateNutrient />,
+            element: (
+              <RequireCalculation>
+                <UpdateNutrient />
+              </RequireCalculation>
+            ),
           },
           {
             path: "/view-subscriptions",
