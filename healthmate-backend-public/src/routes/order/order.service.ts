@@ -3,6 +3,7 @@ import { QueryType } from 'src/shared/schemas/request/request.schema';
 import { Types } from 'mongoose';
 import { OrderRepo } from './order.repo';
 import { CreateOrderBodyType } from './schema/request/order.request.schema';
+import { NotFoundOrderException } from './order.error';
 
 @Injectable()
 export class OrderService {
@@ -18,6 +19,10 @@ export class OrderService {
       new Types.ObjectId(orderId),
     );
 
+    if (!order) {
+      throw NotFoundOrderException;
+    }
+
     return order;
   }
 
@@ -26,9 +31,15 @@ export class OrderService {
   }
 
   async cancel(userId: string, orderId: string) {
-    return this.orderRepository.cancel(
+    const order = await this.orderRepository.detail(
       new Types.ObjectId(userId),
       new Types.ObjectId(orderId),
     );
+
+    if (!order) {
+      throw NotFoundOrderException;
+    }
+
+    return this.orderRepository.cancel(new Types.ObjectId(userId), order._id);
   }
 }

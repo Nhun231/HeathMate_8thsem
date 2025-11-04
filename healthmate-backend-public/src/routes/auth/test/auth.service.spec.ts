@@ -36,7 +36,7 @@ describe('AuthService', () => {
     verifyRefreshToken: jest.fn(),
   };
 
-  const rolesService = { getClientRole: jest.fn() };
+  const rolesService = { getCustomerRole: jest.fn() };
 
   const sharedUserRepository = { findUnique: jest.fn() };
 
@@ -85,7 +85,7 @@ describe('AuthService', () => {
     };
 
     it('should register successfully', async () => {
-      rolesService.getClientRole.mockResolvedValue('clientRoleId');
+      rolesService.getCustomerRole.mockResolvedValue('clientRoleId');
       jest
         .spyOn(authService, 'validateVerificationCode')
         .mockResolvedValue({} as any);
@@ -100,7 +100,7 @@ describe('AuthService', () => {
     });
 
     it('should throw EmailAlreadyExistsException on duplicate email', async () => {
-      rolesService.getClientRole.mockResolvedValue('clientRoleId');
+      rolesService.getCustomerRole.mockResolvedValue('clientRoleId');
       jest
         .spyOn(authService, 'validateVerificationCode')
         .mockResolvedValue({} as any);

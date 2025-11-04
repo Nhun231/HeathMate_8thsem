@@ -8,7 +8,6 @@ import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
 import { OAuth2Client } from 'google-auth-library';
 import { Gender } from 'src/shared/constants/auth.constant';
 
-// ✅ Mock Google APIs
 jest.mock('googleapis', () => ({
   google: {
     auth: {
@@ -42,8 +41,6 @@ jest.mock('googleapis', () => ({
 
 describe('GoogleService', () => {
   let googleService: GoogleService;
-
-  // ✅ Mock dependencies
   const mockAuthRepository = {
     createUser: jest.fn(),
     createDevice: jest.fn(),
