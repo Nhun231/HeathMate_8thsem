@@ -220,16 +220,16 @@ const CustomerProgress = () => {
 
   // Diet progress derived values
   const today = new Date();
-  const startDate = dietPlan ? new Date(dietPlan.startDate) : null;
+  const startDate = dietPlan && dietPlan.startDate ? new Date(dietPlan.startDate) : null;
   const endDate = dietPlan
     ? dietPlan.endDate
       ? new Date(dietPlan.endDate)
       : today
     : today;
-  const totalDays = dietPlan
+  const totalDays = dietPlan && startDate
     ? Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)))
     : 0;
-  const elapsedDays = dietPlan
+  const elapsedDays = dietPlan && startDate
     ? Math.max(
         0,
         Math.min(
@@ -238,7 +238,7 @@ const CustomerProgress = () => {
         )
       )
     : 0;
-  const dayPercent = dietPlan ? (elapsedDays / totalDays) * 100 : 0;
+  const dayPercent = dietPlan && totalDays > 0 ? (elapsedDays / totalDays) * 100 : 0;
   const dayData = [
     { name: "Đã qua", value: dayPercent },
     { name: "Còn lại", value: Math.max(0, 100 - dayPercent) },
@@ -614,10 +614,16 @@ const CustomerProgress = () => {
                 <XAxis
                   dataKey="date"
                   type="number"
-                  domain={[
-                    new Date(dietPlan.startDate).getTime(),
-                    new Date(dietPlan.endDate).getTime(),
-                  ]}
+                  domain={
+                    dietPlan && dietPlan.startDate && dietPlan.endDate
+                      ? [
+                          new Date(dietPlan.startDate).getTime(),
+                          new Date(dietPlan.endDate).getTime(),
+                        ]
+                      : startTime && endTime
+                      ? [startTime, endTime]
+                      : [today.getTime() - 7 * 24 * 60 * 60 * 1000, today.getTime()]
+                  }
                   ticks={ticks}
                   tickMargin={25}
                   tickFormatter={(timestamp) =>
@@ -698,7 +704,7 @@ const CustomerProgress = () => {
               <Typography variant="h6" mb={2}>
                 Calories trung bình
               </Typography>
-              {(() => {
+              {dietPlan && dietPlan.dailyCalories ? (() => {
                 const diff = avgCalories - dietPlan.dailyCalories;
                 let color = "#4CAF50";
                 if (diff < -150) color = "#FFC107";
@@ -753,7 +759,11 @@ const CustomerProgress = () => {
                     </Typography>
                   </>
                 );
-              })()}
+              })() : (
+                <Typography variant="body1" color="text.secondary">
+                  Chưa có kế hoạch ăn uống
+                </Typography>
+              )}
             </Box>
           </Grid>
         </Grid>

@@ -21,13 +21,11 @@ import {
 } from '@mui/material';
 import {
   Send as SendIcon,
-  AttachFile as AttachFileIcon,
-  EmojiEmotions as EmojiIcon,
-  MoreVert as MoreVertIcon,
   OnlinePrediction as OnlineIcon,
   OfflineBolt as OfflineIcon,
   Person as PersonIcon,
   Refresh as RefreshIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import socketService from '../../services/SocketService';
 import chatService from '../../services/ChatService';
@@ -47,8 +45,14 @@ const ExpertChat = () => {
   // Refs
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const selectedCustomerRef = useRef(null);
   // Get current user from auth context
   const { user: currentUser, loading: authLoading } = useAuth();
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    selectedCustomerRef.current = selectedCustomer;
+  }, [selectedCustomer]);
 
 
   // Scroll to bottom of messages
@@ -63,16 +67,54 @@ const ExpertChat = () => {
     try {
       const userType = currentUser?.role === 'Customer' ? 'Customer' : 'NutritionExpert';
       const response = await chatService.getChatRooms(userType);
-      setChatRooms(response?.rooms || []);
+      const rooms = response?.rooms || [];
+      // Sort by lastMessageAt (newest first)
+      const sortedRooms = rooms.sort((a, b) => {
+        const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return timeB - timeA;
+      });
+      setChatRooms(sortedRooms);
     } catch (err) {
       setError('Không thể tải danh sách cuộc trò chuyện');
     }
   }, [currentUser?.role]);
 
+  // Update chat room when a new message is received
+  const updateChatRoomOnMessage = useCallback((message) => {
+    setChatRooms(prev => {
+      const roomIndex = prev.findIndex(room => room.roomId === message.roomId);
+      
+      if (roomIndex >= 0) {
+        // Update the room with new message info
+        const updatedRooms = [...prev];
+        updatedRooms[roomIndex] = {
+          ...updatedRooms[roomIndex],
+          lastMessage: message.content,
+          lastMessageAt: message.timestamp,
+        };
+        
+        // Move updated room to top and sort by lastMessageAt
+        const updatedRoom = updatedRooms[roomIndex];
+        const otherRooms = updatedRooms.filter((_, idx) => idx !== roomIndex);
+        
+        // Sort all rooms by lastMessageAt (newest first)
+        const allRooms = [updatedRoom, ...otherRooms].sort((a, b) => {
+          const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+          const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+          return timeB - timeA;
+        });
+        
+        return allRooms;
+      }
+      
+      return prev;
+    });
+  }, []);
+
   // Load messages for selected customer
   const loadMessages = async (roomId) => {
     try {
-      console.log('Loading messages for room:', roomId);
       setLoading(true);
       
       // Load existing messages from database
@@ -84,7 +126,6 @@ const ExpertChat = () => {
       // Scroll to bottom to show latest messages
       setTimeout(() => scrollToBottom(), 100);
     } catch (err) {
-      console.error(' Error loading messages:', err);
       setError('Không thể tải tin nhắn');
       setMessages([]); // Only clear on error
     } finally {
@@ -113,7 +154,7 @@ const ExpertChat = () => {
     loadInitialData();
   }, [authLoading, currentUser?._id, currentUser?.role, loadChatRooms]);
 
-  // Initialize socket connection
+  // Initialize socket connection and message handler
   useEffect(() => {
     if (!authLoading && currentUser && currentUser._id) {
       const socket = socketService.connect();
@@ -122,60 +163,110 @@ const ExpertChat = () => {
       // Join expert room
       socketService.joinExpertRoom(currentUser._id);
 
-      // Listen for messages
-      socketService.onMessage((message) => {
-        // Add message to state, replacing temp message if exists
-        setMessages(prev => {
-          // Check if this is updating a temp message (same content and recent timestamp)
-          const existingIndex = prev.findIndex(msg => 
-            msg.id?.startsWith('temp_') && 
-            msg.content === message.content &&
-            msg.senderId === message.senderId
-          );
-          
-          if (existingIndex >= 0) {
-            // Replace temp message with real one
-            const updated = [...prev];
-            updated[existingIndex] = message;
-            return updated;
-          }
-          
-          // Check if message already exists (by actual ID or timestamp + content + sender)
-          const exists = prev.some(msg => 
-            msg.id === message.id || msg._id === message._id ||
-            (msg.timestamp === message.timestamp && 
-             msg.content === message.content && 
-             msg.senderId === message.senderId)
-          );
-          
-          if (exists) {
-            return prev;
-          }
-          
-          return [...prev, message];
-        });
+      // Create message handler function that has access to latest state
+      const handleIncomingMessage = (message) => {
+        // Update chat rooms list with new message info
+        updateChatRoomOnMessage(message);
         
+        // Get current selected customer from ref (always up-to-date)
+        const currentSelectedCustomer = selectedCustomerRef.current;
+        
+        // Normalize roomId for comparison (convert to string and trim)
+        const messageRoomId = String(message.roomId || '').trim();
+        const selectedRoomId = currentSelectedCustomer ? String(currentSelectedCustomer.roomId || '').trim() : '';
+        
+        // Only add message if it's for the currently selected room
+        if (currentSelectedCustomer && messageRoomId && messageRoomId === selectedRoomId) {
+          // Use functional update to ensure we have latest state
+          setMessages(prev => {
+            // Create a deep copy to ensure React detects the change
+            const currentMessages = [...prev];
+            
+            // Check if this is updating a temp message (same content and recent timestamp)
+            const tempMessageIndex = currentMessages.findIndex(msg => 
+              msg.id?.startsWith('temp_') && 
+              msg.content === message.content &&
+              String(msg.senderId) === String(message.senderId)
+            );
+            
+            if (tempMessageIndex >= 0) {
+              // Replace temp message with real one - create new array
+              const updated = [...currentMessages];
+              updated[tempMessageIndex] = { ...message }; // Create new object reference
+              return updated;
+            }
+            
+            // Check if message already exists (by actual ID)
+            const existingMessage = currentMessages.find(msg => 
+              (msg.id && msg.id === message.id) || 
+              (msg._id && msg._id === message._id)
+            );
+            
+            if (existingMessage) {
+              return currentMessages; // Return same array reference if no change
+            }
+            
+            // Check if duplicate by content + timestamp + sender (within 1 second)
+            const recentDuplicate = currentMessages.find(msg => {
+              const timeDiff = Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime());
+              return timeDiff < 1000 && 
+                     msg.content === message.content && 
+                     String(msg.senderId) === String(message.senderId);
+            });
+            
+            if (recentDuplicate) {
+              return currentMessages;
+            }
+            
+            // Add new message - create completely new array with new message object
+            const newMessageObj = {
+              id: message.id || message._id || `msg_${Date.now()}_${Math.random()}`,
+              _id: message._id || message.id,
+              roomId: message.roomId,
+              senderId: message.senderId,
+              receiverId: message.receiverId,
+              content: message.content,
+              messageType: message.messageType || 'text',
+              timestamp: message.timestamp,
+              isRead: message.isRead || false
+            };
+            
+            return [...currentMessages, newMessageObj];
+          });
+          
+          // Force scroll after state update with multiple attempts
+          setTimeout(() => scrollToBottom(), 50);
+          setTimeout(() => scrollToBottom(), 150);
+          setTimeout(() => scrollToBottom(), 300);
+        }
+      };
+
+      // Register the message handler
+      socketService.onMessage(handleIncomingMessage);
+      
+      // Return cleanup function
+      return () => {
+        socketService.removeAllListeners();
+        socketService.disconnect();
+      };
+    }
+  }, [authLoading, currentUser?._id, updateChatRoomOnMessage]);
+
+  // Scroll to bottom when messages change - use messages.length as dependency to ensure updates
+  useEffect(() => {
+    if (messages.length > 0 && messagesContainerRef.current) {
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
         scrollToBottom();
+        // Also try after a short delay
+        setTimeout(() => scrollToBottom(), 100);
       });
     }
-
-    // Cleanup on unmount
-    return () => {
-      socketService.removeAllListeners();
-      socketService.disconnect();
-    };
-  }, [authLoading, currentUser?._id]);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  }, [messages.length, messages]);
 
   // Handle sending message (Pure WebSocket)
   const handleSendMessage = async () => {
-    
     if (!newMessage.trim() || !selectedCustomer || !currentUser) {
-      console.log('Expert: Validation failed - cannot send message');
       return;
     }
 
@@ -199,6 +290,14 @@ const ExpertChat = () => {
     };
     
     setMessages(prev => [...prev, tempMessage]);
+    
+    // Update chat room list immediately with temp message
+    updateChatRoomOnMessage({
+      roomId: roomId,
+      content: newMessage.trim(),
+      timestamp: tempMessage.timestamp,
+    });
+    
     setNewMessage('');
 
     try {
@@ -209,11 +308,7 @@ const ExpertChat = () => {
         content: newMessage.trim(),
         messageType: 'text',
       });
-
-      
-      console.log('Socket: Message sent successfully');
     } catch (err) {
-      console.error('Error sending message:', err);
       setError('Không thể gửi tin nhắn: ' + (err.response?.data?.message || err.message));
       // Remove the temp message if sending failed
       setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
@@ -231,11 +326,9 @@ const ExpertChat = () => {
     setMessages([]);
     
     const roomId = customerWithRoom.roomId;
-    console.log('🔌 Expert: Selecting chat room:', roomId);
     
     // Join the room via socket
     if (isConnected) {
-      console.log('Socket: Expert joining room:', roomId);
       socketService.joinRoom(roomId, currentUser._id);
     }
     
@@ -255,10 +348,9 @@ const ExpertChat = () => {
   const handleRefresh = async () => {
     if (currentUser && currentUser._id) {
       setLoading(true);
-        try {
-          await loadChatRooms();
-        } catch (err) {
-        console.error('Error during manual refresh:', err);
+      try {
+        await loadChatRooms();
+      } catch (err) {
         setError('Không thể làm mới dữ liệu');
       } finally {
         setLoading(false);
@@ -347,7 +439,7 @@ const ExpertChat = () => {
             gap: 2,
           }}
         >
-          <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} onClick={()=>(navigate(`customer-progress/:${selectedCustomer.id}`))}>
+          <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}>
             <PersonIcon />
           </Avatar>
           <Box>
@@ -461,9 +553,21 @@ const ExpertChat = () => {
                 </Typography>
               </Box>
               <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-                <IconButton size="small">
-                  <MoreVertIcon />
-                </IconButton>
+                <Tooltip title="Xem thông tin khách hàng">
+                  <IconButton 
+                    size="small"
+                    onClick={() => navigate(`/customer-progress/${selectedCustomer._id}`)}
+                    sx={{ 
+                      color: '#4CAF50',
+                      '&:hover': { 
+                        bgcolor: '#E8F5E9',
+                        color: '#45a049'
+                      }
+                    }}
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
+                </Tooltip>
               </Box>
             </Paper>
 
@@ -480,7 +584,7 @@ const ExpertChat = () => {
                 gap: 1,
               }}
             >
-              {messages.map((message, index) => {
+              {messages && messages.length > 0 ? messages.map((message, index) => {
                 // Handle both object and string senderId formats
                 const messageSenderId = typeof message.senderId === 'object' 
                   ? message.senderId?._id 
@@ -491,8 +595,11 @@ const ExpertChat = () => {
                 const prevMessage = index > 0 ? messages[index - 1] : null;
                 const showDateHeader = !prevMessage || isDifferentDay(prevMessage.timestamp, message.timestamp);
                 
+                // Create unique key for message
+                const messageKey = message.id || message._id || `msg_${message.timestamp}_${index}_${message.content?.substring(0, 10)}`;
+                
                 return (
-                  <React.Fragment key={message.id}>
+                  <React.Fragment key={messageKey}>
                     {showDateHeader && (
                       <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
                         <Chip 
@@ -543,7 +650,7 @@ const ExpertChat = () => {
                           },
                         }}
                       >
-                        <Typography variant="body1">{message.content}</Typography>
+                        <Typography variant="body1">{message.content || '(No content)'}</Typography>
                         <Typography
                           variant="caption"
                           sx={{
@@ -553,17 +660,30 @@ const ExpertChat = () => {
                             textAlign: isOwnMessage ? 'right' : 'left',
                           }}
                         >
-                          {new Date(message.timestamp).toLocaleTimeString('vi-VN', {
+                          {message.timestamp ? new Date(message.timestamp).toLocaleTimeString('vi-VN', {
                             hour: '2-digit',
                             minute: '2-digit',
-                          })}
+                          }) : 'No timestamp'}
                         </Typography>
                       </Box>
                     </Box>
                   </Fade>
                   </React.Fragment>
                 );
-              })}
+              }) : (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  mt: 8,
+                  gap: 2 
+                }}>
+                  <Typography variant="h6" sx={{ color: '#666', textAlign: 'center' }}>
+                    Chưa có tin nhắn nào
+                  </Typography>
+                </Box>
+              )}
 
 
               <div ref={messagesEndRef} />
@@ -580,9 +700,6 @@ const ExpertChat = () => {
                 gap: 1,
               }}
             >
-              <IconButton size="small">
-                <AttachFileIcon />
-              </IconButton>
               <TextField
                 fullWidth
                 multiline
@@ -598,9 +715,6 @@ const ExpertChat = () => {
                   },
                 }}
               />
-              <IconButton size="small" disabled={!selectedCustomer}>
-                <EmojiIcon />
-              </IconButton>
               <IconButton
                 size="small"
                 onClick={handleSendMessage}
