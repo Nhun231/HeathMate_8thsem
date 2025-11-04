@@ -30,14 +30,12 @@ export class SubscriptionService {
 
   async update(id: string, data: UpdateSubscriptionSchemaType) {
     const subscription = await this.findOne(id);
-    if (!subscription) throw NotFoundSubscriptionException;
 
     return this.subscriptionRepo.update(subscription._id, data);
   }
 
   async delete(id: string): Promise<DeleteResult> {
     const subscription = await this.findOne(id);
-    if (!subscription) throw NotFoundSubscriptionException;
 
     return this.subscriptionRepo.delete(subscription._id);
   }
