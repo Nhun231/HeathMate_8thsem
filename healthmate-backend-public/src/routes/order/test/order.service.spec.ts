@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrderService } from '../order.service';
 import { OrderRepo } from '../order.repo';
