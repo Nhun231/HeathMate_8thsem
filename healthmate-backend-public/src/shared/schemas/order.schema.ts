@@ -24,7 +24,7 @@ export class Order {
     type: String,
     enum: [
       OrderStatus.PENDING,
-      OrderStatus.ACTIVE,
+      OrderStatus.SUCCESS,
       OrderStatus.EXPIRES,
       OrderStatus.CANCELLED,
       OrderStatus.FAILED,

@@ -76,7 +76,7 @@ export class IngredientService {
                 const now = new Date();
                 const activeOrder = await this.orderModel.findOne({
                     user: new Types.ObjectId(userId),
-                    status: OrderStatus.ACTIVE,
+                    status: OrderStatus.SUCCESS,
                     $or: [
                         { endDate: { $exists: false } },
                         { endDate: null },
