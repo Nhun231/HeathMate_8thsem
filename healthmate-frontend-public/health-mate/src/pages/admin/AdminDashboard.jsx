@@ -34,6 +34,7 @@ import { getUserStats } from "../../services/AdminService.js";
 import ExpertCertificateManagement from "../../components/admin/ExpertCertificateManagement.jsx";
 import PaymentManagement from "../../components/admin/PaymentManagement.jsx";
 import SubcriptionManagement from "../../components/admin/SubcriptionManagement.jsx";
+import {getAllPayments} from "../../services/PaymentService.js";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -42,7 +43,6 @@ const AdminDashboard = () => {
     totalDishes: 0,
     totalUsers: 0,
     pendingTransactions: 0,
-    totalCoinsDistributed: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -63,12 +63,14 @@ const AdminDashboard = () => {
           listCustomAndPublicIngredients({ limit: 1000 }),
           listDishes({ limit: 1000 }),
           getUserStats(),
+          getAllPayments() ,
         ]);
 
       setQuickStats({
         totalIngredients: ingredientsResponse.items?.length || 0,
         totalDishes: dishesResponse.total || 0,
         totalUsers: userStatsResponse.data?.totalUsers || 0,
+          pendingTransactions: transactionStatsResponse.total || 0,
       });
     } catch (error) {
       console.error("Error fetching quick stats:", error);
@@ -279,8 +281,7 @@ const AdminDashboard = () => {
                     {loading ? (
                       <CircularProgress size={24} />
                     ) : (
-                      // quickStats.pendingTransactions
-                        0
+                       quickStats.pendingTransactions
                     )}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#666" }}>
