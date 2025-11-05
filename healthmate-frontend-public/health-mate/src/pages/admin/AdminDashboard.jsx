@@ -22,6 +22,7 @@ import {
   Assessment,
   Lock,
   MenuBook,
+  CreditCard,
 } from "@mui/icons-material";
 import { listCustomAndPublicIngredients } from "../../services/Ingredient.js";
 import { listDishes } from "../../services/Dish.js";
@@ -32,6 +33,8 @@ import UserManagement from "../../components/admin/UserManagement.jsx";
 import { getUserStats } from "../../services/AdminService.js";
 import ExpertCertificateManagement from "../../components/admin/ExpertCertificateManagement.jsx";
 import PaymentManagement from "../../components/admin/PaymentManagement.jsx";
+import SubcriptionManagement from "../../components/admin/SubcriptionManagement.jsx";
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [quickStats, setQuickStats] = useState({
@@ -104,6 +107,11 @@ const AdminDashboard = () => {
       label: "Quản lý chứng chỉ chuyên gia",
       icon: <Assessment />,
       component: <ExpertCertificateManagement />,
+    },
+    {
+      label: "Quản lý các gói khuyến mãi ",
+      icon: <CreditCard />,
+      component: <SubcriptionManagement />,
     },
   ];
 
