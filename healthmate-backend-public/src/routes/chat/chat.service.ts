@@ -97,7 +97,7 @@ export class ChatService {
   }
 
   // Get messages for a chat room
-  async getMessages(roomId: string, page: number = 1, limit: number = 1000): Promise<MessageDocument[]> {
+  async getMessages(roomId: string, page: number = 1, limit: number = 100): Promise<MessageDocument[]> {
     try {
       const skip = (page - 1) * limit;
       const roomObjectId = new Types.ObjectId(roomId);
