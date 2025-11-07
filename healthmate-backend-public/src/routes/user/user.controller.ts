@@ -50,7 +50,7 @@ export class UserController {
     @ActiveUser('userId') userId: string,
     @Body() body: UpdateUserDTO,
   ) {
-    return this.usersService.updateUser(userId, body);
+    return this.usersService.updateUserCustomer(userId, body);
   }
 
   @Put(':id')

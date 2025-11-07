@@ -7,23 +7,19 @@ import {
   RefreshTokenPayloadCreate,
 } from '../types/jwt.type';
 import envConfig from '../utils/config';
+import { v4 as uuidv4 } from 'uuid';
+import { StringValue } from 'ms';
 
 @Injectable()
 export class TokenService {
-  private uuid: () => string;
-
-  constructor(private readonly jwtService: JwtService) {
-    void import('uuid').then((module) => {
-      this.uuid = module.v4;
-    });
-  }
+  constructor(private readonly jwtService: JwtService) {}
 
   signAccessToken(payload: AccessTokenPayloadCreate): string {
     return this.jwtService.sign(
-      { ...payload, uuid: this.uuid() },
+      { ...payload, uuid: uuidv4() },
       {
         secret: envConfig.ACCESS_TOKEN_SECRET,
-        expiresIn: envConfig.ACCESS_TOKEN_EXPIRES_IN,
+        expiresIn: envConfig.ACCESS_TOKEN_EXPIRES_IN as StringValue,
         algorithm: 'HS256',
       },
     );
@@ -31,10 +27,10 @@ export class TokenService {
 
   signRefreshToken(payload: RefreshTokenPayloadCreate) {
     return this.jwtService.sign(
-      { ...payload, uuid: this.uuid() },
+      { ...payload, uuid: uuidv4() },
       {
         secret: envConfig.REFRESH_TOKEN_SECRET,
-        expiresIn: envConfig.REFRESH_TOKEN_EXPIRES_IN,
+        expiresIn: envConfig.REFRESH_TOKEN_EXPIRES_IN as StringValue,
         algorithm: 'HS256',
       },
     );

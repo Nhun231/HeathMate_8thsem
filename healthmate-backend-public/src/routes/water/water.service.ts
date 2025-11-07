@@ -9,42 +9,83 @@ import {
 } from './schema/request/water.request.schema';
 import { Types } from 'mongoose';
 import {
+    NotFoundUserWaterDataException,
+    NotFoundWaterHistoryRecordException,
+    InvalidWaterAmountException,
     WaterHistoryUpdateNotAllowedException,
     WaterHistoryDeleteNotAllowedException,
+    ExceedDailyWaterLimitException,
 } from './water.error';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 @Injectable()
 export class WaterService {
+    private readonly MAX_SINGLE_ML = 1000; // tối đa mỗi lần thêm
+
     constructor(
         private readonly waterRepo: WaterRepository,
         private readonly calculateRepo: CalculationRepo,
     ) { }
 
+    /** Lấy ngày hiện tại theo múi giờ Việt Nam (YYYY-MM-DD) */
     private getTodayStringVN(): string {
-        const now = new Date();
-        // Tạo ngày theo giờ VN
-        const vnDate = new Date(
-            now.getTime() + 7 * 60 * 60 * 1000 // cộng 7 tiếng
-        );
-        const yyyy = vnDate.getUTCFullYear();
-        const mm = String(vnDate.getUTCMonth() + 1).padStart(2, '0');
-        const dd = String(vnDate.getUTCDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
+        return dayjs().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD');
     }
 
+    /** Lấy giờ hiện tại theo múi giờ Việt Nam (HH:mm) */
     private getCurrentTimeVN(): string {
-        const now = new Date();
-        const vnDate = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-        const hh = String(vnDate.getUTCHours()).padStart(2, '0');
-        const mm = String(vnDate.getUTCMinutes()).padStart(2, '0');
-        return `${hh}:${mm}`;
+        return dayjs().tz('Asia/Ho_Chi_Minh').format('HH:mm');
     }
 
+    /** Tính khoảng cách ngày (theo múi giờ VN) */
+    private getDiffDaysVN(date: string): number {
+        const now = dayjs().tz('Asia/Ho_Chi_Minh').startOf('day');
+        const record = dayjs.tz(date, 'Asia/Ho_Chi_Minh').startOf('day');
+        return now.diff(record, 'day');
+    }
+
+    /** Lấy dữ liệu nước trong ngày (tự tạo nếu chưa có) */
     async getWaterData(userId: Types.ObjectId, data?: GetWaterByDateType) {
         const date = data?.date || this.getTodayStringVN();
-
         let waterData = await this.waterRepo.findByUserAndDate(userId, date);
 
+        const latestCalc = await this.calculateRepo.findLatestByUserId(userId);
+        const targetWater = latestCalc ? Math.round(latestCalc.waterNeeded * 1000) : 2500; // ml
+
+        // Nếu chưa có thì tạo mới
+        if (!waterData) {
+            waterData = await this.waterRepo.create({
+                userId,
+                date,
+                target: targetWater,
+                consumed: 0,
+                unit: 'ml',
+                history: [],
+            });
+        }
+        // Nếu đã có nhưng target thay đổi -> cập nhật lại
+        else if (waterData.target !== targetWater) {
+            waterData = await this.waterRepo.update(userId, date, { target: targetWater });
+        }
+
+        return waterData;
+    }
+
+    /** Thêm lượng nước uống mới */
+    async addWaterIntake(userId: Types.ObjectId, data: AddWaterType) {
+        if (data.amount < 10 || data.amount > this.MAX_SINGLE_ML)
+            throw InvalidWaterAmountException;
+
+        const date = this.getTodayStringVN();
+        const time = this.getCurrentTimeVN();
+
+        // Lấy hoặc tạo waterData
+        let waterData = await this.waterRepo.findByUserAndDate(userId, date);
         if (!waterData) {
             const latestCalc = await this.calculateRepo.findLatestByUserId(userId);
             const targetWater = latestCalc ? Math.round(latestCalc.waterNeeded * 1000) : 2500;
@@ -59,62 +100,53 @@ export class WaterService {
             });
         }
 
-        return waterData;
-    }
+        // Kiểm tra tổng sau khi thêm
+        const maxAllowed = (waterData.target ?? 2500) + 1000;
+        const newTotal = (waterData.consumed ?? 0) + data.amount;
 
-    async addWaterIntake(userId: Types.ObjectId, data: AddWaterType) {
-        if (data.amount <= 0) throw new Error('Invalid water amount');
-
-        const date = this.getTodayStringVN();
-        const time = this.getCurrentTimeVN();
+        if (newTotal > maxAllowed) throw ExceedDailyWaterLimitException;
 
         return await this.waterRepo.addRecord(userId, date, { time, amount: data.amount });
     }
 
+    /** Cập nhật lượng nước của bản ghi cụ thể */
     async updateWaterAmount(userId: Types.ObjectId, data: UpdateWaterHistoryType) {
-        const recordDate = new Date(data.date);
-        const today = new Date();
-        const diffDays = Math.floor(
-            (today.getTime() - recordDate.getTime()) / (1000 * 60 * 60 * 24),
-        );
-        if (diffDays > 6) throw WaterHistoryUpdateNotAllowedException;
-        if (data.amount <= 0) throw new Error('Invalid water amount');
+        const diffDays = this.getDiffDaysVN(data.date);
+        if (diffDays > 7) throw WaterHistoryUpdateNotAllowedException;
+        if (data.amount < 10 || data.amount > this.MAX_SINGLE_ML)
+            throw InvalidWaterAmountException;
 
         const waterData = await this.waterRepo.findByUserAndDate(userId, data.date);
-        if (!waterData) return null;
+        if (!waterData) throw NotFoundUserWaterDataException;
 
-        // Tìm history item theo _id (recordId)
         const historyItem = waterData.history.find(h => h._id?.toString() === data.recordId);
-        if (!historyItem) return null;
+        if (!historyItem) throw NotFoundWaterHistoryRecordException;
+
+        // Tính tổng mới sau update
+        const maxAllowed = (waterData.target ?? 2500) + 1000;
+        const totalAfterUpdate =
+            (waterData.consumed ?? 0) - historyItem.amount + data.amount;
+        if (totalAfterUpdate > maxAllowed) throw InvalidWaterAmountException;
 
         return await this.waterRepo.updateHistoryAmount(
             userId,
             data.date,
             data.recordId,
-            data.amount
+            data.amount,
         );
     }
 
+    /** Xóa bản ghi uống nước cụ thể */
     async deleteWaterRecord(userId: Types.ObjectId, data: DeleteWaterHistoryType) {
-        const recordDate = new Date(data.date);
-        const today = new Date();
-        const diffDays = Math.floor(
-            (today.getTime() - recordDate.getTime()) / (1000 * 60 * 60 * 24),
-        );
-        if (diffDays > 6) throw WaterHistoryDeleteNotAllowedException;
+        const diffDays = this.getDiffDaysVN(data.date);
+        if (diffDays > 7) throw WaterHistoryDeleteNotAllowedException;
 
         const waterData = await this.waterRepo.findByUserAndDate(userId, data.date);
-        if (!waterData) return null;
+        if (!waterData) throw NotFoundUserWaterDataException;
 
-        // Xóa theo recordId
         const historyItem = waterData.history.find(h => h._id?.toString() === data.recordId);
-        if (!historyItem) return null;
+        if (!historyItem) throw NotFoundWaterHistoryRecordException;
 
-        return await this.waterRepo.deleteHistory(
-            userId,
-            data.date,
-            data.recordId
-        );
+        return await this.waterRepo.deleteHistory(userId, data.date, data.recordId);
     }
-
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SharedModule } from './shared/shared.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import CustomMyZodValidationPipe from './shared/pipes/custom-zod-validation.pipe';
 import { ZodSerializerInterceptor } from 'nestjs-zod';
@@ -17,6 +18,7 @@ import { DietPlanModule } from './routes/dietplan/dietplan.module';
 import { DishModule } from './routes/dish/dish.module';
 import { MealModule } from './routes/meal/meal.module';
 import { WaterModule } from './routes/water/water.module';
+import {ReminderModule} from './routes/reminder/reminder.module'
 @Module({
   imports: [
     MongooseModule.forRoot(
@@ -25,6 +27,7 @@ import { WaterModule } from './routes/water/water.module';
         envConfig.MONGODB_USER,
       ).replace('<db_password>', envConfig.MONGODB_PASSWORD),
     ),
+    ScheduleModule.forRoot(),
     SharedModule,
     AuthModule,
     CalculationModule,
@@ -33,7 +36,8 @@ import { WaterModule } from './routes/water/water.module';
     DietPlanModule,
     DishModule,
     MealModule,
-    WaterModule
+    WaterModule,
+    ReminderModule
   ],
   controllers: [AppController],
   providers: [
