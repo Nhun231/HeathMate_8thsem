@@ -1,4 +1,3 @@
-import { SubscriptionType } from 'src/shared/constants/subscription.constant';
 import z from 'zod';
 
 export const GetSubscriptionParamsSchema = z.object({
@@ -7,16 +6,14 @@ export const GetSubscriptionParamsSchema = z.object({
 
 export const CreateSubscriptionSchema = z.object({
   name: z.string(),
-  type: z.enum([SubscriptionType.INDEPTH, SubscriptionType.ADVANCED]),
+  type: z.string(),
   durationDays: z.number(),
   price: z.number(),
 });
 
 export const UpdateSubscriptionSchema = z.object({
   name: z.string().optional(),
-  type: z
-    .enum([SubscriptionType.INDEPTH, SubscriptionType.ADVANCED])
-    .optional(),
+  type: z.string().optional(),
   durationDays: z.number().optional(),
   price: z.number().optional(),
 });

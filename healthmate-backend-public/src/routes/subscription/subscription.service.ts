@@ -25,13 +25,21 @@ export class SubscriptionService {
   }
 
   async create(data: CreateSubscriptionSchemaType) {
-    return this.subscriptionRepo.create(data);
+    const subType = new Types.ObjectId(data.type);
+    return this.subscriptionRepo.create({ ...data, type: subType });
   }
 
   async update(id: string, data: UpdateSubscriptionSchemaType) {
     const subscription = await this.findOne(id);
 
-    return this.subscriptionRepo.update(subscription._id, data);
+    let subType = subscription.type;
+
+    if (data.type) subType = new Types.ObjectId(data.type);
+
+    return this.subscriptionRepo.update(subscription._id, {
+      ...data,
+      type: subType,
+    });
   }
 
   async delete(id: string): Promise<DeleteResult> {

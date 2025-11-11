@@ -5,7 +5,7 @@ import { SubscriptionType } from './subscriptionType.schema';
 @Schema({ timestamps: true })
 export class Subscription {
   @Prop({ type: String, required: true })
-  name: number;
+  name: string;
 
   @Prop({
     type: mongoose.Schema.Types.ObjectId,

@@ -122,7 +122,6 @@ describe('CalculationService', () => {
         userId,
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(service.update).toHaveBeenCalledWith(
         existing._id.toString(),
         expect.objectContaining({ weight: 70 }),
