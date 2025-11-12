@@ -33,6 +33,8 @@ import RegisterExpert from "../components/expert/ExpertRegister.jsx";
 import ViewSubscriptions from "../components/subscription/ViewSubscription.jsx";
 import PaymentSuccess from "../components/subscription/PaymentSucess.jsx";
 import BankInfo from "../components/bank/BankInfo.jsx";
+import PostManagement from "../components/admin/PostManagement.jsx";
+import PostForm from "../components/admin/PostForm.jsx";
 class AuthLayout extends Component {
   render() {
     return (
@@ -167,6 +169,30 @@ const router = createBrowserRouter([
             element: (
               <RequireRole allowedRoles={["Admin"]}>
                 <AdminDashboard />
+              </RequireRole>
+            ),
+          },
+          {
+            path: "/admin/posts",
+            element: (
+              <RequireRole allowedRoles={["Admin"]}>
+                <PostManagement />
+              </RequireRole>
+            ),
+          },
+          {
+            path: "/admin/posts/add",
+            element: (
+              <RequireRole allowedRoles={["Admin"]}>
+                <PostForm />
+              </RequireRole>
+            ),
+          },
+          {
+            path: "/admin/posts/edit/:postId",
+            element: (
+              <RequireRole allowedRoles={["Admin"]}>
+                <PostForm />
               </RequireRole>
             ),
           },

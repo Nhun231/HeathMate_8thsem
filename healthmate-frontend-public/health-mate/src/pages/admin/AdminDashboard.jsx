@@ -23,6 +23,7 @@ import {
   Lock,
   MenuBook,
   CreditCard,
+  Article,
 } from "@mui/icons-material";
 import { listCustomAndPublicIngredients } from "../../services/Ingredient.js";
 import { listDishes } from "../../services/Dish.js";
@@ -34,6 +35,7 @@ import { getUserStats } from "../../services/AdminService.js";
 import ExpertCertificateManagement from "../../components/admin/ExpertCertificateManagement.jsx";
 import PaymentManagement from "../../components/admin/PaymentManagement.jsx";
 import SubcriptionManagement from "../../components/admin/SubcriptionManagement.jsx";
+import PostManagement from "../../components/admin/PostManagement.jsx";
 import {getAllPayments} from "../../services/PaymentService.js";
 
 const AdminDashboard = () => {
@@ -114,6 +116,11 @@ const AdminDashboard = () => {
       label: "Quản lý các gói khuyến mãi ",
       icon: <CreditCard />,
       component: <SubcriptionManagement />,
+    },
+    {
+      label: "Quản lý bài viết",
+      icon: <Article />,
+      component: <PostManagement />,
     },
   ];
 

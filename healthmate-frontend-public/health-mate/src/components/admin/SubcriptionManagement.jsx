@@ -21,7 +21,7 @@ import {
 } from "@mui/material";
 import { Add, Edit } from "@mui/icons-material";
 import {
-    listPremiumPackage,
+    listSubscriptions,
     createSubscription,
     updateSubscription,
 } from "../../services/SubscriptionService";
@@ -47,7 +47,7 @@ export default function ManageSubscription() {
 
     const fetchData = async () => {
         try {
-            const data = await listPremiumPackage();
+            const data = await listSubscriptions();
             setSubscriptions(data.data || data);
         } catch (err) {
             console.error("Lỗi khi tải danh sách gói:", err);
