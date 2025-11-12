@@ -47,7 +47,7 @@ export default function ManageSubscription() {
 
     const fetchData = async () => {
         try {
-            const data = await listPremiumPackage();
+            const data = await listSubscriptions();
             setSubscriptions(data.data || data);
         } catch (err) {
             console.error("Lỗi khi tải danh sách gói:", err);
