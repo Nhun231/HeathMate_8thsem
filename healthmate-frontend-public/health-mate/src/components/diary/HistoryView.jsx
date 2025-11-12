@@ -68,7 +68,7 @@ function HistoryView() {
       <Card
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", sm: "row" }, // cột trên mobile, hàng ngang trên desktop
+          flexDirection: { xs: "column", sm: "row" }, 
           p: 2,
           mb: 3,
           borderRadius: 2,

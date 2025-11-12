@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
 import { FilterQuery, Model } from 'mongoose';
 import { QueryType } from '../schemas/request/request.schema';
 
-@Injectable()
-export class QueryBuilderService<T> {
+type PopulateField = string | { path: string; select?: string };
+
+export class QueryBuilder<T> {
   constructor(
     private readonly model: Model<T>,
     private readonly allowedFilters: string[] = [],
-  ) { }
+  ) {}
 
   async query({
     query,
@@ -16,7 +16,7 @@ export class QueryBuilderService<T> {
   }: {
     query: QueryType;
     allowedFilters?: string[];
-    populateFields?: string[];
+    populateFields?: PopulateField[];
   }) {
     const { page = 1, limit = 10, sort, ...queryFilters } = query;
 
@@ -81,7 +81,13 @@ export class QueryBuilderService<T> {
       .select('-password');
 
     if (populateFields) {
-      mongooseQuery.populate(populateFields);
+      for (const field of populateFields) {
+        if (typeof field === 'string') {
+          mongooseQuery.populate(field);
+        } else {
+          mongooseQuery.populate(field);
+        }
+      }
     }
 
     const [results, total] = await Promise.all([

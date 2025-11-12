@@ -34,7 +34,11 @@ export class Dish {
         deprecated?: boolean;
     }>;
 
-    // Calculated nutritional values per serving
+    // Total weight of all ingredients (in grams)
+    @Prop({ required: true, default: 0 })
+    totalIngredientWeight: number;
+
+    // Calculated nutritional values per total ingredient weight
     @Prop({ required: true, default: 0 })
     totalCalories: number;
 

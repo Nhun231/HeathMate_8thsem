@@ -8,12 +8,16 @@ import { RolesService } from './role.service';
 import { AuthService } from './auth.service';
 import { GoogleAuthStateType } from './schema/request/auth.request.schema';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
-import { Gender, GenderType } from 'src/shared/constants/auth.constant';
+import {
+  Gender,
+  GenderType,
+  UserStatus,
+} from 'src/shared/constants/auth.constant';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class GoogleService {
   private oauth2Client: OAuth2Client;
-  private uuid: () => string;
 
   constructor(
     private readonly authRepository: AuthRepository,
@@ -27,10 +31,6 @@ export class GoogleService {
       envConfig.GOOGLE_CLIENT_SECRET,
       envConfig.GOOGLE_REDIRECT_URI,
     );
-
-    void import('uuid').then((module) => {
-      this.uuid = module.v4;
-    });
   }
 
   getGoogleAuthUrl({ userAgent, ip }: GoogleAuthStateType) {
@@ -84,8 +84,8 @@ export class GoogleService {
 
       // If not user, create new account
       if (!user) {
-        const clientRoleId = await this.rolesService.getClientRole();
-        const randomPassword = this.uuid();
+        const roleId = await this.rolesService.getCustomerRole();
+        const randomPassword = uuidv4();
         const hashedPassword =
           await this.hashingService.hashPassword(randomPassword);
 
@@ -94,10 +94,11 @@ export class GoogleService {
           fullname: profile.name || 'No Name',
           password: hashedPassword,
           phoneNumber: '',
-          roleId: clientRoleId,
+          roleId: roleId,
           avatar: profile.picture,
           gender: profile.gender || Gender.Male,
           dob: profile.birthday ? new Date(profile.birthday) : undefined,
+          status: UserStatus.Active,
         });
       }
 

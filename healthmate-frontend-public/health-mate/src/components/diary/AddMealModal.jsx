@@ -18,7 +18,7 @@ import AvailableDishes from "./AvailableDishes"
 import CreateNewDish from "./CreateNewDish"
 import IngredientsTab from "./IngredientsTab"
 import CustomIngredientsTab from "./CustomIngredientsTab"
-import IngredientService from "../../services/Ingredient"
+import { listCustomAndPublicIngredients } from "../../services/Ingredient"
 
 function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate, onMealAdded }) {
   const [activeTab, setActiveTab] = useState(0)
@@ -41,7 +41,7 @@ function AddMealModal({ open, onClose, mealType, onAddDish, selectedDate, onMeal
     try {
       updateCreateDishState({ ingredientsLoading: true })
       // Load all ingredients without pagination - use a high limit to get everything
-      const response = await IngredientService.list({ limit: 1000 })
+      const response = await listCustomAndPublicIngredients({ limit: 1000 })
       console.log('Loaded ingredients:', response.items?.length || 0, 'total')
       setCreateDishState(prev => ({
         ...prev,

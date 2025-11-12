@@ -3,8 +3,8 @@ import { useState, useEffect } from "react"
 import { Box, Typography, Button, Avatar, CircularProgress, Alert, Pagination, TextField, FormControl, InputLabel, Select, MenuItem, Chip } from "@mui/material"
 import { Add as AddIcon, FilterList as FilterIcon } from "@mui/icons-material"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
-import IngredientService from "../../services/Ingredient"
-import MealService from "../../services/Meal"
+import { listCustomAndPublicIngredients } from "../../services/Ingredient"
+import { addIngredientToMeal } from "../../services/Meal"
 
 function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient }) {
   const [ingredients, setIngredients] = useState([])
@@ -53,7 +53,7 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient }) {
           params.type = selectedTypes[0] // Backend supports single type filter for now
         }
         
-        const response = await IngredientService.list(params)
+        const response = await listCustomAndPublicIngredients(params)
         setIngredients(response.items || [])
         setTotalPages(response.totalPages || 1)
         setSummary(response.summary || { total: 0, public: 0, custom: 0 })
@@ -97,7 +97,7 @@ function IngredientsTab({ searchQuery, mealType, onClose, onAddIngredient }) {
       
       // Add ingredient to meal via backend API (use current date)
       const currentDate = new Date() // Use current date object
-      const mealData = await MealService.addIngredientToMeal(
+      const mealData = await addIngredientToMeal(
         ingredient._id,
         ingredientQuantity,
         currentDate, // Pass Date object, MealService will convert to ISO

@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { Box, Typography, Button, Avatar, CircularProgress, Alert, Chip } from "@mui/material"
 import { Add as AddIcon } from "@mui/icons-material"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
-import DishService from "../../services/Dish"
-import MealService from "../../services/Meal"
+import { listDishes } from "../../services/Dish"
+import { addDishToMeal } from "../../services/Meal"
 
 function AvailableDishes({ searchQuery, mealType, onClose, onAddDish }) {
   const [dishes, setDishes] = useState([])
@@ -29,7 +29,7 @@ function AvailableDishes({ searchQuery, mealType, onClose, onAddDish }) {
         
         // Remove meal type filtering - dishes can be added to any meal
         
-        const response = await DishService.list(params)
+        const response = await listDishes(params)
         setDishes(response.items || [])
         
       } catch (err) {
@@ -70,9 +70,10 @@ function AvailableDishes({ searchQuery, mealType, onClose, onAddDish }) {
       }
       
       const currentDate = new Date()
-      const mealData = await MealService.addDishToMeal(
+      const defaultQuantity = dish.totalIngredientWeight || 100 // Use actual total ingredient weight as default
+      const mealData = await addDishToMeal(
         dish._id,
-        100, // Default serving size
+        defaultQuantity,
         currentDate,
         mealTypeMap[mealType] || 'snack'
       )

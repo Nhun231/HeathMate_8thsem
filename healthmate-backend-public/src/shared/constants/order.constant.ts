@@ -1,0 +1,7 @@
+export const OrderStatus = {
+  PENDING: 'PENDING_PAYMENT',
+  SUCCESS: 'SUCCESS',
+  EXPIRES: 'EXPIRES',
+  CANCELLED: 'CANCELLED',
+  FAILED: 'FAILED',
+} as const;

@@ -19,10 +19,11 @@ import {
   UpdateUserDTO,
 } from './user.dto';
 import { DeleteResult } from 'mongoose';
+import {IsPublic} from "../../shared/decorators/auth.decorator";
 
 @Controller('v1/users')
 export class UserController {
-  constructor(private readonly usersService: UserService) { }
+  constructor(private readonly usersService: UserService) {}
 
   @Get()
   async getUsers(@Query() query: Record<string, string>) {
@@ -35,15 +36,19 @@ export class UserController {
     return this.usersService.getUserById(userId);
   }
 
-  @Get(':id')
+  @Get(':userId')
+  @IsPublic()
   async getUser(@Param() params: GetUserDetailParamsDTO) {
-    return this.usersService.getUserById(params.id);
+    return this.usersService.getUserById(params.userId);
   }
 
-  @Post()
-  async createUser(@Body() body: CreateUserDTO) {
-    return this.usersService.createUser(body);
-  }
+    @Post()
+    async createUser(
+        @Body() body: CreateUserDTO,
+        @ActiveUser('userId') activeUserId: string,
+    ) {
+        return this.usersService.createUser(body, activeUserId);
+    }
 
   @Put('me')
   async updateCurrentUser(
@@ -53,16 +58,20 @@ export class UserController {
     return this.usersService.updateUserCustomer(userId, body);
   }
 
-  @Put(':id')
+  @Put(':userId')
   async updateUser(
     @Param() params: GetUserDetailParamsDTO,
     @Body() body: UpdateUserDTO,
+    @ActiveUser('userId') activeUserId: string,
   ) {
-    return this.usersService.updateUser(params.id, body);
+    return this.usersService.updateUser(params.userId, body, activeUserId);
   }
 
-  @Delete(':id')
-  async deleteUser(@Param() params: DeleteUserDTO): Promise<DeleteResult> {
-    return this.usersService.deleteUser(params.id);
+  @Delete(':userId')
+  async deleteUser(
+    @Param() params: DeleteUserDTO,
+    @ActiveUser('userId') activeUserId: string,
+  ): Promise<DeleteResult> {
+    return this.usersService.deleteUser(params.userId, activeUserId);
   }
 }

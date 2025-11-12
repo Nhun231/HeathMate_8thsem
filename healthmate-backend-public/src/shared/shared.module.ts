@@ -3,7 +3,7 @@ import { HashingService } from './services/hashing.service';
 import { TokenService } from './services/token.service';
 import { JwtModule } from '@nestjs/jwt';
 import { AccessTokenGuard } from './guards/access-token.guard';
-import { APIKeyGuard } from './guards/api-key.guard';
+import { PaymentAPIKeyGuard } from './guards/payment-api-key.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthenticationGuard } from './guards/authentication.guard';
 import { SharedUserRepository } from './repositories/shared-user.repo';
@@ -22,6 +22,8 @@ import {
 } from './schemas/verificationCode.schema';
 import { NutrientsCalculatorService } from './services/nutrients-calculator.service';
 import { SharedRoleRepository } from './repositories/shared-role.repo';
+import { Permission, PermissionSchema } from './schemas/permission.schema';
+import { S3Service } from './services/s3.service';
 
 const sharedServices = [
   TokenService,
@@ -30,6 +32,7 @@ const sharedServices = [
   NutrientsCalculatorService,
   SharedUserRepository,
   SharedRoleRepository,
+  S3Service,
 ];
 
 @Global()
@@ -37,7 +40,7 @@ const sharedServices = [
   providers: [
     ...sharedServices,
     AccessTokenGuard,
-    APIKeyGuard,
+    PaymentAPIKeyGuard,
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,
@@ -54,7 +57,10 @@ const sharedServices = [
     MongooseModule.forFeature([
       { name: VerificationCode.name, schema: VerificationCodeSchema },
     ]),
+    MongooseModule.forFeature([
+      { name: Permission.name, schema: PermissionSchema },
+    ]),
     JwtModule,
   ],
 })
-export class SharedModule { }
+export class SharedModule {}

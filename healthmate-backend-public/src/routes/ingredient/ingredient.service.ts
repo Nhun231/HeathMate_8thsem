@@ -9,13 +9,16 @@ import {IngredientForbiddenError, IngredientNotFoundError} from "./ingredient.er
 import { Rolename } from '../../shared/constants/role.constant';
 import { Types } from 'mongoose';
 import { IngredientRepo } from './ingredient.repo';
+import { Order, OrderDocument } from '../../shared/schemas/order.schema';
+import { OrderStatus } from '../../shared/constants/order.constant';
 
 
 @Injectable()
 export class IngredientService {
     constructor(
         private readonly ingredientRepo: IngredientRepo,
-        @InjectModel('Dish') private dishModel: Model<any>
+        @InjectModel('Dish') private dishModel: Model<any>,
+        @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     ) {}
 
     private validateObjectId(id: string): void {
@@ -67,19 +70,43 @@ export class IngredientService {
         }
 
         try {
-            const result = await this.ingredientRepo.findAllPaginated(page, limit, filter, search);
+            // If customer and not subscribed, cap to 50 results (page 1)
+            let capTo50 = false;
+            if (roleName === Rolename.Customer && userId) {
+                const now = new Date();
+                const activeOrder = await this.orderModel.findOne({
+                    user: new Types.ObjectId(userId),
+                    status: OrderStatus.SUCCESS,
+                    $or: [
+                        { endDate: { $exists: false } },
+                        { endDate: null },
+                        { endDate: { $gte: now } },
+                    ],
+                }).lean().exec();
+                capTo50 = !activeOrder;
+            }
+
+            const effectivePage = capTo50 ? 1 : page;
+            const effectiveLimit = capTo50 ? 50 : limit;
+
+            const result = await this.ingredientRepo.findAllPaginated(effectivePage, effectiveLimit, filter, search);
 
             if (result.total === 0) {
                 throw new IngredientNotFoundError('No ingredients found with the given filter');
             }
 
-            return {
-                items: result.items,
-                total: result.total,
-                page: result.page,
-                limit: result.limit,
-                totalPages: result.totalPages,
-            };
+            // If capped, ensure total reflects cap and single page
+            if (capTo50) {
+                return {
+                    items: result.items,
+                    total: Math.min(result.total, 50),
+                    page: 1,
+                    limit: 50,
+                    totalPages: 1,
+                };
+            }
+
+            return result;
         } catch (error) {
             if (error instanceof IngredientNotFoundError) {
                 throw error;
@@ -271,6 +298,16 @@ export class IngredientService {
             }
             console.error('[IngredientService.delete] Unexpected error:', error);
             throw new Error('Failed to delete ingredient');
+        }
+    }
+
+    async getDistinctTypes(): Promise<string[]> {
+        try {
+            const types = await this.ingredientRepo.distinct('type');
+            return types.filter(type => type && type.trim() !== '').sort();
+        } catch (error) {
+            console.error('[IngredientService.getDistinctTypes] Unexpected error:', error);
+            throw new Error('Failed to fetch ingredient types');
         }
     }
 }

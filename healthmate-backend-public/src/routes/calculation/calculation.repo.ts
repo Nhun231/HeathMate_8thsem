@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Calculation, CalculationDocument } from './schema/calculation.schema';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { DeleteResult } from 'mongodb';
+import { DeleteResult } from 'mongoose';
 
 @Injectable()
 export class CalculationRepo {
   constructor(
     @InjectModel(Calculation.name)
     private calculationModel: Model<CalculationDocument>,
-  ) { }
+  ) {}
 
   async create(calculation: Calculation): Promise<Calculation> {
     return await this.calculationModel.create(calculation);
@@ -47,13 +47,11 @@ export class CalculationRepo {
 
   // Find lastest calculation record by userId
   async findLatestByUserId(
-    userId: Types.ObjectId
+    userId: Types.ObjectId,
   ): Promise<CalculationDocument | null> {
     return this.calculationModel
       .findOne({ userId })
       .sort({ createdAt: -1 })
       .exec();
-
   }
-
 }

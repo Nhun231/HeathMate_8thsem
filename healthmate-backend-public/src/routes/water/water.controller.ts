@@ -5,7 +5,8 @@ import {
     Get,
     Post,
     Put,
-    Query
+    Query,
+    Param
 } from '@nestjs/common';
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
 import { WaterService } from './water.service';
@@ -16,6 +17,8 @@ import {
     DeleteWaterHistoryDto
 } from './water.dto';
 import { Types } from 'mongoose';
+import {IsPublic} from "../../shared/decorators/auth.decorator";
+
 
 
 @Controller('v1/water')
@@ -30,6 +33,14 @@ export class WaterController {
     ) {
         return this.waterService.getWaterData(userId, query);
     }
+    @Get(':userId')
+    @IsPublic()
+    async getWaterDataById(
+        @Param('userId') userId: Types.ObjectId,
+        @Query() query?: GetWaterByDateDto
+    ) {
+        return this.waterService.getWaterData(userId, query);
+        }
 
     // Thêm lượng nước uống mới
     @Post()

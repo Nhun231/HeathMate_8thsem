@@ -13,11 +13,24 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CalculationModule } from './routes/calculation/calculation.module';
 import { UserModule } from './routes/user/user.module';
 import envConfig from './shared/utils/config';
-import { IngredientModule } from "./routes/ingredient/ingredient.module";
+import { IngredientModule } from './routes/ingredient/ingredient.module';
 import { DietPlanModule } from './routes/dietplan/dietplan.module';
 import { DishModule } from './routes/dish/dish.module';
 import { MealModule } from './routes/meal/meal.module';
 import { WaterModule } from './routes/water/water.module';
+import { PermissionModule } from './routes/permission/permission.module';
+import { MediaModule } from './routes/media/media.module';
+import { ExpertCertificateModule } from './routes/expert-certificate/expert-certificate.module';
+import { AiModule } from './routes/ai/ai.module';
+import { RoleModule } from './routes/role/role.module';
+import { ProfileModule } from './routes/profile/profile.module';
+import { OrderModule } from './routes/order/order.module';
+import { SubscriptionModule } from './routes/subscription/subscription.module';
+import { PaymentModule } from './routes/payment/payment.module';
+import { BullModule } from '@nestjs/bullmq';
+
+import { ChatModule } from './routes/chat/chat.module';
+import { BankInfoModule } from './routes/bank-info/bankinfo.module';
 import {ReminderModule} from './routes/reminder/reminder.module'
 @Module({
   imports: [
@@ -27,6 +40,11 @@ import {ReminderModule} from './routes/reminder/reminder.module'
         envConfig.MONGODB_USER,
       ).replace('<db_password>', envConfig.MONGODB_PASSWORD),
     ),
+    BullModule.forRoot({
+      connection: {
+        url: envConfig.REDIS_URI,
+      },
+    }),
     ScheduleModule.forRoot(),
     SharedModule,
     AuthModule,
@@ -36,8 +54,19 @@ import {ReminderModule} from './routes/reminder/reminder.module'
     DietPlanModule,
     DishModule,
     MealModule,
+    AiModule,
+    PermissionModule,
+    MediaModule,
+    ExpertCertificateModule,
+    RoleModule,
+    ProfileModule,
+    ChatModule,
     WaterModule,
-    ReminderModule
+    ReminderModule,
+    OrderModule,
+    SubscriptionModule,
+    PaymentModule,
+    BankInfoModule
   ],
   controllers: [AppController],
   providers: [
@@ -60,4 +89,4 @@ import {ReminderModule} from './routes/reminder/reminder.module'
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

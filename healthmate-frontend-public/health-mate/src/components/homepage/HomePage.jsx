@@ -243,7 +243,6 @@ const HomePage = () => {
                 </Grid>
             </Box>
 
-
             {/* Hoạt động */}
             <Box sx={{ px: { xs: 2, md: 8 }, py: 8, backgroundColor: "#e4fae0ff", mb: 5 }}>
                 <Typography
@@ -350,6 +349,94 @@ const HomePage = () => {
                         </Grid>
                     ))}
                 </Grid>
+            </Box>
+
+            {/* --- Đăng ký trở thành chuyên gia --- */}
+            <Box
+                sx={{
+                    px: { xs: 3, md: 10 },
+                    py: { xs: 8, md: 12 },
+                    background: "linear-gradient(145deg, #e3f8e6 0%, #f7fff9 100%)",
+                    textAlign: "center",
+                    borderTop: "1px solid #d6efd8",
+                }}
+            >
+                <Box
+                    sx={{
+                        maxWidth: "850px",
+                        mx: "auto",
+                        p: { xs: 4, md: 6 },
+                        backgroundColor: "#ffffff",
+                        borderRadius: "28px",
+                        boxShadow: "0 10px 30px rgba(0, 128, 0, 0.08)",
+                        position: "relative",
+                        overflow: "hidden",
+                        "&::before": {
+                            content: '""',
+                            position: "absolute",
+                            top: "-80px",
+                            right: "-80px",
+                            width: "180px",
+                            height: "180px",
+                            background: "rgba(23,137,31,0.1)",
+                            borderRadius: "50%",
+                            filter: "blur(60px)",
+                        },
+                    }}
+                >
+                    <Typography
+                        variant="h4"
+                        fontWeight={700}
+                        sx={{
+                            color: "#0a7a28",
+                            mb: 3,
+                            fontSize: { xs: "1.9rem", md: "2.4rem" },
+                            letterSpacing: 0.5,
+                        }}
+                    >
+                        Trở Thành Chuyên Gia HealthMate 🌿
+                    </Typography>
+
+                    <Typography
+                        variant="body1"
+                        sx={{
+                            mb: 5,
+                            color: "#333",
+                            fontSize: { xs: "1rem", md: "1.1rem" },
+                            lineHeight: 1.8,
+                            maxWidth: "720px",
+                            mx: "auto",
+                        }}
+                    >
+                        Bạn là chuyên gia dinh dưỡng, huấn luyện viên hay người đam mê sức khỏe?
+                        Hãy cùng HealthMate lan tỏa lối sống lành mạnh đến cộng đồng,
+                        chia sẻ kiến thức và hỗ trợ hàng ngàn người dùng xây dựng chế độ ăn uống khoa học hơn.
+                    </Typography>
+
+                    <Button
+                        variant="contained"
+                        color="success"
+                        size="large"
+                        sx={{
+                            fontWeight: 600,
+                            borderRadius: "14px",
+                            px: 6,
+                            py: 1.8,
+                            fontSize: "1.1rem",
+                            boxShadow: "0 6px 18px rgba(16,122,44,0.25)",
+                            textTransform: "none",
+                            transition: "all 0.3s ease",
+                            "&:hover": {
+                                backgroundColor: "#0c6e27",
+                                boxShadow: "0 8px 22px rgba(16,122,44,0.35)",
+                                transform: "translateY(-3px)",
+                            },
+                        }}
+                        onClick={() => navigate("/register-expert")}
+                    >
+                        Đăng ký trở thành chuyên gia
+                    </Button>
+                </Box>
             </Box>
 
         </Box >

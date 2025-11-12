@@ -3,8 +3,8 @@
 import { Box, Typography, TextField, Select, MenuItem, FormControl, Button, Autocomplete, Chip, CircularProgress, Alert } from "@mui/material"
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
-import DishService from "../../services/Dish"
-import MealService from "../../services/Meal"
+import { createDish } from "../../services/Dish"
+import { addDishToMeal } from "../../services/Meal"
 
 function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, resetState }) {
   // Use state from props instead of local state
@@ -18,6 +18,13 @@ function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, reset
     error,
     ingredientsLoading
   } = state
+
+  // Calculate total ingredient weight
+  const calculateTotalWeight = () => {
+    return selectedIngredients.reduce((total, ing) => {
+      return total + (ing.amount || 0)
+    }, 0)
+  }
 
   // Calculate nutritional values
   const calculateNutrition = () => {
@@ -58,7 +65,7 @@ function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, reset
         }))
       }
 
-      const createdDish = await DishService.create(dishData)
+      const createdDish = await createDish(dishData)
 
       // Map meal type to backend enum
       const mealTypeMap = {
@@ -70,9 +77,10 @@ function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, reset
 
       // Add the created dish to the meal
       const currentDate = new Date() // Use current date object
-      const mealData = await MealService.addDishToMeal(
+      const defaultQuantity = createdDish.totalIngredientWeight || 100 // Use actual total ingredient weight as default
+      const mealData = await addDishToMeal(
         createdDish._id,
-        100, // Default serving size
+        defaultQuantity,
         currentDate, // Pass Date object, MealService will convert to ISO
         mealTypeMap[mealType] || 'snack'
       )
@@ -364,8 +372,11 @@ function CreateNewDish({ mealType, onClose, onAddDish, state, updateState, reset
             p: 3,
           }}
         >
-          <Typography variant="h6" sx={{ color: "#4CAF50", fontWeight: 600, mb: 2, textAlign: "center" }}>
+          <Typography variant="h6" sx={{ color: "#4CAF50", fontWeight: 600, mb: 1, textAlign: "center" }}>
             Thông tin dinh dưỡng (tổng)
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#666", mb: 2, textAlign: "center" }}>
+            Tổng trọng lượng nguyên liệu: {calculateTotalWeight()}g
           </Typography>
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             <Box sx={{ textAlign: "center" }}>

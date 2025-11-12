@@ -25,3 +25,13 @@ export const getCurrentDietPlan = async (token) => {
   }
 
 };
+
+export const getDietPlanByUserId = async (userId) => {
+  try {
+    const res = await baseAxios.get(`/diet-plan/${userId}`);
+    return res.data;
+  } catch (e) {
+    console.error("API getDietPlanByUserId error:", e);
+    throw e.response || e;
+  }
+};

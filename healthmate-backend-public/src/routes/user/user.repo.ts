@@ -4,17 +4,17 @@ import { DeleteResult, Model } from 'mongoose';
 import { QueryType } from 'src/shared/schemas/request/request.schema';
 import { Role, RoleDocument } from 'src/shared/schemas/role.schema';
 import { User, UserDocument } from 'src/shared/schemas/user.schema';
-import { QueryBuilderService } from 'src/shared/utils/query-builder';
+import { QueryBuilder } from 'src/shared/utils/query-builder';
 
 @Injectable()
 export class UserRepository {
-  private queryBuilder: QueryBuilderService<UserDocument>;
+  private queryBuilder: QueryBuilder<UserDocument>;
 
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Role.name) private roleModel: Model<RoleDocument>,
   ) {
-    this.queryBuilder = new QueryBuilderService<UserDocument>(this.userModel);
+    this.queryBuilder = new QueryBuilder<UserDocument>(this.userModel);
   }
 
   async findAll(query: QueryType) {

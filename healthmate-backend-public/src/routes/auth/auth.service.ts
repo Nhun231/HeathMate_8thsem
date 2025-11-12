@@ -14,10 +14,12 @@ import {
   OTPExpiredException,
   RefreshTokenAlreadyUsedException,
   UnauthorizedAccessException,
+  UserOfRefreshTokenNotFoundException,
 } from './auth.error';
 import {
   TypeOfVerificationCode,
   TypeOfVerificationCodeType,
+  UserStatus,
 } from 'src/shared/constants/auth.constant';
 import {
   ForgotPasswordBodyType,
@@ -43,12 +45,17 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly sharedUserRepository: SharedUserRepository,
     private readonly emailService: EmailService,
-  ) { }
+  ) {}
 
   async register(body: RegisterBodyType) {
     try {
-      const clientRoleId = await this.rolesService.getClientRole();
-      // console.log(clientRoleId);
+      const roleId =
+        body.isExpert === true
+          ? await this.rolesService.getExpertRole()
+          : await this.rolesService.getCustomerRole();
+
+      const createUserStatus =
+        body.isExpert === true ? UserStatus.Inactive : UserStatus.Active;
 
       // Validate verification code
       await this.validateVerificationCode({
@@ -70,7 +77,8 @@ export class AuthService {
         gender: body.gender,
         dob: body.dob,
         phoneNumber: body.phoneNumber,
-        roleId: clientRoleId,
+        roleId,
+        status: createUserStatus,
       });
 
       const $deleteVerificationCode =
@@ -122,6 +130,7 @@ export class AuthService {
     });
 
     if (error) {
+      console.log('Resend Error: ', error);
       throw FailedToSendOTPException;
     }
 
@@ -190,7 +199,7 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new Error('User not found');
+        throw UserOfRefreshTokenNotFoundException;
       }
 
       const roleId = (user.roleId as RoleDocument)._id ?? user.roleId;
@@ -256,8 +265,6 @@ export class AuthService {
       }
       return { message: 'Logout successfully' };
     } catch (error) {
-      // Trường hợp đã refresh token rồi, hãy thông báo cho user biết
-      // refresh token của họ đã bị đánh cắp
       if (isNotFoundError(error)) {
         throw RefreshTokenAlreadyUsedException;
       }

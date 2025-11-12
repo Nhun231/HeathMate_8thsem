@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { Resend } from 'resend';
 import fs from 'fs';
 import path from 'path';
+import envConfig from '../utils/config';
 
 @Injectable()
 export class EmailService {
   private resend: Resend;
   constructor() {
-    this.resend = new Resend(process.env.RESEND_API_KEY);
+    this.resend = new Resend(envConfig.RESEND_API_KEY);
   }
 
   sendOTP(payload: { email: string; code: string }) {
@@ -19,9 +20,9 @@ export class EmailService {
     const subject = 'OTP Code';
 
     return this.resend.emails.send({
-      from: 'Health Mate <onboarding@resend.dev>',
-      to: ['tranduc2004nd01@gmail.com'],
-      subject: 'Hello World',
+      from: 'Health Mate <no-reply@yourhealthmate.io.vn>',
+      to: [payload.email],
+      subject: 'Mã OTP của bạn',
       html: otpTemplate
         .replaceAll('{{subject}}', subject)
         .replaceAll('{{code}}', payload.code),
