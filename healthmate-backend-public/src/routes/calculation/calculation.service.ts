@@ -9,7 +9,6 @@ import { Calculation } from './schema/calculation.schema';
 import { DeleteResult, Types } from 'mongoose';
 import { NutrientsCalculatorService } from 'src/shared/services/nutrients-calculator.service';
 import { SharedUserRepository } from 'src/shared/repositories/shared-user.repo';
-import { last } from 'rxjs';
 
 @Injectable()
 export class CalculationService {
