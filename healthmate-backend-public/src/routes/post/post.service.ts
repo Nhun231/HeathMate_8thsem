@@ -28,7 +28,7 @@ export class PostService {
     }
 
     if (userRole === Rolename.NutritionExpert) {
-      return this.postRepo.findAll({ ...query, author: activeUserId });
+      return this.postRepo.findAll({ ...query, author: new Types.ObjectId(activeUserId) });
     } else if (userRole === Rolename.Admin) {
       return this.postRepo.findAll(query);
     } else {

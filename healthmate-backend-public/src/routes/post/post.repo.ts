@@ -25,7 +25,7 @@ export class PostRepository {
     const queryPosts = await this.queryBuilder.query({
       query,
       allowedFilters: ['author', 'title', 'status'],
-      populateFields: ['category'],
+      populateFields: ['category','author'],
     });
 
     return queryPosts;

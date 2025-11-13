@@ -38,6 +38,7 @@ import {
 import { getPresignedViewUrl } from "../../services/MediaService";
 import CustomAlert from "../common/Alert";
 import { useNavigate } from "react-router-dom";
+import {getUserById} from "../../services/UserService.js";
 
 const PostManagement = () => {
     const navigate = useNavigate();

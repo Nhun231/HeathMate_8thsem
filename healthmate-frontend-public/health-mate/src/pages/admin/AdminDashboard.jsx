@@ -136,7 +136,7 @@ const AdminDashboard = () => {
             sx={{ color: "#2E7D32", fontWeight: "bold" }}
           >
             <AdminPanelSettings sx={{ mr: 1, verticalAlign: "middle" }} />
-            Bảng điều khiển Admin
+            Bảng quản lý Admin
           </Typography>
           <Typography variant="body1" sx={{ color: "#666" }}>
             Quản lý hệ thống HealthMate - Nguyên liệu, quyền, giao dịch và người
