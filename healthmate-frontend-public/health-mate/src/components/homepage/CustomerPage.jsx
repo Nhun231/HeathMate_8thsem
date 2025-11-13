@@ -3,6 +3,7 @@ import { Box, Typography, Button, Grid, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Apple, Calculate, Favorite, Restaurant } from "@mui/icons-material";
 import banner from "../../assets/healthydish.jpg";
+import NewsFeedSection from "../post/PostsHomepage";
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -205,7 +206,8 @@ const HomePage = () => {
                 </Grid>
             </Box>
 
-
+            {/* --- NEWSFEED SECTION --- */}
+            <NewsFeedSection />
         </>
     );
 };
