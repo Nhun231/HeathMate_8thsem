@@ -1,34 +1,41 @@
 import React, { useEffect, useState } from "react";
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     Typography,
-    Button,
     CircularProgress,
     Chip,
     Stack,
     Box,
     Divider,
+    Container,
+    Paper,
+    List,
+    ListItemButton,
+    ListItemText,
+    Avatar,
 } from "@mui/material";
-import { getPostById } from "../../services/PostService";
+import { useParams, useNavigate } from "react-router-dom";
+import { getPostById, listNewsfeed } from "../../services/PostService";
 import { getPresignedViewUrl } from "../../services/MediaService";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
-const PostDetailPopup = ({ open, onClose, postId }) => {
+const DetailPost = () => {
+    const { postId } = useParams();
+    const navigate = useNavigate();
+
     const [post, setPost] = useState(null);
+    const [relatedPosts, setRelatedPosts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
+    const [relatedImageUrls, setRelatedImageUrls] = useState({});
 
     useEffect(() => {
-        if (open && postId) {
+        if (postId) {
             const fetchPost = async () => {
                 try {
                     setLoading(true);
                     const data = await getPostById(postId);
                     setPost(data);
 
-                    // Lấy ảnh presigned URL
                     if (data.featuredImageUrl) {
                         let key = data.featuredImageUrl;
                         if (key.includes("/")) key = key.split("/").pop().split("?")[0];
@@ -36,6 +43,38 @@ const PostDetailPopup = ({ open, onClose, postId }) => {
                         setImageUrl(url);
                     } else {
                         setImageUrl("https://img.icons8.com/clouds/100/news.png");
+                    }
+
+                    if (data.category?.length > 0) {
+                        const categoryIds = data.category.map(c => c._id);
+                        const res = await listNewsfeed({
+                            status: "PUBLISHED",
+                            limit: 5
+                        });
+                        const related = res.data.filter(p =>
+                            p._id !== data._id &&
+                            p.category?.some(c => categoryIds.includes(c._id))
+                        );
+                        setRelatedPosts(related);
+
+                        const urls = {};
+                        await Promise.all(
+                            related.map(async (p) => {
+                                if (p.featuredImageUrl) {
+                                    let key = p.featuredImageUrl;
+                                    if (key.includes("/")) key = key.split("/").pop().split("?")[0];
+                                    try {
+                                        const url = await getPresignedViewUrl(key);
+                                        urls[p._id] = url;
+                                    } catch {
+                                        urls[p._id] = "https://img.icons8.com/clouds/100/news.png";
+                                    }
+                                } else {
+                                    urls[p._id] = "https://img.icons8.com/clouds/100/news.png";
+                                }
+                            })
+                        );
+                        setRelatedImageUrls(urls);
                     }
                 } catch (err) {
                     console.error("Lỗi khi lấy chi tiết bài viết:", err);
@@ -45,143 +84,175 @@ const PostDetailPopup = ({ open, onClose, postId }) => {
             };
             fetchPost();
         }
-    }, [open, postId]);
+    }, [postId]);
+
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" py={10}>
+                <CircularProgress color="success" />
+            </Box>
+        );
+    }
+
+    if (!post) {
+        return (
+            <Container sx={{ py: 10, textAlign: "center" }}>
+                <Typography variant="h6">Không tìm thấy bài viết.</Typography>
+                <Box mt={3}>
+                    <Typography
+                        onClick={() => navigate(-1)}
+                        sx={{ cursor: "pointer", color: "#0a7a28", fontWeight: 600 }}
+                    >
+                        ← Quay lại
+                    </Typography>
+                </Box>
+            </Container>
+        );
+    }
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            {loading ? (
-                <DialogContent sx={{ textAlign: "center", py: 5 }}>
-                    <CircularProgress color="success" />
-                </DialogContent>
-            ) : post ? (
-                <>
-                    {/* IMAGE */}
-                    {imageUrl && (
-                        <Box
-                            sx={{
-                                width: "100%",
-                                height: { xs: 280, sm: 400 },
-                                overflow: "hidden",
-                                borderTopLeftRadius: "8px",
-                                borderTopRightRadius: "8px",
-                                boxShadow: "0px 6px 18px rgba(0,0,0,0.2)",
-                                transition: "transform 0.4s ease",
-                                "&:hover img": {
-                                    transform: "scale(1.05)",
-                                },
-                            }}
-                        >
-                            <img
-                                src={imageUrl}
-                                alt={post.title}
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "cover",
-                                    display: "block",
-                                    transition: "transform 0.4s ease",
+        <Container sx={{ py: { xs: 4, md: 8 } }}>
+            {/* Back button */}
+            <Typography
+                onClick={() => navigate(-1)}
+                sx={{
+                    cursor: "pointer",
+                    mb: 3,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    color: "#0a7a28",
+                    fontWeight: 600,
+                    transition: "color 0.3s",
+                    "&:hover": { color: "#096e25" },
+                }}
+            >
+                <ArrowBackIcon sx={{ mr: 1 }} /> Quay lại
+            </Typography>
+
+            {/* Header image */}
+            {imageUrl && (
+                <Box
+                    sx={{
+                        width: "100%",
+                        height: { xs: 280, sm: 400 },
+                        overflow: "hidden",
+                        borderRadius: "16px",
+                        mb: 4,
+                        boxShadow: "0px 8px 24px rgba(0,0,0,0.15)",
+                        "& img": { transition: "transform 0.4s ease" },
+                        "&:hover img": { transform: "scale(1.03)" },
+                    }}
+                >
+                    <img
+                        src={imageUrl}
+                        alt={post.title}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        onError={(e) =>
+                            (e.target.src = "https://img.icons8.com/clouds/100/news.png")
+                        }
+                    />
+                </Box>
+            )}
+
+            {/* Title + Meta */}
+            <Box sx={{ textAlign: "center", mb: 4 }}>
+                <Typography
+                    variant="h3"
+                    sx={{ fontWeight: 700, color: "#0a7a28", mb: 1, lineHeight: 1.3 }}
+                >
+                    {post.title}
+                </Typography>
+
+                {post.category?.length > 0 && (
+                    <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" mb={1}>
+                        {post.category.map((c) => (
+                            <Chip
+                                key={c._id}
+                                label={c.name}
+                                size="small"
+                                sx={{
+                                    backgroundColor: "#e7f8ec",
+                                    color: "#0a7a28",
+                                    fontWeight: 500,
+                                    boxShadow: "0px 2px 6px rgba(0,0,0,0.1)",
+                                    fontSize: "0.8rem",
                                 }}
-                                onError={(e) =>
-                                    (e.target.src = "https://img.icons8.com/clouds/100/news.png")
-                                }
                             />
-                        </Box>
-                    )}
+                        ))}
+                    </Stack>
+                )}
 
-                    {/* TITLE */}
-                    <DialogTitle
-                        sx={{
-                            fontWeight: 800,
-                            color: "#0a7a28",
-                            pt: 3,
-                            fontSize: "1.6rem",
-                            textAlign: "center",
-                            lineHeight: 1.4,
-                            letterSpacing: "0.5px",
-                        }}
-                    >
-                        {post.title}
-                    </DialogTitle>
+                <Typography
+                    variant="subtitle2"
+                    sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "0.9rem" }}
+                >
+                    {new Date(post.createdAt).toLocaleDateString("vi-VN")}
+                </Typography>
+            </Box>
 
-                    <DialogContent dividers sx={{ px: 4, py: 3 }}>
-                        {/* Date */}
-                        <Typography
-                            variant="subtitle2"
-                            sx={{
-                                mb: 2,
-                                color: "text.secondary",
-                                textAlign: "center",
-                                fontStyle: "italic",
-                            }}
-                        >
-                            {new Date(post.createdAt).toLocaleDateString("vi-VN")}
-                        </Typography>
+            <Divider sx={{ mb: 4 }} />
 
-                        {/* Categories */}
-                        <Stack
-                            direction="row"
-                            gap={1}
-                            mb={2}
-                            flexWrap="wrap"
-                            justifyContent="center"
-                        >
-                            {post.category?.map((c) => (
-                                <Chip
-                                    key={c._id}
-                                    label={c.name}
-                                    size="small"
-                                    sx={{
-                                        backgroundColor: "#e7f8ec",
-                                        color: "#0a7a28",
-                                        fontWeight: 500,
-                                        boxShadow: "0px 2px 6px rgba(0,0,0,0.1)",
-                                    }}
-                                />
-                            ))}
-                        </Stack>
-
-                        <Divider sx={{ my: 2 }} />
-
-                        {/* Nội dung HTML */}
-                        <Box sx={{ mt: 2, textAlign: "justify" }}>
+            {/* Main layout: content + related */}
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: 4,
+                    alignItems: "flex-start",
+                    flexWrap: "wrap",
+                }}
+            >
+                {/* Main content */}
+                <Box sx={{ flex: 1, minWidth: 300 }}>
+                    <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
+                        <Box sx={{ textAlign: "justify" }}>
                             <div
                                 dangerouslySetInnerHTML={{ __html: post.content }}
-                                style={{
-                                    lineHeight: 1.8,
-                                    fontSize: "1.05rem",
-                                    color: "#333",
-                                }}
+                                style={{ lineHeight: 1.8, fontSize: "1.05rem", color: "#333" }}
                             />
                         </Box>
-                    </DialogContent>
+                    </Paper>
+                </Box>
 
-                    <DialogActions sx={{ justifyContent: "center", py: 2 }}>
-                        <Button
-                            onClick={onClose}
-                            color="success"
-                            variant="contained"
-                            sx={{
-                                px: 5,
-                                py: 1.2,
-                                borderRadius: "10px",
-                                fontWeight: 700,
-                                backgroundColor: "#0a7a28",
-                                "&:hover": { backgroundColor: "#096e25" },
-                                boxShadow: "0px 4px 10px rgba(0,0,0,0.2)",
-                                transition: "all 0.3s ease",
-                            }}
-                        >
-                            Đóng
-                        </Button>
-                    </DialogActions>
-                </>
-            ) : (
-                <DialogContent>
-                    <Typography>Không tìm thấy bài viết.</Typography>
-                </DialogContent>
-            )}
-        </Dialog>
+                {/* Related posts */}
+                {relatedPosts.length > 0 && (
+                    <Box
+                        sx={{
+                            width: 320,
+                            flexShrink: 0,
+                            position: "sticky",
+                            top: 80,
+                        }}
+                    >
+                        <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+                            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: "#0a7a28" }}>
+                                Bài viết liên quan
+                            </Typography>
+                            <List>
+                                {relatedPosts.map((p) => (
+                                    <ListItemButton
+                                        key={p._id}
+                                        onClick={() => navigate(`/detail-post/${p._id}`)}
+                                        sx={{ mb: 1, borderRadius: 1 }}
+                                    >
+                                        <Avatar
+                                            src={relatedImageUrls[p._id] || "https://img.icons8.com/clouds/100/news.png"}
+                                            variant="rounded"
+                                            sx={{ width: 56, height: 56, mr: 1.5 }}
+                                        />
+                                        <ListItemText
+                                            primary={p.title}
+                                            primaryTypographyProps={{ fontSize: "0.95rem", noWrap: true }}
+                                        />
+                                    </ListItemButton>
+                                ))}
+                            </List>
+                        </Paper>
+                    </Box>
+                )}
+            </Box>
+        </Container>
     );
 };
 
-export default PostDetailPopup;
+export default DetailPost;

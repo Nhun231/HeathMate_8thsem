@@ -7,16 +7,15 @@ import {
     Button,
     Stack,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { listNewsfeed } from "../../services/PostService";
 import { getPresignedViewUrl } from "../../services/MediaService";
-import PostDetailPopup from "./PostDetail";
 
 const NewsFeedSection = () => {
+    const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [imageUrls, setImageUrls] = useState({});
-    const [openPopup, setOpenPopup] = useState(false);
-    const [selectedPostId, setSelectedPostId] = useState(null);
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -24,6 +23,11 @@ const NewsFeedSection = () => {
     const CARD_HEIGHT = 420;
     const IMAGE_HEIGHT = 180;
     const DESCRIPTION_LENGTH = 250;
+
+    const authorNameMap = {
+        "Expert": "Chuyên gia",
+        "Super Admin": "Quản trị viên",
+    };
 
     const shortenText = (htmlText) => {
         const tmp = document.createElement("div");
@@ -93,6 +97,7 @@ const NewsFeedSection = () => {
             >
                 Cập nhật kiến thức sức khỏe và dinh dưỡng mới nhất cùng HealthMate
             </Typography>
+
             {/* GRID */}
             <Box
                 sx={{
@@ -106,10 +111,7 @@ const NewsFeedSection = () => {
                 {posts.map((post) => (
                     <Box
                         key={post._id}
-                        onClick={() => {
-                            setSelectedPostId(post._id);
-                            setOpenPopup(true);
-                        }}
+                        onClick={() => navigate(`/detail-post/${post._id}`)} // Chuyển sang trang chi tiết
                         sx={{
                             border: "1px solid #e0e0e0",
                             borderRadius: "20px",
@@ -127,7 +129,6 @@ const NewsFeedSection = () => {
                             },
                         }}
                     >
-                        {/* IMAGE */}
                         <Box sx={{ position: "relative", height: IMAGE_HEIGHT, overflow: "hidden" }}>
                             <img
                                 src={imageUrls[post._id] || "https://img.icons8.com/clouds/100/news.png"}
@@ -141,7 +142,6 @@ const NewsFeedSection = () => {
                             />
                         </Box>
 
-                        {/* CONTENT */}
                         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2.5 }}>
                             <Typography
                                 variant="h6"
@@ -176,7 +176,7 @@ const NewsFeedSection = () => {
                                 {shortenText(post.excerpt || post.content)}
                             </Typography>
 
-                            <Stack direction="row" flexWrap="wrap" gap={1} mb={2}>
+                            <Stack direction="row" flexWrap="wrap" gap={1} mb={1}>
                                 {post.category?.map((c) => (
                                     <Chip
                                         key={c._id}
@@ -192,6 +192,13 @@ const NewsFeedSection = () => {
                                 ))}
                             </Stack>
 
+                            <Typography
+                                variant="subtitle2"
+                                sx={{ color: "#0a7a28", fontWeight: 500, mb: 0.5 }}
+                            >
+                                Tác giả: {authorNameMap[post.author?.fullname] || post.author?.fullname || "Ẩn danh"}
+                            </Typography>
+
                             <Typography variant="caption" sx={{ color: "#666", fontStyle: "italic" }}>
                                 {new Date(post.createdAt).toLocaleDateString("vi-VN")}
                             </Typography>
@@ -200,34 +207,15 @@ const NewsFeedSection = () => {
                 ))}
             </Box>
 
-            {/* Pagination buttons */}
             <Box textAlign="center" mt={6}>
                 <Button
                     variant="contained"
                     color="success"
-                    disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage((prev) => prev - 1)}
-                    sx={{ mx: 1 }}
+                    onClick={() => navigate("/list-post")}
                 >
-                    Trang trước
-                </Button>
-                <Button
-                    variant="contained"
-                    color="success"
-                    disabled={currentPage >= totalPages}
-                    onClick={() => setCurrentPage((prev) => prev + 1)}
-                    sx={{ mx: 1 }}
-                >
-                    Trang sau
+                    Xem thêm →
                 </Button>
             </Box>
-
-            {/* POPUP DETAIL */}
-            <PostDetailPopup
-                open={openPopup}
-                onClose={() => setOpenPopup(false)}
-                postId={selectedPostId}
-            />
         </Box>
     );
 };

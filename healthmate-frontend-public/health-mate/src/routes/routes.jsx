@@ -35,6 +35,8 @@ import PaymentSuccess from "../components/subscription/PaymentSucess.jsx";
 import BankInfo from "../components/bank/BankInfo.jsx";
 import PostManagement from "../components/admin/PostManagement.jsx";
 import PostForm from "../components/admin/PostForm.jsx";
+import ListPost from "../components/post/ListPosts.jsx";
+import PostDetail from "../components/post/PostDetail.jsx";
 class AuthLayout extends Component {
   render() {
     return (
@@ -65,6 +67,14 @@ const router = createBrowserRouter([
   {
     path: "/guest-homepage",
     element: <GuestHomePage />,
+  },
+  {
+    path: "/list-post",
+    element: <ListPost />,
+  },
+  {
+    path: "/detail-post/:postId",
+    element: <PostDetail />,
   },
   {
     path: "/register-expert",
