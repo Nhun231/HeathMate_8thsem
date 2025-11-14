@@ -21,11 +21,15 @@ import {
     uploadFileToS3,
     getPresignedViewUrl,
 } from "../../services/MediaService";
-import { createPost, updatePost, getPostById } from "../../services/PostService";
+import { createPost, updatePost, getPostById, getPostCategories } from "../../services/PostService";
 import CustomAlert from "../common/Alert";
 import { useNavigate, useParams } from "react-router-dom";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 
 const PostForm = () => {
     const navigate = useNavigate();
@@ -47,19 +51,36 @@ const PostForm = () => {
         featuredImageUrl: "",
     });
 
-    const [categoryInput, setCategoryInput] = useState("");
+    const [categories, setCategories] = useState([]);
+    const [loadingCategories, setLoadingCategories] = useState(true);
+    const [newCategoryDialogOpen, setNewCategoryDialogOpen] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState("");
 
-    // Load post data if in edit mode
+    // Load categories and post data
     useEffect(() => {
+        fetchCategories();
         if (isEditMode) {
             loadPostData();
         }
     }, [postId]);
 
+    const fetchCategories = async () => {
+        try {
+            setLoadingCategories(true);
+            const categoryList = await getPostCategories();
+            setCategories(categoryList);
+        } catch (err) {
+            console.error("Lỗi khi tải danh sách danh mục:", err);
+        } finally {
+            setLoadingCategories(false);
+        }
+    };
+
     const loadPostData = async () => {
         try {
             setLoadingPost(true);
-            const post = await getPostById(postId);
+            // Use authenticated endpoint to view posts regardless of status (for admin editing)
+            const post = await getPostById(postId, true);
             
             // Load thumbnail if exists
             if (post.featuredImageUrl) {
@@ -141,23 +162,71 @@ const PostForm = () => {
         setFormData({ ...formData, featuredImageUrl: "" });
     };
 
-    // Add category
-    const handleAddCategory = () => {
-        if (categoryInput.trim() && !formData.category.includes(categoryInput.trim())) {
+    // Handle category selection change
+    const handleCategoryChange = (event) => {
+        const value = event.target.value;
+        // If "add new" option is selected, open dialog
+        // Check if the value is an array and contains "__add_new__"
+        if (Array.isArray(value) && value.includes("__add_new__")) {
+            // Remove "__add_new__" from the array and open dialog
+            const filteredValue = value.filter((v) => v !== "__add_new__");
             setFormData({
                 ...formData,
-                category: [...formData.category, categoryInput.trim()],
+                category: filteredValue,
             });
-            setCategoryInput("");
+            setNewCategoryDialogOpen(true);
+        } else if (value === "__add_new__") {
+            setNewCategoryDialogOpen(true);
+        } else {
+            setFormData({
+                ...formData,
+                category: Array.isArray(value) ? value : [value],
+            });
         }
     };
 
-    // Remove category
-    const handleRemoveCategory = (categoryToRemove) => {
+    // Add new category
+    const handleAddNewCategory = () => {
+        if (newCategoryName.trim()) {
+            const newCategory = {
+                _id: `temp_${Date.now()}`, // Temporary ID for new categories
+                name: newCategoryName.trim(),
+                description: "",
+            };
+
+            // Add to categories list
+            if (!categories.find((cat) => cat.name === newCategory.name)) {
+                setCategories([...categories, newCategory].sort((a, b) => 
+                    a.name.localeCompare(b.name)
+                ));
+            }
+
+            // Add to selected categories
+            if (!formData.category.includes(newCategory._id)) {
+                setFormData({
+                    ...formData,
+                    category: [...formData.category, newCategory._id],
+                });
+            }
+
+            // Reset and close dialog
+            setNewCategoryName("");
+            setNewCategoryDialogOpen(false);
+        }
+    };
+
+    // Remove category chip
+    const handleRemoveCategory = (categoryIdToRemove) => {
         setFormData({
             ...formData,
-            category: formData.category.filter((cat) => cat !== categoryToRemove),
+            category: formData.category.filter((catId) => catId !== categoryIdToRemove),
         });
+    };
+
+    // Get category name by ID
+    const getCategoryName = (categoryId) => {
+        const category = categories.find((cat) => cat._id === categoryId);
+        return category ? category.name : categoryId;
     };
 
     // Upload thumbnail to S3
@@ -190,9 +259,36 @@ const PostForm = () => {
             return;
         }
 
-        if (formData.category.length === 0) {
+        // Filter out temporary category IDs (new categories that haven't been created yet)
+        const validCategoryIds = formData.category.filter(
+            (catId) => !catId.toString().startsWith("temp_")
+        );
+        const tempCategoryIds = formData.category.filter((catId) =>
+            catId.toString().startsWith("temp_")
+        );
+
+        if (validCategoryIds.length === 0 && tempCategoryIds.length > 0) {
+            showAlert(
+                "Vui lòng chọn ít nhất một danh mục đã tồn tại. Danh mục mới cần được tạo trước khi sử dụng.",
+                "error"
+            );
+            return;
+        }
+
+        if (validCategoryIds.length === 0) {
             showAlert("Vui lòng thêm ít nhất một danh mục", "error");
             return;
+        }
+
+        // Show warning if some temporary categories were filtered out
+        if (tempCategoryIds.length > 0) {
+            const tempCategoryNames = tempCategoryIds
+                .map((id) => getCategoryName(id))
+                .join(", ");
+            showAlert(
+                `Cảnh báo: Các danh mục mới (${tempCategoryNames}) chưa được lưu. Chỉ các danh mục đã tồn tại sẽ được gán cho bài viết.`,
+                "warning"
+            );
         }
 
         try {
@@ -207,7 +303,7 @@ const PostForm = () => {
             const submitData = {
                 title: formData.title,
                 content: formData.content,
-                category: formData.category,
+                category: validCategoryIds, // Only send valid category IDs
                 ...(imageKey && { featuredImageUrl: imageKey }),
             };
 
@@ -355,37 +451,48 @@ const PostForm = () => {
                         {/* Danh mục */}
                         <Box>
                             <Typography variant="subtitle2" gutterBottom>
-                                Danh mục * (Nhập ID danh mục)
+                                Danh mục *
                             </Typography>
-                            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                                <TextField
-                                    size="small"
-                                    placeholder="Nhập ID danh mục"
-                                    value={categoryInput}
-                                    onChange={(e) => setCategoryInput(e.target.value)}
-                                    onKeyPress={(e) => {
-                                        if (e.key === "Enter") {
-                                            e.preventDefault();
-                                            handleAddCategory();
-                                        }
-                                    }}
-                                    sx={{ flexGrow: 1 }}
-                                />
-                                <Button
-                                    variant="outlined"
-                                    onClick={handleAddCategory}
-                                    disabled={!categoryInput.trim()}
+                            <FormControl fullWidth>
+                                <InputLabel>Chọn danh mục</InputLabel>
+                                <Select
+                                    multiple
+                                    value={formData.category}
+                                    onChange={handleCategoryChange}
+                                    label="Chọn danh mục"
+                                    renderValue={(selected) => (
+                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                                            {selected.map((value) => (
+                                                <Chip
+                                                    key={value}
+                                                    label={getCategoryName(value)}
+                                                    size="small"
+                                                />
+                                            ))}
+                                        </Box>
+                                    )}
+                                    disabled={loadingCategories}
                                 >
-                                    Thêm
-                                </Button>
-                            </Stack>
+                                    {categories.map((category) => (
+                                        <MenuItem key={category._id} value={category._id}>
+                                            {category.name}
+                                        </MenuItem>
+                                    ))}
+                                    <MenuItem
+                                        value="__add_new__"
+                                        sx={{ fontStyle: "italic", color: "primary.main" }}
+                                    >
+                                        + Thêm danh mục mới
+                                    </MenuItem>
+                                </Select>
+                            </FormControl>
                             {formData.category.length > 0 && (
-                                <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                                    {formData.category.map((cat, index) => (
+                                <Stack direction="row" spacing={1} flexWrap="wrap" gap={1} sx={{ mt: 2 }}>
+                                    {formData.category.map((catId) => (
                                         <Chip
-                                            key={index}
-                                            label={cat}
-                                            onDelete={() => handleRemoveCategory(cat)}
+                                            key={catId}
+                                            label={getCategoryName(catId)}
+                                            onDelete={() => handleRemoveCategory(catId)}
                                             color="primary"
                                             variant="outlined"
                                         />
@@ -492,6 +599,44 @@ const PostForm = () => {
                     </Stack>
                 </Box>
             </Paper>
+
+            {/* Add New Category Dialog */}
+            <Dialog
+                open={newCategoryDialogOpen}
+                onClose={() => setNewCategoryDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Thêm danh mục mới</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        label="Tên danh mục"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        fullWidth
+                        sx={{ mt: 2 }}
+                        placeholder="Nhập tên danh mục mới..."
+                        helperText="Danh mục mới sẽ được thêm vào danh sách và được chọn tự động"
+                        onKeyPress={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddNewCategory();
+                            }
+                        }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setNewCategoryDialogOpen(false)}>Hủy</Button>
+                    <Button
+                        onClick={handleAddNewCategory}
+                        variant="contained"
+                        disabled={!newCategoryName.trim()}
+                        sx={{ textTransform: "none" }}
+                    >
+                        Thêm
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

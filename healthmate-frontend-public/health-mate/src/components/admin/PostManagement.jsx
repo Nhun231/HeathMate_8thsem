@@ -119,7 +119,8 @@ const PostManagement = () => {
     // Xem chi tiết bài viết
     const handleViewDetails = async (postId) => {
         try {
-            const post = await getPostById(postId);
+            // Use authenticated endpoint to view posts regardless of status (for admin)
+            const post = await getPostById(postId, true);
             setSelectedPost(post);
             setOpenDetailsDialog(true);
         } catch (err) {

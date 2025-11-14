@@ -21,8 +21,8 @@ export class SharedUserRepository {
       .exec();
   }
 
-  async getUserById(id: Types.ObjectId): Promise<UserDocument | null> {
-    return this.userModel.findById(id).populate('roleId').exec();
+  async getUserById(_id: Types.ObjectId): Promise<UserDocument | null> {
+    return this.userModel.findById(_id).populate('roleId').exec();
   }
 
   async getUserAge(id: Types.ObjectId) {

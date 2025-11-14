@@ -44,9 +44,7 @@ export class ExpertCertificateService {
     userId: string;
     data: CreateCertificateBodyType;
   }) {
-    const user = await this.sharedUserRepository.findUnique({
-      _id: new Types.ObjectId(userId),
-    });
+    const user = await this.sharedUserRepository.getUserById( new Types.ObjectId(userId));
     if (!user) {
       throw NotFoundUserException;
     }
@@ -65,9 +63,7 @@ export class ExpertCertificateService {
   async update({ id, data }: { id: string; data: UpdateCertificateBodyType }) {
     const certificate = await this.findOne(id);
 
-    const user = await this.sharedUserRepository.findUnique({
-      _id: certificate.user,
-    });
+    const user = await this.sharedUserRepository.getUserById( new Types.ObjectId(certificate.user));
     if (!user) {
       throw NotFoundUserException;
     }
@@ -77,6 +73,8 @@ export class ExpertCertificateService {
         email: user.email,
         name: user.fullname,
       });
+       user.status = 'Active';
+       await user.save();
     } else if (data.status === 'Rejected') {
       await this.emailService.rejectExpertRequest({
         email: user.email,

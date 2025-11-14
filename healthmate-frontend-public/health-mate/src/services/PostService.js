@@ -12,9 +12,11 @@ export const listPosts = async (params = {}) => {
 };
 
 // Lấy chi tiết bài viết
-export const getPostById = async (postId) => {
+export const getPostById = async (postId, useAuthored = false) => {
     try {
-        const res = await baseAxios.get(`/post/${postId}`);
+        // Use authenticated endpoint for admin/expert to view posts regardless of status
+        const endpoint = useAuthored ? `/post/${postId}/authored` : `/post/${postId}`;
+        const res = await baseAxios.get(endpoint);
         return res.data;
     } catch (err) {
         console.error("Lỗi khi lấy chi tiết bài viết:", err);
@@ -63,5 +65,38 @@ export const listNewsfeed = async (params = {}) => {
     } catch (err) {
         console.error("Lỗi khi lấy danh sách bài viết newsfeed:", err);
         throw err;
+    }
+};
+
+// Lấy danh sách categories từ các bài viết hiện có
+export const getPostCategories = async () => {
+    try {
+        // Fetch posts to extract unique categories
+        const res = await baseAxios.get("/post", { params: { limit: 1000 } });
+        const posts = res.data?.data || [];
+        
+        // Extract unique categories
+        const categoryMap = new Map();
+        posts.forEach((post) => {
+            if (post.category && Array.isArray(post.category)) {
+                post.category.forEach((cat) => {
+                    if (cat && typeof cat === 'object' && cat._id) {
+                        if (!categoryMap.has(cat._id)) {
+                            categoryMap.set(cat._id, {
+                                _id: cat._id,
+                                name: cat.name || 'Chưa phân loại',
+                                description: cat.description || ''
+                            });
+                        }
+                    }
+                });
+            }
+        });
+        
+        return Array.from(categoryMap.values());
+    } catch (err) {
+        console.error("Lỗi khi lấy danh sách categories:", err);
+        // Return empty array on error
+        return [];
     }
 };

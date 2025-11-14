@@ -22,7 +22,7 @@ export class ReminderService {
 
   async updateExpoPushToken(userId: Types.ObjectId, expoPushToken: string) {
     if (!expoPushToken) {
-      this.logger.warn(`⚠️ Attempted to update empty expoPushToken for user ${userId.toString()}`);
+      this.logger.warn(` Attempted to update empty expoPushToken for user ${userId.toString()}`);
       return null;
     }
     return this.reminderRepo.updateToken(userId, expoPushToken);
@@ -66,13 +66,13 @@ export class ReminderService {
     try {
       const result = await this.reminderRepo.clearToken(userId);
       if (result.modifiedCount > 0) {
-        this.logger.log(`🧹 Cleared expoPushToken for user ${userId.toString()}`);
+        this.logger.log(` Cleared expoPushToken for user ${userId.toString()}`);
       } else {
-        this.logger.warn(`⚠️ No expoPushToken found to clear for user ${userId.toString()}`);
+        this.logger.warn(` No expoPushToken found to clear for user ${userId.toString()}`);
       }
       return { success: true, message: 'Token cleared successfully' };
     } catch (err) {
-      this.logger.error(`❌ Failed to clear expoPushToken for user ${userId.toString()}`, err);
+      this.logger.error(` Failed to clear expoPushToken for user ${userId.toString()}`, err);
       throw err;
     }
   }
@@ -94,7 +94,6 @@ export class ReminderService {
   async sendReminders() {
     const timezone = 'Asia/Ho_Chi_Minh';
     const currentTimeStr = moment().tz(timezone).format('HH:mm');
-    this.logger.log(`Checking reminders at ${currentTimeStr}`);
 
     let settings: any[];
     try {
@@ -124,9 +123,9 @@ export class ReminderService {
           `Đã đến lúc uống ${match.amount}ml nước!`,
           { type: 'water-reminder' },
         );
-        this.logger.log(`✅ Sent reminder to user ${userIdStr} for ${match.amount}ml`);
+        this.logger.log(` Sent reminder to user ${userIdStr} for ${match.amount}ml`);
       } catch (err) {
-        this.logger.error(`❌ Failed push for user ${userIdStr}`, err);
+        this.logger.error(` Failed push for user ${userIdStr}`, err);
       }
     }
   }

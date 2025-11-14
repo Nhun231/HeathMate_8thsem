@@ -48,7 +48,11 @@ const ExpertCertificateList = () => {
     const fetchCertificates = async () => {
         try {
             setLoading(true);
-            const res = await listExpertCertificates({ page: 1, limit: 1000 });
+            const res = await listExpertCertificates({ 
+                page: 1, 
+                limit: 1000,
+                sort: '-createdAt' // Sort by latest first (descending order)
+            });
             const data = res?.data || [];
             setCertificates(data);
 
