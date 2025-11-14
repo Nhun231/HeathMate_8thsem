@@ -5,3 +5,8 @@ export const NotFoundExpertCertificateException =
     message: 'Error.NotFoundExpertCertificate',
     path: 'expert-certificate',
   });
+
+export const NotFoundUserException = new UnprocessableEntityException({
+  message: 'Error.NotFoundUser',
+  path: 'user',
+});
