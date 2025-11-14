@@ -198,7 +198,7 @@ const router = createBrowserRouter([
           {
             path: "/admin/posts",
             element: (
-              <RequireRole allowedRoles={["Admin"]}>
+              <RequireRole allowedRoles={["Admin", "NutritionExpert"]}>
                 <PostManagement />
               </RequireRole>
             ),
@@ -206,7 +206,7 @@ const router = createBrowserRouter([
           {
             path: "/admin/posts/add",
             element: (
-              <RequireRole allowedRoles={["Admin"]}>
+              <RequireRole allowedRoles={["Admin", "NutritionExpert"]}>
                 <PostForm />
               </RequireRole>
             ),
@@ -214,7 +214,7 @@ const router = createBrowserRouter([
           {
             path: "/admin/posts/edit/:postId",
             element: (
-              <RequireRole allowedRoles={["Admin"]}>
+              <RequireRole allowedRoles={["Admin", "NutritionExpert"]}>
                 <PostForm />
               </RequireRole>
             ),

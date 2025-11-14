@@ -180,6 +180,7 @@ const Header = () => {
               )}
               {userRole === "NutritionExpert" && (
                 <>
+                    <Button onClick={() => navigate("/admin/posts")}>Tin tức của bạn</Button>
                   <Button onClick={() => navigate("/expert-chat")}>Tư vấn</Button>
                   <Button onClick={() => navigate("/my-profile")}>Hồ sơ</Button>
                   <Button onClick={() => navigate("/bankinfo")}>Ngân hàng</Button>
