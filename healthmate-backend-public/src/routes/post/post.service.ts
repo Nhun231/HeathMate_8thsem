@@ -27,7 +27,7 @@ export class PostService {
       userRole = await this.getUserRole(activeUserId);
     }
 
-    const sortQuery = query.sort || '-createdAt';
+    const sortQuery = query.sort || '-updatedAt';
 
     if (userRole === Rolename.NutritionExpert) {
       return this.postRepo.findAll({ ...query, author: activeUserId });

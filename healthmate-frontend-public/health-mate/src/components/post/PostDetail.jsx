@@ -161,7 +161,7 @@ const DetailPost = () => {
                                 variant="subtitle1"
                                 sx={{ color: "text.secondary", mb: 1 }}
                             >
-                                Tác giả: {authorNameMap[post.author?.fullname] || post.author?.fullname || "Ẩn danh"}
+                                Tác giả: {post.author?.fullname || "Ẩn danh"}
                             </Typography>
                         )}
 
@@ -191,13 +191,20 @@ const DetailPost = () => {
                         )} */}
 
                         {/* Date */}
+                        <Box display="flex" justifyContent="space-between">
                         <Typography
                             variant="subtitle2"
                             sx={{ color: "text.secondary", fontStyle: "italic", mb: 2 }}
                         >
-                            {new Date(post.createdAt).toLocaleDateString("vi-VN")}
+                            Ngày tạo: {new Date(post.createdAt).toLocaleDateString("vi-VN")}
                         </Typography>
-
+                        <Typography
+                            variant="subtitle2"
+                            sx={{ color: "text.secondary", fontStyle: "italic", mb: 2 }}
+                        >
+                            Ngày cập nhật: {new Date(post.updatedAt).toLocaleDateString("vi-VN")}
+                        </Typography>
+                        </Box>
                         {/* Header image */}
                         {imageUrl && (
                             <Box

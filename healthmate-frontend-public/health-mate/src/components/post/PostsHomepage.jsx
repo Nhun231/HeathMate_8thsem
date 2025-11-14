@@ -41,7 +41,12 @@ const NewsFeedSection = () => {
     const fetchPosts = async (page = 1) => {
         try {
             setLoading(true);
-            const res = await listNewsfeed({ status: "PUBLISHED", limit: 6, page });
+            const res = await listNewsfeed({ 
+                status: "PUBLISHED", 
+                limit: 6, 
+                page,
+                sort: '-updatedAt', // Sort by latest first (descending order)
+            });
             const data = res.data || [];
             setPosts(data);
             setTotalPages(res.totalPages || 1);
@@ -196,12 +201,16 @@ const NewsFeedSection = () => {
                                 variant="subtitle2"
                                 sx={{ color: "#0a7a28", fontWeight: 500, mb: 0.5 }}
                             >
-                                Tác giả: {authorNameMap[post.author?.fullname] || post.author?.fullname || "Ẩn danh"}
+                                Tác giả: {post.author?.fullname || "Ẩn danh"}
                             </Typography>
-
+                            <Box display="flex" justifyContent="space-between">
                             <Typography variant="caption" sx={{ color: "#666", fontStyle: "italic" }}>
-                                {new Date(post.createdAt).toLocaleDateString("vi-VN")}
+                                Ngày tạo: {new Date(post.createdAt).toLocaleDateString("vi-VN")}
                             </Typography>
+                            <Typography variant="caption" sx={{ color: "#666", fontStyle: "italic" }}>
+                                Ngày cập nhật: {new Date(post.updatedAt).toLocaleDateString("vi-VN")}
+                            </Typography>
+                            </Box>
                         </Box>
                     </Box>
                 ))}
