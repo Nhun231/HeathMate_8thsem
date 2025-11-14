@@ -25,7 +25,7 @@ const NewsFeedSection = () => {
     const DESCRIPTION_LENGTH = 250;
 
     const authorNameMap = {
-        "Expert": "Chuyên gia",
+        "Expert": "Chuyên gia dinh dưỡng",
         "Super Admin": "Quản trị viên",
     };
 

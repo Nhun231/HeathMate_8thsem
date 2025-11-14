@@ -28,6 +28,11 @@ const DetailPost = () => {
     const [imageUrl, setImageUrl] = useState(null);
     const [relatedImageUrls, setRelatedImageUrls] = useState({});
 
+    const authorNameMap = {
+        "Expert": "Chuyên gia dinh dưỡng",
+        "Super Admin": "Quản trị viên",
+    };
+
     useEffect(() => {
         if (postId) {
             const fetchPost = async () => {
@@ -46,14 +51,15 @@ const DetailPost = () => {
                     }
 
                     if (data.category?.length > 0) {
-                        const categoryIds = data.category.map(c => c._id);
+                        const categoryIds = data.category.map((c) => c._id);
                         const res = await listNewsfeed({
                             status: "PUBLISHED",
-                            limit: 5
+                            limit: 5,
                         });
-                        const related = res.data.filter(p =>
-                            p._id !== data._id &&
-                            p.category?.some(c => categoryIds.includes(c._id))
+                        const related = res.data.filter(
+                            (p) =>
+                                p._id !== data._id &&
+                                p.category?.some((c) => categoryIds.includes(c._id))
                         );
                         setRelatedPosts(related);
 
@@ -129,74 +135,10 @@ const DetailPost = () => {
                 <ArrowBackIcon sx={{ mr: 1 }} /> Quay lại
             </Typography>
 
-            {/* Header image */}
-            {imageUrl && (
-                <Box
-                    sx={{
-                        width: "100%",
-                        height: { xs: 280, sm: 400 },
-                        overflow: "hidden",
-                        borderRadius: "16px",
-                        mb: 4,
-                        boxShadow: "0px 8px 24px rgba(0,0,0,0.15)",
-                        "& img": { transition: "transform 0.4s ease" },
-                        "&:hover img": { transform: "scale(1.03)" },
-                    }}
-                >
-                    <img
-                        src={imageUrl}
-                        alt={post.title}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                        onError={(e) =>
-                            (e.target.src = "https://img.icons8.com/clouds/100/news.png")
-                        }
-                    />
-                </Box>
-            )}
-
-            {/* Title + Meta */}
-            <Box sx={{ textAlign: "center", mb: 4 }}>
-                <Typography
-                    variant="h3"
-                    sx={{ fontWeight: 700, color: "#0a7a28", mb: 1, lineHeight: 1.3 }}
-                >
-                    {post.title}
-                </Typography>
-
-                {post.category?.length > 0 && (
-                    <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" mb={1}>
-                        {post.category.map((c) => (
-                            <Chip
-                                key={c._id}
-                                label={c.name}
-                                size="small"
-                                sx={{
-                                    backgroundColor: "#e7f8ec",
-                                    color: "#0a7a28",
-                                    fontWeight: 500,
-                                    boxShadow: "0px 2px 6px rgba(0,0,0,0.1)",
-                                    fontSize: "0.8rem",
-                                }}
-                            />
-                        ))}
-                    </Stack>
-                )}
-
-                <Typography
-                    variant="subtitle2"
-                    sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "0.9rem" }}
-                >
-                    {new Date(post.createdAt).toLocaleDateString("vi-VN")}
-                </Typography>
-            </Box>
-
-            <Divider sx={{ mb: 4 }} />
-
-            {/* Main layout: content + related */}
+            {/* Layout: main content + related posts */}
             <Box
                 sx={{
                     display: "flex",
-                    flexDirection: "row",
                     gap: 4,
                     alignItems: "flex-start",
                     flexWrap: "wrap",
@@ -205,6 +147,88 @@ const DetailPost = () => {
                 {/* Main content */}
                 <Box sx={{ flex: 1, minWidth: 300 }}>
                     <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
+                        {/* Title */}
+                        <Typography
+                            variant="h3"
+                            sx={{ fontWeight: 700, color: "#0a7a28", mb: 2, lineHeight: 1.3 }}
+                        >
+                            {post.title}
+                        </Typography>
+
+                        {/* Author */}
+                        {post.author && (
+                            <Typography
+                                variant="subtitle1"
+                                sx={{ color: "text.secondary", mb: 1 }}
+                            >
+                                Tác giả: {authorNameMap[post.author?.fullname] || post.author?.fullname || "Ẩn danh"}
+                            </Typography>
+                        )}
+
+                        {/* Categories
+                        {post.category?.length > 0 && (
+                            <Stack
+                                direction="row"
+                                spacing={1}
+                                flexWrap="wrap"
+                                mb={1}
+                            >
+                                {post.category.map((c) => (
+                                    <Chip
+                                        key={c._id}
+                                        label={c.name}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: "#e7f8ec",
+                                            color: "#0a7a28",
+                                            fontWeight: 500,
+                                            boxShadow: "0px 2px 6px rgba(0,0,0,0.1)",
+                                            fontSize: "0.8rem",
+                                        }}
+                                    />
+                                ))}
+                            </Stack>
+                        )} */}
+
+                        {/* Date */}
+                        <Typography
+                            variant="subtitle2"
+                            sx={{ color: "text.secondary", fontStyle: "italic", mb: 2 }}
+                        >
+                            {new Date(post.createdAt).toLocaleDateString("vi-VN")}
+                        </Typography>
+
+                        {/* Header image */}
+                        {imageUrl && (
+                            <Box
+                                sx={{
+                                    width: "100%",
+                                    height: { xs: 280, sm: 400 },
+                                    overflow: "hidden",
+                                    borderRadius: "16px",
+                                    mb: 3,
+                                    boxShadow: "0px 8px 24px rgba(0,0,0,0.15)",
+                                    "& img": { transition: "transform 0.4s ease" },
+                                    "&:hover img": { transform: "scale(1.03)" },
+                                }}
+                            >
+                                <img
+                                    src={imageUrl}
+                                    alt={post.title}
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                        display: "block",
+                                    }}
+                                    onError={(e) =>
+                                        (e.target.src = "https://img.icons8.com/clouds/100/news.png")
+                                    }
+                                />
+                            </Box>
+                        )}
+
+                        {/* Content */}
                         <Box sx={{ textAlign: "justify" }}>
                             <div
                                 dangerouslySetInnerHTML={{ __html: post.content }}
@@ -225,7 +249,10 @@ const DetailPost = () => {
                         }}
                     >
                         <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
-                            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: "#0a7a28" }}>
+                            <Typography
+                                variant="h6"
+                                sx={{ mb: 2, fontWeight: 700, color: "#0a7a28" }}
+                            >
                                 Bài viết liên quan
                             </Typography>
                             <List>

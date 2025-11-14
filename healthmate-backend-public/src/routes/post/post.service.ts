@@ -18,7 +18,7 @@ export class PostService {
     private readonly postRepo: PostRepository,
     private readonly sharedRoleRepository: SharedRoleRepository,
     private readonly sharedUserRepository: SharedUserRepository,
-  ) {}
+  ) { }
 
   async list(query: QueryType, activeUserId?: string) {
     let userRole;

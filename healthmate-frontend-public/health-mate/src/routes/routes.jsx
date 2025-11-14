@@ -69,12 +69,25 @@ const router = createBrowserRouter([
     element: <GuestHomePage />,
   },
   {
-    path: "/list-post",
-    element: <ListPost />,
-  },
-  {
-    path: "/detail-post/:postId",
-    element: <PostDetail />,
+    path: "/",
+    element: <AuthLayout />,
+    children: [
+      {
+        element: <MainLayout />,
+        children: [
+          {
+            path: "list-post",
+            element: <ListPost />,
+          },
+          {
+            path: "detail-post/:postId",
+            element: <PostDetail />,
+          },
+          // các route khác nằm trong MainLayout
+        ],
+      },
+      // các route ngoài MainLayout (nếu có)
+    ],
   },
   {
     path: "/register-expert",

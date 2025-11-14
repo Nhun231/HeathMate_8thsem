@@ -116,7 +116,7 @@ const ListPost = () => {
             {/* Tiêu đề page */}
             <Typography
                 variant="h3"
-                fontWeight={900}
+                fontWeight={800}
                 sx={{
                     color: "#0a7a28",
                     mb: 4,

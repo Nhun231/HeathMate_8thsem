@@ -74,13 +74,12 @@ const Header = () => {
         boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
       }}
     >
-      {/* tăng nhẹ chiều cao bằng vh, không phá layout */}
       <Toolbar
         sx={{
           maxWidth: "1600px",
           mx: "auto",
           width: "100%",
-          height: "12vh", 
+          height: "12vh",
           minHeight: "80px",
         }}
       >
@@ -93,7 +92,7 @@ const Header = () => {
             cursor: "pointer",
             fontWeight: "bold",
             color: "#ffffff",
-            fontSize: { xs: "1.6rem", sm: "1.8rem", md: "2rem" }, // chỉ to hơn nhẹ
+            fontSize: { xs: "1.6rem", sm: "1.8rem", md: "2rem" },
             transition: "transform 0.2s",
             position: "relative",
             display: "inline-block",
@@ -106,8 +105,8 @@ const Header = () => {
                 userRole === "Admin"
                   ? "/admin/dashboard"
                   : userRole === "NutritionExpert"
-                  ? "/expert-chat"
-                  : "/customer-homepage"
+                    ? "/expert-chat"
+                    : "/customer-homepage"
               }
               style={{ color: "inherit", textDecoration: "none", position: "relative" }}
             >
@@ -151,13 +150,13 @@ const Header = () => {
           )}
         </Typography>
 
-        {/* Các nút */}
+        {/* Nút menu */}
         <Box
           sx={{
             display: "flex",
             gap: 2,
             "& button": {
-              fontSize: { xs: "0.9rem", sm: "1rem", md: "1.05rem" }, // tăng nhẹ chữ
+              fontSize: { xs: "0.9rem", sm: "1rem", md: "1.05rem" },
               padding: { xs: "6px 10px", sm: "8px 12px", md: "9px 15px" },
               fontWeight: "bold",
               color: "white",
@@ -167,6 +166,9 @@ const Header = () => {
             },
           }}
         >
+          {/* Tin tức luôn hiển thị */}
+          <Button onClick={() => navigate("/list-post")}>Tin tức</Button>
+
           {isLoggedIn ? (
             <>
               {userRole === "Admin" && (
@@ -199,11 +201,7 @@ const Header = () => {
                     open={Boolean(anchorEl)}
                     onClose={handleClose}
                     PaperProps={{
-                      sx: {
-                        mt: 1,
-                        borderRadius: 2,
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                      },
+                      sx: { mt: 1, borderRadius: 2, boxShadow: "0 4px 12px rgba(0,0,0,0.2)" },
                     }}
                   >
                     <MenuItem

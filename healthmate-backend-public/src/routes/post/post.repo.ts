@@ -25,7 +25,7 @@ export class PostRepository {
     const queryPosts = await this.queryBuilder.query({
       query,
       allowedFilters: ['author', 'title', 'status'],
-      populateFields: ['category','author'],
+      populateFields: ['category', 'author'],
     });
 
     return queryPosts;
@@ -36,7 +36,7 @@ export class PostRepository {
       | ({ _id: Types.ObjectId } & Partial<Post>)
       | { _id: Types.ObjectId; authorId: Types.ObjectId },
   ) {
-    return this.postModel.findOne(where).populate('category');
+    return this.postModel.findOne(where).populate('category').populate('author');
   }
 
   async create(data: Partial<PostDocument>) {
