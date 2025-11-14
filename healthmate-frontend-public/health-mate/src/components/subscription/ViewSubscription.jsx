@@ -54,14 +54,23 @@ const ViewSubscriptions = () => {
         const res = await listSubscriptions();
         const data = Array.isArray(res.data) ? res.data : [];
         const advPkgs = data
-          .filter((pkg) => pkg.type === "ADVANCED")
+          .filter((pkg) => pkg.type.name === "ADVANCED")
           .sort((a, b) => a.durationDays - b.durationDays);
         setSubscriptions(advPkgs);
         if (advPkgs.length > 0) setSelectedSub(advPkgs[0]);
         // Fetch current active order for this user
         if (user?._id) {
-          const ordersRes = await baseAxios.get("/order", { params: { user: user._id, status: "SUCCESS", limit: 1, sort: "-startDate" }, populate: "subscription" });
-          const current = ordersRes?.data?.data?.[0] || ordersRes?.data?.[0] || null;
+          const ordersRes = await baseAxios.get("/order", {
+            params: {
+              user: user._id,
+              status: "SUCCESS",
+              limit: 1,
+              sort: "-startDate",
+            },
+            populate: "subscription",
+          });
+          const current =
+            ordersRes?.data?.data?.[0] || ordersRes?.data?.[0] || null;
           setCurrentOrder(current);
         }
       } catch (err) {
@@ -173,17 +182,42 @@ const ViewSubscriptions = () => {
         {/* CURRENT SUBSCRIPTION (if exists) */}
         {currentOrder && (
           <Grid item xs={12} md={10}>
-            <Card sx={{ borderRadius: 4, boxShadow: 4, bgcolor: "#fff", border: "2px solid #4CAF50" }}>
+            <Card
+              sx={{
+                borderRadius: 4,
+                boxShadow: 4,
+                bgcolor: "#fff",
+                border: "2px solid #4CAF50",
+              }}
+            >
               <CardContent>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "#1B5E20", mb: 1 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, color: "#1B5E20", mb: 1 }}
+                >
                   Gói hiện tại của bạn
                 </Typography>
-                <Typography variant="body1" sx={{ color: "#2E7D32", fontWeight: 600 }}>
-                  {currentOrder?.subscription?.name} — {currentOrder?.subscription?.price?.toLocaleString("vi-VN")} đ
+                <Typography
+                  variant="body1"
+                  sx={{ color: "#2E7D32", fontWeight: 600 }}
+                >
+                  {currentOrder?.subscription?.name} —{" "}
+                  {currentOrder?.subscription?.price?.toLocaleString("vi-VN")} đ
                 </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-                  Hiệu lực từ: {currentOrder?.startDate ? new Date(currentOrder.startDate).toLocaleDateString("vi-VN") : "-"}
-                  {" "}đến {currentOrder?.endDate ? new Date(currentOrder.endDate).toLocaleDateString("vi-VN") : "—"}
+                <Typography
+                  variant="body2"
+                  sx={{ color: "text.secondary", mt: 0.5 }}
+                >
+                  Hiệu lực từ:{" "}
+                  {currentOrder?.startDate
+                    ? new Date(currentOrder.startDate).toLocaleDateString(
+                        "vi-VN"
+                      )
+                    : "-"}{" "}
+                  đến{" "}
+                  {currentOrder?.endDate
+                    ? new Date(currentOrder.endDate).toLocaleDateString("vi-VN")
+                    : "—"}
                 </Typography>
               </CardContent>
             </Card>
@@ -384,11 +418,18 @@ const ViewSubscriptions = () => {
                     fontWeight: 600,
                   }}
                   onClick={handleUpgrade}
-                  disabled={creatingOrder || (currentOrder && currentOrder?.subscription?._id === selectedSub?._id)}
+                  disabled={
+                    creatingOrder ||
+                    (currentOrder &&
+                      currentOrder?.subscription?._id === selectedSub?._id)
+                  }
                 >
-                  {currentOrder && currentOrder?.subscription?._id === selectedSub?._id
+                  {currentOrder &&
+                  currentOrder?.subscription?._id === selectedSub?._id
                     ? "Đang sử dụng"
-                    : (creatingOrder ? "Đang tạo đơn..." : "Nâng cấp ngay")}
+                    : creatingOrder
+                    ? "Đang tạo đơn..."
+                    : "Nâng cấp ngay"}
                 </Button>
               </CardContent>
             </Card>
