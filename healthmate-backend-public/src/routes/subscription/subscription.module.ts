@@ -7,6 +7,10 @@ import {
   Subscription,
   SubscriptionSchema,
 } from '../../shared/schemas/subscription.schema';
+import {
+  SubscriptionType,
+  SubscriptionTypeSchema,
+} from 'src/shared/schemas/subscriptionType.schema';
 
 @Module({
   controllers: [SubscriptionController],
@@ -14,6 +18,9 @@ import {
   imports: [
     MongooseModule.forFeature([
       { name: Subscription.name, schema: SubscriptionSchema },
+    ]),
+    MongooseModule.forFeature([
+      { name: SubscriptionType.name, schema: SubscriptionTypeSchema },
     ]),
   ],
 })

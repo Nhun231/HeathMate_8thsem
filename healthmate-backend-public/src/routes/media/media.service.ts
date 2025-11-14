@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { S3Service } from 'src/shared/services/s3.service';
 import { unlink } from 'fs/promises';
 import { PresignedUploadFileBodyType } from './schema/request/media.request.schema';
 import { generateRandomFilename } from 'src/shared/utils/helper';
+import mime from 'mime-types';
+
 @Injectable()
 export class MediaService {
   constructor(private readonly s3Service: S3Service) {}
@@ -33,6 +35,19 @@ export class MediaService {
   }
 
   async getPresignedPutURL(body: PresignedUploadFileBodyType) {
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'application/pdf',
+      'image/webp',
+    ];
+
+    const contentType =
+      mime.lookup(body.filename) || 'application/octet-stream';
+    if (!allowedTypes.includes(contentType)) {
+      throw new BadRequestException(`File type ${contentType} not allowed`);
+    }
+
     const randomFileName = generateRandomFilename(body.filename);
     const presignedUrl =
       await this.s3Service.createPresignedUrlWithClient(randomFileName);

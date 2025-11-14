@@ -27,12 +27,18 @@ export class PostService {
       userRole = await this.getUserRole(activeUserId);
     }
 
+    const sortQuery = query.sort || '-createdAt';
+
     if (userRole === Rolename.NutritionExpert) {
       return this.postRepo.findAll({ ...query, author: activeUserId });
     } else if (userRole === Rolename.Admin) {
       return this.postRepo.findAll(query);
     } else {
-      return this.postRepo.findAll({ ...query, status: PostStatus.PUBLISHED });
+      return this.postRepo.findAll({
+        ...query,
+        status: PostStatus.PUBLISHED,
+        sort: sortQuery,
+      });
     }
   }
 

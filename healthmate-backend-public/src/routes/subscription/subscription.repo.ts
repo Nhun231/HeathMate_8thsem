@@ -25,6 +25,7 @@ export class SubscriptionRepository {
     const querySubscriptions = await this.queryBuilder.query({
       query,
       allowedFilters: ['name', 'type', 'duration', 'price'],
+      populateFields: ['type'],
     });
 
     return querySubscriptions;
