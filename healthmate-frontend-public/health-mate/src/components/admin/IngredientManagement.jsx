@@ -544,7 +544,6 @@ const IngredientManagement = () => {
                 onChange={(e) => setFormData({ ...formData, isPublic: e.target.value })}
                 label="Loại công khai"
               >
-                <SelectMenuItem value={false}>Nguyên liệu cá nhân</SelectMenuItem>
                 <SelectMenuItem value={true}>Nguyên liệu công khai</SelectMenuItem>
               </Select>
             </FormControl>

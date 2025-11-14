@@ -31,7 +31,13 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import viLocale from "date-fns/locale/vi";
-import { subDays, differenceInCalendarDays, parse, differenceInMinutes, differenceInHours } from "date-fns";
+import {
+  subDays,
+  differenceInCalendarDays,
+  parse,
+  differenceInMinutes,
+  differenceInHours,
+} from "date-fns";
 
 import {
   addWaterIntake,
@@ -56,7 +62,16 @@ const todayIso = toIsoDate(new Date());
 const CONFETTI_LOCALSTORAGE_PREFIX = "water_confetti_shown_"; // + yyyy-mm-dd
 
 // Custom reusable confirm dialog component
-const CustomConfirmDialog = ({ open, title, message, icon, onCancel, onConfirm, confirmText = "Tiếp tục", cancelText = "Huỷ" }) => {
+const CustomConfirmDialog = ({
+  open,
+  title,
+  message,
+  icon,
+  onCancel,
+  onConfirm,
+  confirmText = "Tiếp tục",
+  cancelText = "Huỷ",
+}) => {
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -186,13 +201,29 @@ const WaterTrackingPage = () => {
     if (!data?.history || data.history.length === 0) return null;
     // assume history sorted ascending? To be safe, find max by time
     const sorted = [...data.history].sort((a, b) => (a.time < b.time ? 1 : -1));
-    console.log(sorted)
+    console.log(sorted);
     return sorted[0];
   };
 
   // general function to open confirm dialog with props
-  const openConfirm = ({ title, message, icon = null, onConfirm, onCancel, confirmText = "Tiếp tục", cancelText = "Huỷ" }) => {
-    confirmRef.current = { title, message, icon, onConfirm, onCancel, confirmText, cancelText };
+  const openConfirm = ({
+    title,
+    message,
+    icon = null,
+    onConfirm,
+    onCancel,
+    confirmText = "Tiếp tục",
+    cancelText = "Huỷ",
+  }) => {
+    confirmRef.current = {
+      title,
+      message,
+      icon,
+      onConfirm,
+      onCancel,
+      confirmText,
+      cancelText,
+    };
     setConfirmOpen(true);
   };
 
@@ -202,15 +233,14 @@ const WaterTrackingPage = () => {
   };
 
   const handleConfirmOk = () => {
-  setConfirmOpen(false);
-  const onConfirm = confirmRef.current.onConfirm;
-  if (onConfirm) {
-    setTimeout(() => {
-      onConfirm();
-    }, 0);
-  }
-};
-
+    setConfirmOpen(false);
+    const onConfirm = confirmRef.current.onConfirm;
+    if (onConfirm) {
+      setTimeout(() => {
+        onConfirm();
+      }, 0);
+    }
+  };
 
   // Add flow with checks:
   // 1) if amount > 250 -> ask confirm
@@ -222,7 +252,11 @@ const WaterTrackingPage = () => {
       const resp = await addWaterIntake(amount);
       setWaterData(resp.data);
       setNewIntake("");
-      setAlert({ show: true, message: "Thêm nước thành công!", variant: "success" });
+      setAlert({
+        show: true,
+        message: "Thêm nước thành công!",
+        variant: "success",
+      });
     } catch (err) {
       console.error(err);
       setAlert({
@@ -237,10 +271,10 @@ const WaterTrackingPage = () => {
 
   const prepareAdd = (amount) => {
     const amt = Number(amount);
-    if (!amt || isNaN(amt) || amt <= 0) {
+    if (!amt || isNaN(amt) || amt < 10 || amt >1000) {
       setAlert({
         show: true,
-        message: "Vui lòng nhập số lượng hợp lệ",
+        message: "Vui lòng nhập số lượng hợp lệ (tối thiểu 10ml, tối đa 1000ml)",
         variant: "error",
       });
       return;
@@ -260,9 +294,15 @@ const WaterTrackingPage = () => {
     const afterOverLimit = () => {
       // after confirming >250, then check proximity
       if (latest) {
-        const lastDate = parseTimeOnDate(latest.time, waterData.date || selectedDate);
+        const lastDate = parseTimeOnDate(
+          latest.time,
+          waterData.date || selectedDate
+        );
         if (lastDate) {
-          const minutesDiff = Math.max(0, Math.round(differenceInMinutes(now, lastDate)));
+          const minutesDiff = Math.max(
+            0,
+            Math.round(differenceInMinutes(now, lastDate))
+          );
           if (minutesDiff <= 10) {
             // show proximity warning
             openConfirm({
@@ -298,9 +338,15 @@ const WaterTrackingPage = () => {
 
     // not >250, check proximity
     if (latest) {
-      const lastDate = parseTimeOnDate(latest.time, waterData.date || selectedDate);
+      const lastDate = parseTimeOnDate(
+        latest.time,
+        waterData.date || selectedDate
+      );
       if (lastDate) {
-        const minutesDiff = Math.max(0, Math.round(differenceInMinutes(now, lastDate)));
+        const minutesDiff = Math.max(
+          0,
+          Math.round(differenceInMinutes(now, lastDate))
+        );
         if (minutesDiff <= 10) {
           openConfirm({
             title: "Cảnh báo gần đây",
@@ -316,15 +362,15 @@ const WaterTrackingPage = () => {
       }
     }
     // otherwise safe to add
-   openConfirm({
-    title: "Xác nhận uống nước",
-    message: `Bạn sắp ghi nhận ${amt} ml. Xác nhận?`,
-    icon: <LocalDrinkIcon color="primary" />,
-    confirmText: "Uống",
-    cancelText: "Huỷ",
-    onConfirm: () => performAdd(amt),
-    onCancel: () => {},
-  });
+    openConfirm({
+      title: "Xác nhận uống nước",
+      message: `Bạn sắp ghi nhận ${amt} ml. Xác nhận?`,
+      icon: <LocalDrinkIcon color="primary" />,
+      confirmText: "Uống",
+      cancelText: "Huỷ",
+      onConfirm: () => performAdd(amt),
+      onCancel: () => {},
+    });
   };
 
   // add handlers
@@ -340,7 +386,10 @@ const WaterTrackingPage = () => {
   // edit inline open
   const handleStartEdit = (entry) => {
     // check 7-day rule based on day's record date
-    const daysDiff = differenceInCalendarDays(new Date(), new Date(waterData.date));
+    const daysDiff = differenceInCalendarDays(
+      new Date(),
+      new Date(waterData.date)
+    );
     if (daysDiff > 6) {
       setAlert({
         show: true,
@@ -350,7 +399,6 @@ const WaterTrackingPage = () => {
       });
       return;
     }
-
     setEditingId(entry._id);
     setEditingAmount(String(entry.amount));
   };
@@ -362,10 +410,10 @@ const WaterTrackingPage = () => {
 
   const handleSaveEdit = async (entry) => {
     const newAmt = Number(editingAmount);
-    if (!newAmt || isNaN(newAmt) || newAmt <= 0) {
+    if (!newAmt || isNaN(newAmt) || newAmt < 10 || newAmt >1000) {
       setAlert({
         show: true,
-        message: "Vui lòng nhập số lượng hợp lệ",
+        message: "Vui lòng nhập số lượng hợp lệ (tối thiểu 10ml, tối đa 1001ml) ",
         variant: "error",
       });
       return;
@@ -383,7 +431,9 @@ const WaterTrackingPage = () => {
     // Confirm update with dialog
     openConfirm({
       title: "Xác nhận cập nhật",
-      message: `Xác nhận cập nhật từ ${entry.amount} → ${newAmt} ${waterData?.unit || "ml"}?`,
+      message: `Xác nhận cập nhật từ ${entry.amount} → ${newAmt} ${
+        waterData?.unit || "ml"
+      }?`,
       icon: <WarningAmberIcon color="warning" />,
       confirmText: "Cập nhật",
       cancelText: "Huỷ",
@@ -415,7 +465,10 @@ const WaterTrackingPage = () => {
   };
 
   const handleDelete = async (entry) => {
-    const daysDiff = differenceInCalendarDays(new Date(), new Date(waterData.date));
+    const daysDiff = differenceInCalendarDays(
+      new Date(),
+      new Date(waterData.date)
+    );
     if (daysDiff > 6) {
       setAlert({
         show: true,
@@ -437,7 +490,11 @@ const WaterTrackingPage = () => {
           setLoading(true);
           await deleteWaterHistory(entry._id, selectedDate); // assumes service
           await reloadDate(selectedDate);
-          setAlert({ show: true, message: "Xoá thành công", variant: "success" });
+          setAlert({
+            show: true,
+            message: "Xoá thành công",
+            variant: "success",
+          });
         } catch (err) {
           console.error(err);
           setAlert({
@@ -474,9 +531,15 @@ const WaterTrackingPage = () => {
     if (!waterData) return null;
     const latest = getLatestEntry(waterData);
     if (!latest) return null;
-    const lastDate = parseTimeOnDate(latest.time, waterData.date || selectedDate);
+    const lastDate = parseTimeOnDate(
+      latest.time,
+      waterData.date || selectedDate
+    );
     if (!lastDate) return null;
-    const diff = Math.max(0, Math.round(differenceInHours(new Date(), lastDate)));
+    const diff = Math.max(
+      0,
+      Math.round(differenceInHours(new Date(), lastDate))
+    );
     return diff;
   }, [waterData, selectedDate]);
 
@@ -491,7 +554,6 @@ const WaterTrackingPage = () => {
           onClose={() => setAlert({ ...alert, show: false })}
         />
       )}
-
       {/* Confirm dialog */}
       <CustomConfirmDialog
         open={confirmOpen}
@@ -503,10 +565,14 @@ const WaterTrackingPage = () => {
         onCancel={handleConfirmCancel}
         onConfirm={handleConfirmOk}
       />
-
       {/* Confetti */}
-      {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} />}
-
+      {showConfetti && (
+        <Confetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+        />
+      )}
       {/* Header */}
       <div className="flex flex-col mb-6 gap-4">
         <div>
@@ -516,7 +582,6 @@ const WaterTrackingPage = () => {
           </p>
         </div>
       </div>
-
       {/* Top row: Calendar + Progress (with add form) */}
       <div className="flex gap-4">
         {/* Calendar card */}
@@ -529,7 +594,7 @@ const WaterTrackingPage = () => {
               <span style={{ marginLeft: 8 }}>Chọn ngày</span>
             </div>
           </div>
-          <div className="card-content">
+          <div className="card-content" > 
             <LocalizationProvider
               dateAdapter={AdapterDateFns}
               adapterLocale={viLocale}
@@ -549,6 +614,8 @@ const WaterTrackingPage = () => {
                   "& .MuiPickersCalendarHeader-root": {
                     borderBottom: "1px solid #e0e0e0",
                   },
+                  backgroundColor: "rgb(241, 248, 244)",
+                  borderRadius: 2
                 }}
               />
             </LocalizationProvider>
@@ -595,79 +662,98 @@ const WaterTrackingPage = () => {
 
           <div className="card-content">
             {/* Progress container */}
-            <div className="water-progress-container" >
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "12" }}>
+            <div className="water-progress-container">
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  marginBottom: "12",
+                }}
+              >
                 <Box
-  sx={{
-    position: "relative",
-    width: 100,
-    height: 140,
-    border: "2px solid #00aaff",
-    borderRadius: "0 0 12px 12px",
-    overflow: "hidden",
-    background: "linear-gradient(135deg, rgba(0, 170, 255, 0.05) 0%, rgba(0, 170, 255, 0.02) 100%)",
-    boxShadow: "inset 0 2px 4px rgba(0, 170, 255, 0.1), 0 4px 12px rgba(0, 170, 255, 0.15)",
-    "&::before": {
-      content: '""',
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      height: "3px",
-      background: "linear-gradient(90deg, transparent, #00aaff, transparent)",
-      borderRadius: "2px 2px 0 0",
-    },
-  }}
->
-  {/* Liquid Fill */}
-  <Box
-    sx={{
-      position: "absolute",
-      bottom: 0,
-      width: "100%",
-      height: `${progressPercentage}%`,
-      background: "linear-gradient(180deg, #00aaff 0%, #0088cc 50%, #005fa3 100%)",
-      transition: "height 0.3s ease-out",
-      boxShadow: "inset 0 2px 4px rgba(255, 255, 255, 0.3)",
-    }}
-  />
+                  sx={{
+                    position: "relative",
+                    width: 100,
+                    height: 140,
+                    border: "2px solid #00aaff",
+                    borderRadius: "0 0 12px 12px",
+                    overflow: "hidden",
+                    background:
+                      "linear-gradient(135deg, rgba(0, 170, 255, 0.05) 0%, rgba(0, 170, 255, 0.02) 100%)",
+                    boxShadow:
+                      "inset 0 2px 4px rgba(0, 170, 255, 0.1), 0 4px 12px rgba(0, 170, 255, 0.15)",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: "3px",
+                      background:
+                        "linear-gradient(90deg, transparent, #00aaff, transparent)",
+                      borderRadius: "2px 2px 0 0",
+                    },
+                  }}
+                >
+                  {/* Liquid Fill */}
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      bottom: 0,
+                      width: "100%",
+                      height: `${progressPercentage}%`,
+                      background:
+                        "linear-gradient(180deg, #00aaff 0%, #0088cc 50%, #005fa3 100%)",
+                      transition: "height 0.3s ease-out",
+                      boxShadow: "inset 0 2px 4px rgba(255, 255, 255, 0.3)",
+                    }}
+                  />
 
-  {/* Inner shine for depth */}
-  <Box
-    sx={{
-      position: "absolute",
-      top: 0,
-      left: "10%",
-      width: "15%",
-      height: "100%",
-      background: "linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 100%)",
-      borderRadius: "0 0 8px 0",
-    }}
-  />
+                  {/* Inner shine for depth */}
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: "10%",
+                      width: "15%",
+                      height: "100%",
+                      background:
+                        "linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 100%)",
+                      borderRadius: "0 0 8px 0",
+                    }}
+                  />
 
-  {/* Cup handle */}
-  <Box
-    sx={{
-      position: "absolute",
-      right: -20,
-      top: 20,
-      width: 20,
-      height: 50,
-      border: "2px solid #00aaff",
-      borderLeft: "none",
-      borderRadius: "0 12px 12px 0",
-      boxShadow: "0 2px 8px rgba(0, 170, 255, 0.2)",
-    }}
-  />
-</Box>
+                  {/* Cup handle */}
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      right: -20,
+                      top: 20,
+                      width: 20,
+                      height: 50,
+                      border: "2px solid #00aaff",
+                      borderLeft: "none",
+                      borderRadius: "0 12px 12px 0",
+                      boxShadow: "0 2px 8px rgba(0, 170, 255, 0.2)",
+                    }}
+                  />
+                </Box>
 
                 {/* one-line UI under progress with icon-left */}
-                <Box sx={{ mt: 4, display: "flex", alignItems: "center", gap: 1 }}>
-                  <WaterDropIcon fontSize="small" sx={{ color: "primary.main" }} />
+                <Box
+                  sx={{ mt: 4, display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <WaterDropIcon
+                    fontSize="small"
+                    sx={{ color: "primary.main" }}
+                  />
                   <Typography variant="body2" color="text.secondary">
                     {progressPercentage >= 100
                       ? "Yay! Bạn đã uống đủ nước!"
-                      : `Còn ${remaining} ${waterData?.unit ?? "ml"} nữa để đạt mục tiêu`}
+                      : `Còn ${remaining} ${
+                          waterData?.unit ?? "ml"
+                        } nữa để đạt mục tiêu`}
                   </Typography>
                 </Box>
               </div>
@@ -677,26 +763,36 @@ const WaterTrackingPage = () => {
                   <div className="water-percentage">{progressPercentage}%</div>
                   <div className="water-amounts">
                     <span className="consumed">
-                      {waterData?.consumed ?? waterData?.current ?? 0} {waterData?.unit ?? "ml"}
+                      {waterData?.consumed ?? waterData?.current ?? 0}{" "}
+                      {waterData?.unit ?? "ml"}
                     </span>
                     <span className="separator">/</span>
                     <span className="target">
-                      {waterData?.target ?? waterData?.goal ?? "-"} {waterData?.unit ?? "ml"}
+                      {waterData?.target ?? waterData?.goal ?? "-"}{" "}
+                      {waterData?.unit ?? "ml"}
                     </span>
                   </div>
                 </div>
 
-
                 {/* small subtitle + HCDC link */}
                 <div style={{ marginTop: 8 }} className="text-sm text-gray-600">
-                  Theo khuyến cáo từ bác sĩ, mỗi người nên uống đủ nước mỗi ngày. Tuy nhiên tùy vào <strong>tình trạng sức khỏe</strong> và <strong>cường độ vận động</strong>, lượng nước cần thiết có thể ít hoặc nhiều hơn.
+                  Theo khuyến cáo từ bác sĩ, mỗi người nên uống đủ nước mỗi
+                  ngày. Tuy nhiên tùy vào <strong>tình trạng sức khỏe</strong>{" "}
+                  và <strong>cường độ vận động</strong>, lượng nước cần thiết có
+                  thể ít hoặc nhiều hơn.
                 </div>
 
-                <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <Box
+                  sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}
+                >
                   <HelpOutlineIcon fontSize="small" />
                   <Typography variant="body2" color="text.secondary">
                     Bạn đã biết cách uống nước đúng cách chưa?{" "}
-                    <Link href="https://hcdc.vn/ban-da-uong-nuoc-dung-cach-chua-YO76QJ.html" target="_blank" rel="noopener">
+                    <Link
+                      href="https://hcdc.vn/ban-da-uong-nuoc-dung-cach-chua-YO76QJ.html"
+                      target="_blank"
+                      rel="noopener"
+                    >
                       Xem hướng dẫn HCDC
                     </Link>
                   </Typography>
@@ -712,19 +808,57 @@ const WaterTrackingPage = () => {
               }}
             />
 
-            {/* Banner: remind if not reached and >2 hours since last drink */}
-            {isViewingToday&& waterData && (waterData?.consumed ?? waterData?.current ?? 0) < (waterData?.target ?? waterData?.goal ?? Infinity) && hoursSinceLastDrink !== null && hoursSinceLastDrink >= 2 && (
-              <Alert severity="warning" sx={{ mb: 2, alignItems: "center", display: "flex", gap: 1 }}>
-                <Box sx={{ flex: 1 }}>
-                  <strong>Đã {hoursSinceLastDrink} giờ bạn chưa uống nước rồi.</strong> Hãy uống một ít để duy trì độ ẩm cơ thể nhé!
-                </Box>
-              </Alert>
+            {/* Banner: remind if not reached and >2 hours since last drink, or no data today */}
+            {isViewingToday && (
+              <>
+                {waterData&&waterData.consumed > 0 ? (
+                  (waterData.consumed ?? waterData.current ?? 0) <
+                    (waterData.target ?? waterData.goal ?? Infinity) &&
+                  hoursSinceLastDrink !== null &&
+                  hoursSinceLastDrink >= 2 && (
+                    <Alert
+                      severity="warning"
+                      sx={{
+                        mb: 2,
+                        display: "flex",
+                        gap: 1,
+                        alignItems: "center",
+                      }}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <strong>
+                          Đã {hoursSinceLastDrink} giờ bạn chưa uống nước rồi.
+                        </strong>{" "}
+                        Hãy uống một ít để duy trì độ ẩm cơ thể nhé!
+                      </Box>
+                    </Alert>
+                  )
+                ) : (
+                  <Alert
+                    severity="info"
+                    sx={{
+                      mb: 2,
+                      display: "flex",
+                      gap: 1,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box sx={{ flex: 1 }}>
+                      <strong>Hôm nay bạn chưa uống nước.</strong> Hãy bổ sung
+                      nước để cơ thể luôn đủ nước nhé!
+                    </Box>
+                  </Alert>
+                )}
+              </>
             )}
 
             {/* Add form (on top of history) */}
             <div className="water-form">
               <label className="form-label">Thêm lượng nước (ml)</label>
-              <div className="water-input-group" style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <div
+                className="water-input-group"
+                style={{ display: "flex", gap: 8, marginTop: 8 }}
+              >
                 <input
                   className="form-control"
                   type="number"
@@ -747,7 +881,10 @@ const WaterTrackingPage = () => {
 
               <div className="quick-add-section" style={{ marginTop: 12 }}>
                 <div className="text-sm text-gray-600 mb-2">Thêm nhanh:</div>
-                <div className="quick-add-buttons" style={{ display: "flex", gap: 8 }}>
+                <div
+                  className="quick-add-buttons"
+                  style={{ display: "flex", gap: 8 }}
+                >
                   {quickAddOptions.map((amt) => (
                     <button
                       key={amt}
@@ -793,9 +930,27 @@ const WaterTrackingPage = () => {
                       const isEditing = editingId === entry._id;
 
                       return (
-                        <div className="history-item" key={entry._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 8 }}>
-                          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                            <div className="history-time" style={{ minWidth: 70 }}>
+                        <div
+                          className="history-item"
+                          key={entry._id}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: 8,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 12,
+                              alignItems: "center",
+                            }}
+                          >
+                            <div
+                              className="history-time"
+                              style={{ minWidth: 70 }}
+                            >
                               {entry.time}
                             </div>
 
@@ -862,7 +1017,9 @@ const WaterTrackingPage = () => {
                             }}
                           >
                             <Tooltip
-                              title={canEdit ? "Sửa" : "Không thể sửa (quá 7 ngày)"}
+                              title={
+                                canEdit ? "Sửa" : "Không thể sửa (quá 7 ngày)"
+                              }
                             >
                               <span>
                                 <IconButton
@@ -886,7 +1043,9 @@ const WaterTrackingPage = () => {
                             </Tooltip>
 
                             <Tooltip
-                              title={canEdit ? "Xoá" : "Không thể xoá (quá 7 ngày)"}
+                              title={
+                                canEdit ? "Xoá" : "Không thể xoá (quá 7 ngày)"
+                              }
                             >
                               <span>
                                 <IconButton
@@ -924,7 +1083,8 @@ const WaterTrackingPage = () => {
             </div>
           </div>
         </div>
-      </div> {/* end top row */}
+      </div>{" "}
+      {/* end top row */}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SharedModule } from './shared/shared.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import CustomMyZodValidationPipe from './shared/pipes/custom-zod-validation.pipe';
 import { ZodSerializerInterceptor } from 'nestjs-zod';
@@ -29,6 +30,8 @@ import { PaymentModule } from './routes/payment/payment.module';
 import { BullModule } from '@nestjs/bullmq';
 
 import { ChatModule } from './routes/chat/chat.module';
+import { BankInfoModule } from './routes/bank-info/bankinfo.module';
+import { ReminderModule } from './routes/reminder/reminder.module';
 import { PostModule } from './routes/post/post.module';
 @Module({
   imports: [
@@ -43,6 +46,7 @@ import { PostModule } from './routes/post/post.module';
         url: envConfig.REDIS_URI,
       },
     }),
+    ScheduleModule.forRoot(),
     SharedModule,
     AuthModule,
     CalculationModule,
@@ -59,9 +63,11 @@ import { PostModule } from './routes/post/post.module';
     ProfileModule,
     ChatModule,
     WaterModule,
+    ReminderModule,
     OrderModule,
     SubscriptionModule,
     PaymentModule,
+    BankInfoModule,
     PostModule,
   ],
   controllers: [AppController],

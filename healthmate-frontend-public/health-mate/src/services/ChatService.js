@@ -16,7 +16,7 @@ class ChatService {
   }
 
   // Get messages for a specific chat room
-  async getMessages(roomId, page = 1, limit = 50) {
+  async getMessages(roomId, page = 1, limit = 100) {
     try {
       const response = await axios.get(`/chat/rooms/${roomId}/messages`, {
         params: { page, limit }

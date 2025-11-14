@@ -16,28 +16,25 @@ import { AuthContext } from "../../context/AuthProvider";
 
 const Header = () => {
   const navigate = useNavigate();
-
-  // Use AuthContext directly with fallback - won't throw error if not within provider
   const authContext = useContext(AuthContext);
   const user = authContext?.user || null;
+  const subscripted = !!user?.subscripted;
   const userRole = user?.roleId?.name || null;
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     const token = localStorage.getItem("accessToken");
     return !!token;
   });
-
   const [anchorEl, setAnchorEl] = useState(null);
   const [hasDietPlan, setHasDietPlan] = useState(false);
+
   useEffect(() => {
     const handleStorageChange = () => {
       const token = localStorage.getItem("accessToken");
       setIsLoggedIn(!!token);
       if (token) {
         getCurrentDietPlan(token)
-          .then((data) => {
-            if (data) setHasDietPlan(true);
-          })
+          .then((data) => data && setHasDietPlan(true))
           .catch((err) => {
             if (err?.status === 404 || err?.statusCode === 404) {
               setHasDietPlan(false);
@@ -51,13 +48,8 @@ const Header = () => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const handleClick = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
 
   const handleLogout = async () => {
     try {
@@ -73,6 +65,7 @@ const Header = () => {
       alert("Đăng xuất thất bại");
     }
   };
+
   return (
     <AppBar
       position="sticky"
@@ -81,9 +74,16 @@ const Header = () => {
         boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
       }}
     >
-      <Toolbar sx={{ maxWidth: "1600px", mx: "auto", width: "100%" }}>
+      <Toolbar
+        sx={{
+          maxWidth: "1600px",
+          mx: "auto",
+          width: "100%",
+          height: "12vh", 
+          minHeight: "80px",
+        }}
+      >
         {/* Logo */}
-
         <Typography
           variant="h5"
           component="div"
@@ -92,7 +92,10 @@ const Header = () => {
             cursor: "pointer",
             fontWeight: "bold",
             color: "#ffffff",
+            fontSize: { xs: "1.6rem", sm: "1.8rem", md: "2rem" }, // chỉ to hơn nhẹ
             transition: "transform 0.2s",
+            position: "relative",
+            display: "inline-block",
             "&:hover": { transform: "scale(1.05)", opacity: 0.9 },
           }}
         >
@@ -105,9 +108,37 @@ const Header = () => {
                   ? "/expert-chat"
                   : "/customer-homepage"
               }
-              style={{ color: "inherit", textDecoration: "none" }}
+              style={{ color: "inherit", textDecoration: "none", position: "relative" }}
             >
               HealthMate
+              {subscripted && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: "-8px",
+                    right: "-60px",
+                    background:
+                      "linear-gradient(135deg, #b388ff, #7c4dff, #64b5f6, #e1bee7)",
+                    color: "white",
+                    fontSize: "0.65rem",
+                    fontWeight: 700,
+                    padding: "2px 6px",
+                    borderRadius: "8px",
+                    boxShadow: "0 0 8px rgba(255,255,255,0.6)",
+                    letterSpacing: "0.5px",
+                    textShadow: "0 0 4px rgba(255,255,255,0.8)",
+                    animation: "shimmer 3s infinite",
+                    backgroundSize: "300% 300%",
+                    "@keyframes shimmer": {
+                      "0%": { backgroundPosition: "0% 50%" },
+                      "50%": { backgroundPosition: "100% 50%" },
+                      "100%": { backgroundPosition: "0% 50%" },
+                    },
+                  }}
+                >
+                  ★ PREMIUM
+                </Box>
+              )}
             </Link>
           ) : (
             <Link
@@ -119,155 +150,49 @@ const Header = () => {
           )}
         </Typography>
 
-        {/* Nút đăng nhập/đăng ký */}
-        <Box sx={{ display: "flex", gap: 2 }}>
+        {/* Các nút */}
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            "& button": {
+              fontSize: { xs: "0.9rem", sm: "1rem", md: "1.05rem" }, // tăng nhẹ chữ
+              padding: { xs: "6px 10px", sm: "8px 12px", md: "9px 15px" },
+              fontWeight: "bold",
+              color: "white",
+              "&:hover": {
+                bgcolor: "rgba(255,255,255,0.1)",
+              },
+            },
+          }}
+        >
           {isLoggedIn ? (
             <>
-              {/* Admin Role */}
               {userRole === "Admin" && (
                 <>
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate("/admin/dashboard")}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Dashboard
-                  </Button>
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate("/my-profile")}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Hồ sơ
-                  </Button>
-                  <Button
-                    color="inherit"
-                    onClick={handleLogout}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Đăng xuất
-                  </Button>
+                  <Button onClick={() => navigate("/admin/dashboard")}>Dashboard</Button>
+                  <Button onClick={() => navigate("/my-profile")}>Hồ sơ</Button>
+                  <Button onClick={handleLogout}>Đăng xuất</Button>
                 </>
               )}
-
-              {/* Expert Role */}
               {userRole === "NutritionExpert" && (
                 <>
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate("/expert-chat")}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Tư vấn cho khách hàng
-                  </Button>
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate("/my-profile")}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Hồ sơ
-                  </Button>
-                  <Button
-                    color="inherit"
-                    onClick={handleLogout}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Đăng xuất
-                  </Button>
+                    <Button onClick={() => navigate("/admin/posts")}>Tin tức của bạn</Button>
+                  <Button onClick={() => navigate("/expert-chat")}>Tư vấn</Button>
+                  <Button onClick={() => navigate("/my-profile")}>Hồ sơ</Button>
+                  <Button onClick={() => navigate("/bankinfo")}>Ngân hàng</Button>
+                  <Button onClick={handleLogout}>Đăng xuất</Button>
                 </>
               )}
-
-              {/* Customer Role */}
               {userRole === "Customer" && (
                 <>
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate("/calculate")}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Công cụ tính toán
-                  </Button>
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate("/diary")}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Thực đơn hôm nay
-                  </Button>
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate("/customer-chat")}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Tư vấn cùng chuyên gia
-                  </Button>
-                  <Button
-                    color="inherit"
-                    onClick={handleClick}
-                    endIcon={<ArrowDropDown />}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Kế hoạch ăn uống
+                  <Button onClick={() => navigate("/calculate")}>Công cụ tính toán</Button>
+                  <Button onClick={() => navigate("/diary")}>Thực đơn</Button>
+                  {subscripted && (
+                    <Button onClick={() => navigate("/customer-chat")}>Tư vấn</Button>
+                  )}
+                  <Button onClick={handleClick} endIcon={<ArrowDropDown />}>
+                    Kế hoạch
                   </Button>
                   <Menu
                     anchorEl={anchorEl}
@@ -278,11 +203,6 @@ const Header = () => {
                         mt: 1,
                         borderRadius: 2,
                         boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                        "& .MuiMenuItem-root": {
-                          "&:hover": {
-                            bgcolor: "#f5f5f5",
-                          },
-                        },
                       },
                     }}
                   >
@@ -292,9 +212,7 @@ const Header = () => {
                         handleClose();
                       }}
                     >
-                      {hasDietPlan
-                        ? "Chỉnh sửa kế hoạch ăn uống"
-                        : "Lập kế hoạch ăn uống"}
+                      {hasDietPlan ? "Chỉnh sửa kế hoạch" : "Lập kế hoạch"}
                     </MenuItem>
                     <MenuItem
                       onClick={() => {
@@ -302,72 +220,31 @@ const Header = () => {
                         handleClose();
                       }}
                     >
-                      Theo dõi kế hoạch ăn uống
+                      Theo dõi kế hoạch
                     </MenuItem>
                   </Menu>
+                  <Button onClick={() => navigate("/my-profile")}>Hồ sơ</Button>
                   <Button
-                    color="inherit"
-                    onClick={() => navigate("/my-profile")}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    Hồ sơ
-                  </Button>
-                  <Button
-                    color="inherit"
                     onClick={() => navigate("/view-subscriptions")}
                     sx={{
-                      fontWeight: "bold",
-                      color: "rgba(255, 255, 255, 1)",
-                      backgroundColor: "rgba(255, 174, 0, 1)",
-                      "&:hover": {
-                        bgcolor: "rgba(252, 255, 85, 1)",
-                      },
-                    }}
-                  >
-                    Nâng cấp tài khoản
-                  </Button>
-                  <Button
-                    color="inherit"
-                    onClick={handleLogout}
-                    sx={{
-                      fontWeight: "bold",
                       color: "white",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                      },
+                      backgroundColor: "rgba(255,174,0,1)",
+                      "&:hover": { bgcolor: "rgba(252,255,85,1)" },
                     }}
                   >
-                    Đăng xuất
+                    Nâng cấp
                   </Button>
+                  <Button onClick={handleLogout}>Đăng xuất</Button>
                 </>
               )}
             </>
           ) : (
             <>
-              <Button
-                color="inherit"
-                onClick={() => navigate("/login")}
-                sx={{
-                  fontWeight: "bold",
-                  color: "white",
-                  "&:hover": {
-                    bgcolor: "rgba(255, 255, 255, 0.1)",
-                  },
-                }}
-              >
-                Đăng nhập
-              </Button>
+              <Button onClick={() => navigate("/login")}>Đăng nhập</Button>
               <Button
                 variant="contained"
                 onClick={() => navigate("/register")}
                 sx={{
-                  fontWeight: "bold",
                   background: "linear-gradient(45deg, #FF8A65, #FF7043)",
                   color: "#fff",
                   "&:hover": {

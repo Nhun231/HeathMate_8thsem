@@ -1,0 +1,132 @@
+name: Deploy Backend and Frontend
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    outputs:
+      build-artifact: ${{ steps.upload-backend.outputs.artifact }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node for backend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.11.0
+          cache: "npm"
+          cache-dependency-path: healthmate-backend-public/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: healthmate-backend-public
+        run: npm install --force
+
+      - name: Import .env
+        run: |
+          cat <<'EOF' > healthmate-backend-public/.env
+          ${{ secrets.BACKEND_ENV_PRODUCTION }}
+          EOF
+
+      - name: Preview .env (safe)
+        run: |
+          echo "=== first 10 lines of .env ==="
+          head -n 10 healthmate-backend-public/.env
+
+      - name: Build backend
+        working-directory: healthmate-backend-public
+        run: npm run build
+
+      - name: Upload backend build artifact
+        id: upload-backend
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: healthmate-backend-public/dist
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    outputs:
+      build-artifact: ${{ steps.upload-frontend.outputs.artifact }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node for frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.11.0
+          cache: "npm"
+          cache-dependency-path: healthmate-frontend-public/health-mate/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: healthmate-frontend-public/health-mate
+        run: npm install --force
+
+      - name: Import .env
+        run: echo "${{ secrets.FRONTEND_ENV_PRODUCTION }}" > healthmate-frontend-public/health-mate/.env
+
+      - name: Build frontend
+        working-directory: healthmate-frontend-public/health-mate
+        run: npm run build
+
+      - name: Upload frontend build artifact
+        id: upload-frontend
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: healthmate-frontend-public/health-mate/dist
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    needs: build-backend
+    steps:
+      - name: Executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST_PRODUCTION }}
+          username: ${{ secrets.USERNAME_PRODUCTION }}
+          password: ${{ secrets.PASSWORD_PRODUCTION }}
+          port: ${{ secrets.PORT_PRODUCTION }}
+          script: |
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
+            cd ~/HeathMate_8thsem/healthmate-backend-public
+            git fetch origin
+            git reset --hard origin/main
+            cat <<'EOF' > .env
+            ${{ secrets.BACKEND_ENV_PRODUCTION }}
+            EOF
+            npm i --force
+            npm run build-vps
+            pm2 restart HealthMateBE
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    steps:
+      - name: Deploy Frontend
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST_PRODUCTION }}
+          username: ${{ secrets.USERNAME_PRODUCTION }}
+          password: ${{ secrets.PASSWORD_PRODUCTION }}
+          port: ${{ secrets.PORT_PRODUCTION }}
+          script: |
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
+            cd ~/HeathMate_8thsem/healthmate-frontend-public/health-mate
+            git fetch origin
+            git reset --hard origin/main
+            cat <<'EOF' > .env
+            ${{ secrets.FRONTEND_ENV_PRODUCTION }}
+            EOF
+            npm install --force
+            npm run build
+            pm2 restart HealthMateFE

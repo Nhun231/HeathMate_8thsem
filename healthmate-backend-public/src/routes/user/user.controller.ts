@@ -51,11 +51,11 @@ export class UserController {
   }
 
   @Put('me')
-  async updateCurrentUser(
+  updateCurrentUser(
     @ActiveUser('userId') userId: string,
     @Body() body: UpdateUserDTO,
   ) {
-    return this.usersService.updateMe(userId, body);
+    return this.usersService.updateUserCustomer(userId, body);
   }
 
   @Put(':userId')

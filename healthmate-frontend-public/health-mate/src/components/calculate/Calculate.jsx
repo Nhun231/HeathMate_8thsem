@@ -15,7 +15,7 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import "../../styles/themeCalculate.css";
 import {
@@ -56,6 +56,24 @@ export default function Calculate() {
 
   const resultRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if redirected from RequireCalculation and show alert
+  useEffect(() => {
+    if (location.state?.showAlert && location.state?.alertMessage) {
+      setAlert({
+        show: true,
+        message: location.state.alertMessage,
+        severity: "warning",
+      });
+      // Auto close after 5 seconds
+      setTimeout(() => {
+        setAlert((prev) => ({ ...prev, show: false }));
+      }, 5000);
+      // Clear location state to prevent showing alert again on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Hàm tính tuổi
   const calculateAge = (dob) => {

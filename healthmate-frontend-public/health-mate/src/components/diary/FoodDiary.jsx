@@ -235,7 +235,7 @@ function FoodDiary() {
         );
     }
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.default", pb: 4 }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default", pb: 4}}>
         {alert.show && (
             <CustomAlert
                 message={alert.message}
@@ -245,7 +245,7 @@ function FoodDiary() {
                 autoCloseDelay={2000}
             />
         )}
-      <Container maxWidth="md">
+      <Container maxWidth="lg">
         {/* Header */}
         <Box
           sx={{

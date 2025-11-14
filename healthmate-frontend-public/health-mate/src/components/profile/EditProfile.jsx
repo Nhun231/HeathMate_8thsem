@@ -67,6 +67,19 @@ const EditProfilePage = () => {
     fetchData();
   }, []);
 
+  // Hàm tính tuổi
+  const calculateAge = (dob) => {
+    if (!dob) return "";
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : "";
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -94,6 +107,8 @@ const EditProfilePage = () => {
         dob: data.dob,
       });
       await createCalculation({
+        age: calculateAge(data.dob),
+        gender: data.gender,
         height: Number(data.height),
         weight: Number(data.weight),
         activityLevel: data.activityLevel,

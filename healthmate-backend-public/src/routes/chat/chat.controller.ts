@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator';
 import { Types } from 'mongoose';
@@ -14,6 +14,7 @@ import {
 @Controller('v1/chat')
 
 export class ChatController {
+  private readonly logger = new Logger('ChatController');
   constructor(private readonly chatService: ChatService) {}
   // Get chat rooms for current user
   @Get('rooms')
@@ -55,20 +56,36 @@ export class ChatController {
     @Body() body: CreateChatRoomBodyDTO,
     @ActiveUser('userId') userId: Types.ObjectId
   ) {
-    // For simplicity, assume the current user is always the client
-    // and participantId is the expert
-    const room = await this.chatService.createChatRoom(userId.toString(), body.participantId);
-    
-    // Transform response to include roomId
-    const roomObj = room.toObject();
-    const transformedRoom = {
-      ...roomObj,
-      roomId: (room._id as Types.ObjectId).toString(),
-      customerId: room.customerId,
-      expertId: room.expertId,
-    };
-    
-    return { room: transformedRoom };
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    const participantId = body.participantId;
+    this.logger.log(`createChatRoom requester=${userId?.toString()} participantId=${participantId}`);
+    if (!Types.ObjectId.isValid(participantId)) {
+      throw new BadRequestException('Invalid participantId');
+    }
+    const requesterId = userId.toString();
+    if (requesterId === participantId) {
+      throw new BadRequestException('participantId must be different from requester');
+    }
+
+    try {
+      const room = await this.chatService.createChatRoom(requesterId, participantId);
+
+      const roomObj = room.toObject();
+      const transformedRoom = {
+        ...roomObj,
+        roomId: (room._id as Types.ObjectId).toString(),
+        customerId: room.customerId,
+        expertId: room.expertId,
+      };
+
+      return { room: transformedRoom };
+    } catch (error) {
+      this.logger.error(`createChatRoom failed: ${error?.message}`, error?.stack);
+      throw error;
+    }
   }
 
   // Get available users to chat with
@@ -79,18 +96,13 @@ export class ChatController {
     
     let users;
     if (userRole === 'Customer') {
-      console.log('👤 User is Customer, getting experts...');
       users = await this.chatService.getAvailableExperts(userId.toString());
     } else if (userRole === 'NutritionExpert' || userRole === 'NutrientExpert') {
-      console.log('👨‍⚕️ User is Expert, getting customers...');
       users = await this.chatService.getAvailableCustomers(userId.toString());
     } else {
-      console.log('❓ Unknown user role, defaulting to get experts');
       users = await this.chatService.getAvailableExperts(userId.toString());
     }
-    
-    console.log('🔍 Found users for role', userRole, ':', users.length);
-    return { users };
+        return { users };
   }
 
   // Mark messages as read

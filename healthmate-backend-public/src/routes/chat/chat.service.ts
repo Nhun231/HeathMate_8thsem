@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ChatRoom, ChatRoomDocument, Message, MessageDocument } from '../../shared/schemas/chat.schema';
@@ -25,35 +25,45 @@ export class ChatService {
   async createChatRoom(customerId: string, expertId: string): Promise<ChatRoomDocument> {
     const customerObjectId = new Types.ObjectId(customerId);
     const expertObjectId = new Types.ObjectId(expertId);
-    
     // Check if room already exists between these users
-    const existingRoom = await this.chatRoomModel.findOne({ 
+    const existingRoom = await this.chatRoomModel.findOne({
       $or: [
-        { 
-          customerId: customerObjectId,
-          expertId: expertObjectId
-        },
-        { 
-          customerId: expertObjectId,
-          expertId: customerObjectId
-        }
-      ]
+        { customerId: customerObjectId, expertId: expertObjectId },
+        { customerId: expertObjectId, expertId: customerObjectId },
+      ],
     }).exec();
-    
     if (existingRoom) {
       return existingRoom;
     }
-    
-    const chatRoom = new this.chatRoomModel({
-      customerId: customerObjectId,
-      expertId: expertObjectId,
-      status: 'Active',
-      lastMessageAt: new Date(),
-      lastMessage: 'Chat started',
-      unreadCount: 0,
-    });
-
-    return chatRoom.save();
+    // Use create() for new room and handle duplicates
+    try {
+      const chatRoom = await this.chatRoomModel.create({
+        customerId: customerObjectId,
+        expertId: expertObjectId,
+        status: 'Active',
+        lastMessageAt: new Date(),
+        lastMessage: 'Chat started',
+        unreadCount: 0,
+      });
+      // Add customerId to expert's clients list if not present
+      await this.userModel.updateOne(
+        { _id: expertObjectId },
+        { $addToSet: { clients: customerObjectId } }
+      ).exec();
+      return chatRoom;
+    } catch (error) {
+      if ((error as any)?.code === 11000) {
+        // Duplicate key: fetch and return existing room
+        const dupRoom = await this.chatRoomModel.findOne({
+          $or: [
+            { customerId: customerObjectId, expertId: expertObjectId },
+            { customerId: expertObjectId, expertId: customerObjectId },
+          ],
+        }).exec();
+        if (dupRoom) return dupRoom;
+      }
+      throw error;
+    }
   }
 
   // Get chat rooms for a user
@@ -87,7 +97,7 @@ export class ChatService {
   }
 
   // Get messages for a chat room
-  async getMessages(roomId: string, page: number = 1, limit: number = 50): Promise<MessageDocument[]> {
+  async getMessages(roomId: string, page: number = 1, limit: number = 100): Promise<MessageDocument[]> {
     try {
       const skip = (page - 1) * limit;
       const roomObjectId = new Types.ObjectId(roomId);

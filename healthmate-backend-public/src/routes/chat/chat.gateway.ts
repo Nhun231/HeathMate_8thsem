@@ -15,7 +15,7 @@ import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173', 'https://yourhealthmate.io.vn/'],
     credentials: true,
   },
   namespace: '/v1/chat',
@@ -65,7 +65,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   ) {
     const { userId, userType } = data;
     
-    console.log('🔌 Socket: User joining room:', userId, 'as', userType);
+    console.log('Socket: User joining room:', userId, 'as', userType);
     
     // Store user connection
     this.connectedUsers.set(userId, client.id);

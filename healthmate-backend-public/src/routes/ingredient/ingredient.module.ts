@@ -5,12 +5,14 @@ import { IngredientRepo } from './ingredient.repo';
 import {MongooseModule} from "@nestjs/mongoose";
 import {Ingredient, IngredientSchema} from "./schema/ingredient.schema";
 import { Dish, DishSchema } from "../dish/schema/dish.schema";
+import { Order, OrderSchema } from '../../shared/schemas/order.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Ingredient.name, schema: IngredientSchema },
       { name: Dish.name, schema: DishSchema },
+      { name: Order.name, schema: OrderSchema },
     ]),
   ],
   controllers: [IngredientController],

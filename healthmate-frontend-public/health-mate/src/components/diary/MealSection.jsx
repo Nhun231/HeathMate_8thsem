@@ -6,7 +6,7 @@ import RestaurantIcon from "@mui/icons-material/Restaurant"
 import { useDiary } from "../../context/DiaryContext.jsx"
 import UpdateMealModal from "./UpdateMealModal"
 
-function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded }) {
+function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded, readOnly = false }) {
   const [updateModalOpen, setUpdateModalOpen] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState(null)
   const { selectedDate, getDayEntries, removeDishFromMeal } = useDiary()
@@ -78,7 +78,7 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
           <Typography variant="body1" sx={{ color: "#4CAF50", fontWeight: 500 }}>
             {totalCalories} cal
           </Typography>
-          <Button
+          {!readOnly&&<Button
             variant="contained"
             size="small"
             startIcon={<AddIcon />}
@@ -92,6 +92,7 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
           >
             Thêm
           </Button>
+          }
         </Box>
       </Box>
 
@@ -148,20 +149,16 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
                 </Box>
               </Box>
               <Box sx={{ display: "flex", gap: 0.5 }}>
-                <IconButton 
-                  size="small" 
-                  sx={{ color: "#4CAF50" }}
-                  onClick={() => handleEditMeal(meal)}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  sx={{ color: "#f44336" }}
-                  onClick={() => handleEditMeal(meal)}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
+                {!readOnly && (
+    <>
+      <IconButton size="small" sx={{ color: "#4CAF50" }} onClick={() => handleEditMeal(meal)}>
+        <EditIcon fontSize="small" />
+      </IconButton>
+      <IconButton size="small" sx={{ color: "#f44336" }} onClick={() => handleEditMeal(meal)}>
+        <DeleteIcon fontSize="small" />
+      </IconButton>
+    </>
+  )}
               </Box>
             </Box>
           ))}
@@ -179,7 +176,7 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
           <Typography variant="body2" sx={{ color: "#999", mb: 2 }}>
             Chưa có món ăn nào
           </Typography>
-          <Button
+          {!readOnly&&<Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={onAddMeal}
@@ -192,6 +189,8 @@ function MealSection({ mealType, meals, loading = false, onAddMeal, onMealAdded 
           >
             Thêm món ăn đầu tiên
           </Button>
+          }
+          
         </Box>
       )}
 

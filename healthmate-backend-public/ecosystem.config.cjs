@@ -1,6 +1,6 @@
 module.exports = {
   apps : [{
-    name   : "HealthMateBE-apitest",
+    name   : "HealthMateBE",
     script : "node dist/src/main.js"
   }]
 }

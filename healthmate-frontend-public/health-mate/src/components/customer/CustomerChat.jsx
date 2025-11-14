@@ -26,9 +26,6 @@ import {
 } from '@mui/material';
 import {
   Send as SendIcon,
-  AttachFile as AttachFileIcon,
-  EmojiEmotions as EmojiIcon,
-  MoreVert as MoreVertIcon,
   OnlinePrediction as OnlineIcon,
   OfflineBolt as OfflineIcon,
   Person as PersonIcon,
@@ -94,11 +91,50 @@ const CustomerChat = () => {
     try {
       const userType = currentUser?.role === 'Customer' ? 'Customer' : 'NutritionExpert';
       const response = await chatService.getChatRooms(userType);
-      setChatRooms(response?.rooms || []);
+      const rooms = response?.rooms || [];
+      // Sort by lastMessageAt (newest first)
+      const sortedRooms = rooms.sort((a, b) => {
+        const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return timeB - timeA;
+      });
+      setChatRooms(sortedRooms);
     } catch (err) {
       setError('Không thể tải danh sách cuộc trò chuyện');
       setChatRooms([]); // Set empty array on error
     }
+  };
+
+  // Update chat room when a new message is received
+  const updateChatRoomOnMessage = (message) => {
+    setChatRooms(prev => {
+      const roomIndex = prev.findIndex(room => room.roomId === message.roomId);
+      
+      if (roomIndex >= 0) {
+        // Update the room with new message info
+        const updatedRooms = [...prev];
+        updatedRooms[roomIndex] = {
+          ...updatedRooms[roomIndex],
+          lastMessage: message.content,
+          lastMessageAt: message.timestamp,
+        };
+        
+        // Move updated room to top and sort by lastMessageAt
+        const updatedRoom = updatedRooms[roomIndex];
+        const otherRooms = updatedRooms.filter((_, idx) => idx !== roomIndex);
+        
+        // Sort all rooms by lastMessageAt (newest first)
+        const allRooms = [updatedRoom, ...otherRooms].sort((a, b) => {
+          const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+          const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+          return timeB - timeA;
+        });
+        
+        return allRooms;
+      }
+      
+      return prev;
+    });
   };
 
   // Load messages for selected user
@@ -137,6 +173,9 @@ const CustomerChat = () => {
 
     // Listen for messages
     socketService.onMessage((message) => {
+      // Update chat rooms list with new message info
+      updateChatRoomOnMessage(message);
+      
       // Add message to state, replacing temp message if exists
       setMessages(prev => {
         // Check if this is updating a temp message (same content and recent timestamp)
@@ -215,6 +254,14 @@ const CustomerChat = () => {
     };
     
     setMessages(prev => [...prev, tempMessage]);
+    
+    // Update chat room list immediately with temp message
+    updateChatRoomOnMessage({
+      roomId: roomId,
+      content: newMessage.trim(),
+      timestamp: tempMessage.timestamp,
+    });
+    
     setNewMessage('');
 
     try {
@@ -489,7 +536,7 @@ const CustomerChat = () => {
                           {room.lastMessage || 'Chưa có tin nhắn'}
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#999' }}>
-                          {room.lastMessageTime ? formatTime(room.lastMessageTime) : ''}
+                          {room.lastMessageAt ? new Date(room.lastMessageAt).toLocaleString('vi-VN') : ''}
                         </Typography>
                       </Box>
                     }
@@ -516,7 +563,7 @@ const CustomerChat = () => {
                 borderRadius: 0,
               }}
             >
-              <Avatar sx={{ bgcolor: '#2196F3' }}>
+              <Avatar sx={{ bgcolor: '#4CAF50' }}>
                 {selectedUser.fullname?.charAt(0) || 'U'}
               </Avatar>
               <Box>
@@ -528,9 +575,6 @@ const CustomerChat = () => {
                 </Typography>
               </Box>
               <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-                <IconButton size="small">
-                  <MoreVertIcon />
-                </IconButton>
               </Box>
             </Paper>
 
@@ -545,7 +589,6 @@ const CustomerChat = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1,
-                borderRadius: 2,
                 border: '1px solid #e0e0e0',
               }}
             >
@@ -694,15 +737,6 @@ const CustomerChat = () => {
                 borderTop: '1px solid #e0e0e0',
               }}
             >
-              <IconButton 
-                size="small"
-                sx={{ 
-                  color: '#666',
-                  '&:hover': { bgcolor: '#f5f5f5' }
-                }}
-              >
-                <AttachFileIcon />
-              </IconButton>
               <TextField
                 fullWidth
                 multiline
@@ -736,15 +770,6 @@ const CustomerChat = () => {
                   },
                 }}
               />
-              <IconButton 
-                size="small"
-                sx={{ 
-                  color: '#666',
-                  '&:hover': { bgcolor: '#f5f5f5' }
-                }}
-              >
-                <EmojiIcon />
-              </IconButton>
               <IconButton
                 size="medium"
                 onClick={handleSendMessage}

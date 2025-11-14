@@ -21,3 +21,10 @@ export const PaymentTransactionAlreadyExistsException =
       path: 'payment-transaction',
     },
   ]);
+
+  export const NotFoundPaymentException = new UnprocessableEntityException([
+  {
+    message: 'Error.NotFoundPayment',
+    path: 'payment',
+  },
+]);

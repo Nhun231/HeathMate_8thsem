@@ -7,6 +7,7 @@ import {
   NotFoundOrderException,
   NotFoundSubscriptionException,
   PaymentTransactionAlreadyExistsException,
+  NotFoundPaymentException,
 } from './payment.error';
 import {
   Subscription,
@@ -23,9 +24,12 @@ import {
   PREFIX_PAYMENT_CODE,
 } from 'src/shared/constants/payment.constant';
 import { User, UserDocument } from 'src/shared/schemas/user.schema';
+import { QueryBuilder } from 'src/shared/utils/query-builder';
+import { QueryType } from 'src/shared/schemas/request/request.schema';
 
 @Injectable()
 export class PaymentRepo {
+  private queryBuilder: QueryBuilder<PaymentTransactionDocument>;
   constructor(
     @InjectModel(PaymentTransaction.name)
     private paymentTransactionModel: Model<PaymentTransactionDocument>,
@@ -34,7 +38,11 @@ export class PaymentRepo {
     private subscriptionModel: Model<SubscriptionDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectConnection() private readonly connection: Connection,
-  ) {}
+  ) {
+    this.queryBuilder = new QueryBuilder<PaymentTransactionDocument>(
+      this.paymentTransactionModel,
+    );
+  }
 
   private async getPrice(orderId: Types.ObjectId) {
     const order = await this.orderModel
@@ -154,5 +162,46 @@ export class PaymentRepo {
     } finally {
       await session.endSession();
     }
+  }
+  async findAll(query: QueryType) {
+    const parsedQuery: any = { ...query };
+    
+    if (
+      typeof query.dateFrom === 'string' &&
+      typeof query.dateTo === 'string'
+    ) {
+      const from = new Date(query.dateFrom);
+      const to = new Date(query.dateTo);
+      parsedQuery.transactionDate = { $gte: from, $lte: to };
+
+      delete parsedQuery.dateFrom;
+      delete parsedQuery.dateTo;
+    }
+
+    return this.queryBuilder.query({
+      query: parsedQuery,
+      allowedFilters: [
+        'gateway',
+        'accountNumber',
+        'subAccount',
+        'transactionDate',
+        'amountIn',
+        'amountOut',
+        'accumulated',
+        'code',
+        'referenceNumber',
+        'transactionContent',
+      ],
+    });
+  }
+
+  async findById(id: string) {
+    const payment = await this.paymentTransactionModel.findById(id).lean();
+
+    if (!payment) {
+      throw NotFoundPaymentException;
+    }
+
+    return payment;
   }
 }

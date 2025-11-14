@@ -22,6 +22,8 @@ import {
   Assessment,
   Lock,
   MenuBook,
+  CreditCard,
+  Article,
 } from "@mui/icons-material";
 import { listCustomAndPublicIngredients } from "../../services/Ingredient.js";
 import { listDishes } from "../../services/Dish.js";
@@ -31,6 +33,10 @@ import PermissionManagement from "../../components/admin/PermissionManagement.js
 import UserManagement from "../../components/admin/UserManagement.jsx";
 import { getUserStats } from "../../services/AdminService.js";
 import ExpertCertificateManagement from "../../components/admin/ExpertCertificateManagement.jsx";
+import PaymentManagement from "../../components/admin/PaymentManagement.jsx";
+import SubcriptionManagement from "../../components/admin/SubcriptionManagement.jsx";
+import PostManagement from "../../components/admin/PostManagement.jsx";
+import {getAllPayments} from "../../services/PaymentService.js";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -39,7 +45,6 @@ const AdminDashboard = () => {
     totalDishes: 0,
     totalUsers: 0,
     pendingTransactions: 0,
-    totalCoinsDistributed: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -60,12 +65,14 @@ const AdminDashboard = () => {
           listCustomAndPublicIngredients({ limit: 1000 }),
           listDishes({ limit: 1000 }),
           getUserStats(),
+          getAllPayments() ,
         ]);
 
       setQuickStats({
         totalIngredients: ingredientsResponse.items?.length || 0,
         totalDishes: dishesResponse.total || 0,
         totalUsers: userStatsResponse.data?.totalUsers || 0,
+          pendingTransactions: transactionStatsResponse.total || 0,
       });
     } catch (error) {
       console.error("Error fetching quick stats:", error);
@@ -93,11 +100,7 @@ const AdminDashboard = () => {
     {
       label: "Quản lý giao dịch",
       icon: <AccountBalance />,
-      component: (
-        <Typography sx={{ textAlign: "center", mt: 2 }}>
-          Chức năng đang được phát triển...
-        </Typography>
-      ),
+      component: <PaymentManagement />,
     },
     {
       label: "Quản lý người dùng",
@@ -108,6 +111,16 @@ const AdminDashboard = () => {
       label: "Quản lý chứng chỉ chuyên gia",
       icon: <Assessment />,
       component: <ExpertCertificateManagement />,
+    },
+    {
+      label: "Quản lý các gói khuyến mãi ",
+      icon: <CreditCard />,
+      component: <SubcriptionManagement />,
+    },
+    {
+      label: "Quản lý bài viết",
+      icon: <Article />,
+      component: <PostManagement />,
     },
   ];
 
@@ -123,7 +136,7 @@ const AdminDashboard = () => {
             sx={{ color: "#2E7D32", fontWeight: "bold" }}
           >
             <AdminPanelSettings sx={{ mr: 1, verticalAlign: "middle" }} />
-            Bảng điều khiển Admin
+            Bảng quản lý Admin
           </Typography>
           <Typography variant="body1" sx={{ color: "#666" }}>
             Quản lý hệ thống HealthMate - Nguyên liệu, quyền, giao dịch và người
@@ -275,8 +288,7 @@ const AdminDashboard = () => {
                     {loading ? (
                       <CircularProgress size={24} />
                     ) : (
-                      // quickStats.pendingTransactions
-                        0
+                       quickStats.pendingTransactions
                     )}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#666" }}>

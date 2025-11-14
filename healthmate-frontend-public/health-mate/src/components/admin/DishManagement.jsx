@@ -408,16 +408,6 @@ const DishManagement = () => {
             </Typography>
           </CardContent>
         </Card>
-        <Card sx={{ flex: 1 }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ color: '#2196F3', fontWeight: 'bold' }}>
-              {dishes.length}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Món ăn công khai
-            </Typography>
-          </CardContent>
-        </Card>
       </Box>
 
       {/* Table */}
