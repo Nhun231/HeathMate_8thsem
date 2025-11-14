@@ -74,7 +74,6 @@ const Header = () => {
         boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
       }}
     >
-      {/* tăng nhẹ chiều cao bằng vh, không phá layout */}
       <Toolbar
         sx={{
           maxWidth: "1600px",
@@ -178,6 +177,7 @@ const Header = () => {
               )}
               {userRole === "NutritionExpert" && (
                 <>
+                    <Button onClick={() => navigate("/admin/posts")}>Tin tức của bạn</Button>
                   <Button onClick={() => navigate("/expert-chat")}>Tư vấn</Button>
                   <Button onClick={() => navigate("/my-profile")}>Hồ sơ</Button>
                   <Button onClick={() => navigate("/bankinfo")}>Ngân hàng</Button>

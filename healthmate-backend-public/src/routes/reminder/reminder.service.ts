@@ -94,7 +94,7 @@ export class ReminderService {
   async sendReminders() {
     const timezone = 'Asia/Ho_Chi_Minh';
     const currentTimeStr = moment().tz(timezone).format('HH:mm');
-    this.logger.log(`⏰ Checking reminders at ${currentTimeStr}`);
+    this.logger.log(`Checking reminders at ${currentTimeStr}`);
 
     let settings: any[];
     try {
