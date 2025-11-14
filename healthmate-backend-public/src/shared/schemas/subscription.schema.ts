@@ -1,18 +1,18 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
-import { SubscriptionType } from 'src/shared/constants/subscription.constant';
+import mongoose, { HydratedDocument, Types } from 'mongoose';
+import { SubscriptionType } from './subscriptionType.schema';
 
 @Schema({ timestamps: true })
 export class Subscription {
   @Prop({ type: String, required: true })
-  name: number;
+  name: string;
 
   @Prop({
-    type: String,
-    enum: [SubscriptionType.INDEPTH, SubscriptionType.ADVANCED],
+    type: mongoose.Schema.Types.ObjectId,
+    ref: SubscriptionType.name,
     required: true,
   })
-  type: string;
+  type: Types.ObjectId;
 
   @Prop({ type: Number, required: true })
   durationDays: number;

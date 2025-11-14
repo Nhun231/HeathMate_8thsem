@@ -21,6 +21,7 @@
     "@mui/x-date-pickers": "^8.11.3",
     "axios": "^1.12.2",
     "ckeditor5": "^47.2.0",
+    "ckeditor5-premium-features": "^47.2.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
     "jwt-decode": "^4.0.0",

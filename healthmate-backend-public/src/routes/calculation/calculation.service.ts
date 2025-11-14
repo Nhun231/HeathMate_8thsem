@@ -112,7 +112,8 @@ export class CalculationService {
 
   async updateNutrient(
     userId: Types.ObjectId,
-    data: { protein?: number; fat?: number; carbs?: number; fiber?: number }) {
+    data: { protein?: number; fat?: number; carbs?: number; fiber?: number },
+  ) {
     //Give the lastest calculation record
     const latest = await this.findLatestByUserId(userId);
     if (!latest) {
@@ -128,5 +129,4 @@ export class CalculationService {
     });
     return updated;
   }
-
 }

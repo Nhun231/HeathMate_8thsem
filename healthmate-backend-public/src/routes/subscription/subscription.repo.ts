@@ -7,10 +7,6 @@ import {
   Subscription,
   SubscriptionDocument,
 } from '../../shared/schemas/subscription.schema';
-import {
-  CreateSubscriptionSchemaType,
-  UpdateSubscriptionSchemaType,
-} from './schema/request/subscription.request.schema';
 
 @Injectable()
 export class SubscriptionRepository {
@@ -29,6 +25,7 @@ export class SubscriptionRepository {
     const querySubscriptions = await this.queryBuilder.query({
       query,
       allowedFilters: ['name', 'type', 'duration', 'price'],
+      populateFields: ['type'],
     });
 
     return querySubscriptions;
@@ -38,11 +35,11 @@ export class SubscriptionRepository {
     return this.subscriptionModel.findById(id);
   }
 
-  async create(data: CreateSubscriptionSchemaType) {
+  async create(data: Partial<Subscription>) {
     return this.subscriptionModel.create(data);
   }
 
-  async update(id: Types.ObjectId, data: UpdateSubscriptionSchemaType) {
+  async update(id: Types.ObjectId, data: Partial<Subscription>) {
     return this.subscriptionModel.findByIdAndUpdate(id, data, { new: true });
   }
 

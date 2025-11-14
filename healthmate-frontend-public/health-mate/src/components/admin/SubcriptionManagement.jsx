@@ -179,9 +179,9 @@ export default function ManageSubscription() {
                                 <TableCell>{sub.name}</TableCell>
                                 <TableCell>
                                     <Chip
-                                        label={renderTypeLabel(sub.type)}
+                                        label={renderTypeLabel(sub.type.name)}
                                         color={
-                                            sub.type === "ADVANCED"
+                                            sub.type.name === "ADVANCED"
                                                 ? "success"
                                                 : "primary"
                                         }

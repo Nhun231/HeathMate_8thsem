@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
 import { Role } from 'src/shared/schemas/role.schema';
+import { SubscriptionType } from './subscriptionType.schema';
 
 @Schema({ timestamps: true })
 export class Permission {
@@ -31,6 +32,13 @@ export class Permission {
     required: true,
   })
   role: Types.ObjectId[];
+
+  @Prop({
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: SubscriptionType.name,
+    required: false,
+  })
+  subscriptionType: Types.ObjectId[];
 }
 
 export const PermissionSchema = SchemaFactory.createForClass(Permission);

@@ -23,12 +23,12 @@ export class SubscriptionController {
   }
 
   @Post()
-  async createUser(@Body() body: CreateSubscriptionBodyDTO) {
+  async createSubscription(@Body() body: CreateSubscriptionBodyDTO) {
     return this.subscriptionService.create(body);
   }
 
   @Put(':subId')
-  async updateUser(
+  async updateSubscription(
     @Param() params: GetSubscriptionParamsDTO,
     @Body() body: UpdateSubscriptionBodyDTO,
   ) {

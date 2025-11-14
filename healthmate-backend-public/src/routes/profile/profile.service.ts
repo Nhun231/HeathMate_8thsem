@@ -32,37 +32,31 @@ export class ProfileService {
     userId: string,
     body: Omit<ChangePasswordBodyType, 'confirmNewPassword'>,
   ) {
-    try {
-      const { password, newPassword } = body;
+    const { password, newPassword } = body;
 
-      const user = await this.sharedUserRepository.findUnique({
-        _id: new Types.ObjectId(userId),
-      });
-      if (!user) {
-        throw NotFoundProfileRecordException;
-      }
-
-      const isPasswordMatch = await this.hashingService.comparePassword(
-        password,
-        user.password,
-      );
-      if (!isPasswordMatch) {
-        throw InvalidPasswordException;
-      }
-
-      const hashedPassword =
-        await this.hashingService.hashPassword(newPassword);
-
-      await this.profileRepo.update(new Types.ObjectId(userId), {
-        password: hashedPassword,
-      });
-
-      return {
-        message: 'Password changed successfully',
-      };
-    } catch (error) {
-      console.error(error);
-      throw error;
+    const user = await this.sharedUserRepository.findUnique({
+      _id: new Types.ObjectId(userId),
+    });
+    if (!user) {
+      throw NotFoundProfileRecordException;
     }
+
+    const isPasswordMatch = await this.hashingService.comparePassword(
+      password,
+      user.password,
+    );
+    if (!isPasswordMatch) {
+      throw InvalidPasswordException;
+    }
+
+    const hashedPassword = await this.hashingService.hashPassword(newPassword);
+
+    await this.profileRepo.update(new Types.ObjectId(userId), {
+      password: hashedPassword,
+    });
+
+    return {
+      message: 'Password changed successfully',
+    };
   }
 }

@@ -130,14 +130,21 @@ export class PaymentRepo {
       );
       if (!subscription) throw NotFoundSubscriptionException;
 
+      const now = new Date();
+      const startDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      );
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + subscription.durationDays);
+
       await this.orderModel.updateOne(
         { _id: order._id },
         {
           status: PaymentStatus.SUCCESS,
-          startDate: new Date(Date.now()).getDate(),
-          endDate: new Date(Date.now()).setDate(
-            new Date(Date.now()).getDate() + subscription.durationDays,
-          ),
+          startDate,
+          endDate,
         },
         { session },
       );

@@ -31,7 +31,7 @@ import { BullModule } from '@nestjs/bullmq';
 
 import { ChatModule } from './routes/chat/chat.module';
 import { BankInfoModule } from './routes/bank-info/bankinfo.module';
-import {ReminderModule} from './routes/reminder/reminder.module'
+import { ReminderModule } from './routes/reminder/reminder.module';
 import { PostModule } from './routes/post/post.module';
 @Module({
   imports: [

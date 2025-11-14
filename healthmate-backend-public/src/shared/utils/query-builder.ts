@@ -1,4 +1,4 @@
-import { FilterQuery, Model } from 'mongoose';
+import mongoose, { FilterQuery, Model } from 'mongoose';
 import { QueryType } from '../schemas/request/request.schema';
 
 type PopulateField = string | { path: string; select?: string };
@@ -29,6 +29,16 @@ export class QueryBuilder<T> {
       if (value === undefined || value === null || value === '') return;
 
       if (filtersWhitelist.length > 0 && !filtersWhitelist.includes(key)) {
+        return;
+      }
+
+      const schemaPath = this.model.schema.path(key);
+      const isObjectIdType =
+        schemaPath instanceof mongoose.Schema.Types.ObjectId ||
+        mongoose.isValidObjectId(value);
+
+      if (isObjectIdType) {
+        (conditions as any)[key] = new mongoose.Types.ObjectId(value as any);
         return;
       }
 
