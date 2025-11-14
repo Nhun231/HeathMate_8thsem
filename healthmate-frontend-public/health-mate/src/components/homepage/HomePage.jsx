@@ -5,14 +5,11 @@ import {
     Typography,
     Button,
     Grid,
-    Card,
-    CardMedia,
-    CardContent,
-    Chip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import heroBanner from "../../assets/healthyfood.jpg";
 import pyramidFood from "../../assets/pyramidFood.jpg";
+import NewsFeedSection from "../post/PostsHomepage";
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -34,7 +31,6 @@ const HomePage = () => {
                     px: 2,
                     py: 6,
                     position: "relative",
-
                 }}
             >
                 <Box
@@ -74,7 +70,7 @@ const HomePage = () => {
                 </Box>
             </Box>
 
-            {/* Đặc điểm */}
+            {/* --- Đặc điểm --- */}
             <Box
                 sx={{
                     px: { xs: 2, md: 6, lg: 10 },
@@ -84,11 +80,7 @@ const HomePage = () => {
                     mb: 2,
                 }}
             >
-                <Grid
-                    container
-                    spacing={6}
-                    alignItems="center"
-                >
+                <Grid container spacing={6} alignItems="center">
                     {/* Bên trái */}
                     <Grid item xs={12} md={5}>
                         <Box
@@ -120,7 +112,7 @@ const HomePage = () => {
                         </Typography>
 
                         <Grid container spacing={2}>
-                            {/*Bên trái danh sách*/}
+                            {/* Bên trái danh sách */}
                             <Grid item xs={6}>
                                 {[
                                     "Dinh dưỡng cho mọi độ tuổi",
@@ -129,8 +121,8 @@ const HomePage = () => {
                                 ].map((txt, i) => (
                                     <Typography
                                         key={i}
-                                        sx={{ fontSize: "0.90rem", color: "#000", mb: 1, mt: 2 }}
-                                        textAlign={"left"}
+                                        sx={{ fontSize: "0.9rem", color: "#000", mb: 1, mt: 2 }}
+                                        textAlign="left"
                                     >
                                         ✓ {txt}
                                     </Typography>
@@ -146,8 +138,8 @@ const HomePage = () => {
                                 ].map((txt, i) => (
                                     <Typography
                                         key={i}
-                                        sx={{ fontSize: "0.90rem", color: "#000", mb: 1, mt: 2 }}
-                                        textAlign={"left"}
+                                        sx={{ fontSize: "0.9rem", color: "#000", mb: 1, mt: 2 }}
+                                        textAlign="left"
                                     >
                                         ✓ {txt}
                                     </Typography>
@@ -158,12 +150,19 @@ const HomePage = () => {
                 </Grid>
             </Box>
 
+            {/* --- NEWSFEED SECTION --- */}
+            <NewsFeedSection />
 
-            {/* Tính năng */}
-            <Box sx={{
-                px: { xs: 2, md: 8 }, py: 8, backgroundColor: "#e4fae0ff", mt: 8,
-                mb: 12,
-            }}>
+            {/* --- Tính năng --- */}
+            <Box
+                sx={{
+                    px: { xs: 2, md: 8 },
+                    py: 8,
+                    backgroundColor: "#e4fae0ff",
+                    mt: 8,
+                    mb: 12,
+                }}
+            >
                 <Grid container spacing={4} justifyContent="center" wrap="nowrap" alignItems="stretch">
                     {[
                         {
@@ -182,19 +181,10 @@ const HomePage = () => {
                             iconBg: "#b6e6b8ff",
                             icon: "https://img.icons8.com/bubbles/100/meal.png",
                             title: "Dịch vụ ăn uống & sức khỏe",
-                            desc: "Cung cấp chế độ ăn phù hợp cho mục tiêu cá nhân hóa",
+                            desc: "Cung cấp chế độ ăn phù hợp cho mục tiêu cá nhân hóa.",
                         },
                     ].map((item, idx) => (
-                        <Grid
-                            item
-                            xs={4}
-                            key={idx}
-                            sx={{
-                                flex: 1,
-                                maxWidth: "33.33%",
-                                display: "flex",
-                            }}
-                        >
+                        <Grid item xs={4} key={idx} sx={{ flex: 1, maxWidth: "33.33%", display: "flex" }}>
                             <Box
                                 sx={{
                                     p: 4,
@@ -227,121 +217,10 @@ const HomePage = () => {
                                     />
                                 </Box>
 
-                                <Typography
-                                    variant="h6"
-                                    sx={{ fontWeight: 700, color: "#1b1b1b", mb: 1 }}
-                                >
+                                <Typography variant="h6" sx={{ fontWeight: 700, color: "#1b1b1b", mb: 1 }}>
                                     {item.title}
                                 </Typography>
 
-                                <Typography sx={{ color: "text.secondary", fontSize: "0.95rem" }}>
-                                    {item.desc}
-                                </Typography>
-                            </Box>
-                        </Grid>
-                    ))}
-                </Grid>
-            </Box>
-
-            {/* Hoạt động */}
-            <Box sx={{ px: { xs: 2, md: 8 }, py: 8, backgroundColor: "#e4fae0ff", mb: 5 }}>
-                <Typography
-                    variant="h4"
-                    fontWeight={700}
-                    textAlign="center"
-                    sx={{ color: "#097d0ff9", letterSpacing: 2, mb: 1 }}
-                >
-                    CÁCH CHÚNG TÔI HOẠT ĐỘNG
-                </Typography>
-                <Typography
-                    variant="h4"
-                    textAlign="center"
-                    sx={{ fontWeight: 300, color: "#369c36ff", mb: 6 }}
-                >
-                    Dễ dàng thao tác
-                </Typography>
-
-                <Grid
-                    container
-                    spacing={4}
-                    justifyContent="center"
-                    wrap="nowrap"
-                    alignItems="stretch"
-                    sx={{ overflowX: "auto" }}
-                >
-                    {[
-                        {
-                            icon: "https://img.icons8.com/scribby/64/todo-list.png",
-                            bg: "#d2f4d4ff",
-                            title: "Chọn tính năng",
-                            desc: "Lựa chọn tính năng phù hợp mục tiêu cá nhân.",
-                        },
-                        {
-                            icon: "https://img.icons8.com/scribby/64/planner.png",
-                            bg: "#eff5b7ff",
-                            title: "Đặt lịch",
-                            desc: "Thiết lập lịch ăn và kế hoạch theo dõi rõ ràng.",
-                        },
-                        {
-                            icon: "https://img.icons8.com/scribby/64/stopwatch.png",
-                            bg: "#f2e1dcff",
-                            title: "Duy trì thói quen",
-                            desc: "Giữ lịch trình và chế độ ăn uống ổn định hằng ngày.",
-                        },
-                        {
-                            icon: "https://img.icons8.com/scribby/64/combo-chart.png",
-                            bg: "#c4f2f5ff",
-                            title: "Tận hưởng kết quả",
-                            desc: "Cảm nhận sự thay đổi tích cực về sức khỏe.",
-                        },
-                    ].map((item, idx) => (
-                        <Grid
-                            item
-                            key={idx}
-                            xs={3}
-                            sx={{
-                                flex: 1,
-                                maxWidth: "25%",
-                                display: "flex",
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    p: 4,
-                                    border: "1px solid #e0e0e0",
-                                    borderRadius: "24px",
-                                    textAlign: "center",
-                                    backgroundColor: "#fff",
-                                    height: "100%",
-                                    flex: 1,
-                                }}
-                            >
-                                {/* Icon */}
-                                <Box
-                                    sx={{
-                                        width: 72,
-                                        height: 72,
-                                        borderRadius: "20px",
-                                        backgroundColor: item.bg,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        mx: "auto",
-                                        mb: 3,
-                                    }}
-                                >
-                                    <img
-                                        src={item.icon}
-                                        alt={item.title}
-                                        width="48"
-                                        height="48"
-                                        style={{ objectFit: "contain" }}
-                                    />
-                                </Box>
-
-                                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                                    {item.title}
-                                </Typography>
                                 <Typography sx={{ color: "text.secondary", fontSize: "0.95rem" }}>
                                     {item.desc}
                                 </Typography>
@@ -438,8 +317,7 @@ const HomePage = () => {
                     </Button>
                 </Box>
             </Box>
-
-        </Box >
+        </Box>
     );
 };
 

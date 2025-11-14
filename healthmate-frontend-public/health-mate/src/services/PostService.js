@@ -55,3 +55,13 @@ export const deletePost = async (postId) => {
     }
 };
 
+// Lấy danh sách bài viết cho newsfeed (hiển thị công khai)
+export const listNewsfeed = async (params = {}) => {
+    try {
+        const res = await baseAxios.get("/post/newsfeed", { params });
+        return res.data;
+    } catch (err) {
+        console.error("Lỗi khi lấy danh sách bài viết newsfeed:", err);
+        throw err;
+    }
+};
